@@ -352,3 +352,15 @@ This file mirrors project-relevant decisions made after Project Freeze 3.0 for t
 **What this does NOT license claiming:** per-case dispersion (~0.16-0.25) is large relative to the gaps between planners (~0.02-0.23); this is one training seed and one checkpoint. The prior D/E/F ablation on this branch already showed single-seed REINFORCE-style variance is real and can make an individual run look better or worse than the underlying setup reliably is - that finding carries over structurally here. Nothing above should be read as "GNN+RL beats Information Gain" until multiple independent training seeds are compared and averaged. Explicitly not a winner-only score, not a claim of ecological representativeness (world-model ranges/q values are declared benchmark scenario anchors in `configs/q_protocol_r7.json`, not calibrated estimates), not proven field effectiveness.
 
 **Owner:** Demu.
+
+## 2026-09-12 — R7 multi-seed replication: the id_test/ood_model_E/ood_q_high gap holds across 3 independent training seeds
+
+**Status:** Strengthens, does not settle, the single-seed R7 benchmark entry above. Full table in `docs/R7_BENCHMARK_REPORT.md` Section 6.
+
+**What ran:** two more independent training seeds (1, 2), same hyperparameters as `r7_serious_v0` (seed 0), benchmarked against the identical 120 cases (same `--seed 12345`). Raw rows: `reports/r7_benchmark_seed1.csv`, `reports/r7_benchmark_seed2.csv`.
+
+**Finding:** Frontier/Information Gain are near-deterministic across training seeds (stdev-across-seeds <=0.005 - they don't depend on RL training). GNN+RL carries real seed-to-seed variance (stdev 0.006-0.066, largest in ood_q_high) - the same single-seed-REINFORCE-variance lesson from the pre-R7 D/E/F ablation still applies. But the DIRECTION is now consistent across all three independent runs: every one of the three RL seeds landed clearly below both baselines in id_test, ood_model_E, and ood_q_high (mean missed_occupied_fraction across seeds: id_test 0.678 vs frontier 0.775/IG 0.760; ood_model_E 0.717 vs 0.754/0.779; ood_q_high 0.461 vs 0.646/0.661). ood_q_low stays indistinguishable across all three, as expected (q_true=0.02 makes strategy matter little).
+
+**What this still does not license:** n=3 seeds, 300 updates each (not run to convergence), one architecture/hyperparameter choice, and the case set is this branch's provisional real-graph sampling, not the team's eventual frozen OOD manifest. This is meaningfully stronger evidence than the single-seed result - a consistent direction across 3 independent runs is not nothing - but still not a claim to present as settled.
+
+**Owner:** Demu.

@@ -88,12 +88,54 @@ q value, or the 12-20-site graph range are ecologically representative -
 `configs/benchmark_protocol_r7.json`/`configs/q_protocol_r7.json` already say
 so explicitly for the underlying scenario design.
 
-## 6. Suggested next steps (not started here)
+## 6. Multi-seed replication (added after Section 1-5 were first written)
 
-1. Multiple training seeds (>=2-3), averaged, before treating the ood_q_high
-   gap as real.
-2. More updates per seed if runtime allows - 300 updates is a first pass,
-   not a convergence claim.
-3. Once the team's exact frozen OOD topology case manifest exists, rerun
+Two more independent training seeds (1, 2) were run with identical
+hyperparameters, then benchmarked against the exact same 120 cases (same
+`--seed 12345` for case sampling) as seed 0. Per-group, per-planner mean
+missed_occupied_fraction across the three seed-level means:
+
+| Group | Planner | seed 0 | seed 1 | seed 2 | mean across seeds | stdev across seeds |
+|---|---|---|---|---|---|---|
+| id_test | frontier | 0.774 | 0.773 | 0.778 | 0.775 | 0.002 |
+| id_test | information_gain | 0.760 | 0.760 | 0.760 | 0.760 | 0.000 |
+| id_test | gnn_rl | 0.668 | 0.683 | 0.682 | 0.678 | 0.007 |
+| ood_model_E | frontier | 0.753 | 0.755 | 0.756 | 0.754 | 0.001 |
+| ood_model_E | information_gain | 0.782 | 0.776 | 0.779 | 0.779 | 0.002 |
+| ood_model_E | gnn_rl | 0.709 | 0.712 | 0.731 | 0.717 | 0.010 |
+| ood_q_low | frontier | 0.751 | 0.751 | 0.751 | 0.751 | 0.000 |
+| ood_q_low | information_gain | 0.756 | 0.756 | 0.756 | 0.756 | 0.000 |
+| ood_q_low | gnn_rl | 0.757 | 0.745 | 0.758 | 0.753 | 0.006 |
+| ood_q_high | frontier | 0.647 | 0.646 | 0.645 | 0.646 | 0.001 |
+| ood_q_high | information_gain | 0.664 | 0.664 | 0.655 | 0.661 | 0.005 |
+| ood_q_high | gnn_rl | 0.416 | 0.554 | 0.411 | 0.461 | 0.066 |
+
+**Reading this**: Frontier/Information Gain are near-deterministic across
+training seeds (stdev <=0.005 - expected, they don't depend on RL training at
+all; the tiny residual variation is incidental, not signal). GNN+RL carries
+real seed-to-seed variance (stdev 0.006-0.066), confirming the same
+single-seed-REINFORCE-variance lesson from the pre-R7 D/E/F ablation still
+applies here. **But the direction is now consistent across all three
+independent training runs**: in id_test, ood_model_E, and ood_q_high, every
+one of the three RL seeds landed clearly below both baselines - not one seed
+happened to look good while the others didn't. ood_q_low stays
+indistinguishable across all three, as expected.
+
+**Updated read**: this is meaningfully stronger evidence than the single-seed
+result in Sections 1-5 - a consistent direction across 3 independent training
+runs is not nothing. It is still **not** a fully validated claim: n=3 seeds,
+one architecture/hyperparameter choice, 300 updates (not run to convergence),
+and the case set is this report's provisional real-graph sampling, not the
+team's eventual frozen OOD manifest. Worth taking seriously; not yet
+something to present as settled.
+
+## 7. Suggested next steps (not started here)
+
+1. More updates per seed if runtime allows - 300 updates is a first pass,
+   not a convergence claim, and it is unclear whether the gap grows, holds,
+   or shrinks with more training.
+2. Once the team's exact frozen OOD topology case manifest exists, rerun
    this exact benchmark against it instead of the provisional real-graph
    seed sampling used here (`real_graph_cases.py`).
+3. If runtime allows, a couple more seeds (5 total) would tighten the
+   stdev-across-seeds estimate, especially for ood_q_high where it's largest.
