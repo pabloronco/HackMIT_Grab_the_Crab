@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import math
 from collections import defaultdict, deque
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from statistics import median
 from typing import Any, Iterable, Mapping, Sequence
@@ -44,11 +44,10 @@ def _as_bool(value: object) -> bool:
 
 
 def _site_sort_key(value: str) -> tuple[int, int | str]:
-    text = str(value)
     try:
-        return (0, int(text))
+        return (0, int(str(value)))
     except ValueError:
-        return (1, text)
+        return (1, str(value))
 
 
 def _quantile(values: Sequence[float], q: float) -> float | None:
@@ -62,22 +61,14 @@ def _quantile(values: Sequence[float], q: float) -> float | None:
     upper = int(math.ceil(position))
     if lower == upper:
         return ordered[lower]
-    weight = position - lower
-    return ordered[lower] * (1.0 - weight) + ordered[upper] * weight
+    alpha = position - lower
+    return ordered[lower] * (1.0 - alpha) + ordered[upper] * alpha
 
 
 def read_canonical_rows(path: Path) -> list[dict[str, Any]]:
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
-        required = {
-            "site_id",
-            "year",
-            "month",
-            "habitat",
-            "trap_sets",
-            "effort_missing",
-            "detected",
-        }
+        required = {"site_id", "year", "month", "habitat", "trap_sets", "effort_missing", "detected"}
         missing = required.difference(reader.fieldnames or [])
         if missing:
             raise ValueError(f"Canonical table missing fields: {sorted(missing)}")
@@ -105,17 +96,15 @@ def read_real_sites(path: Path) -> list[dict[str, Any]]:
         missing = required.difference(reader.fieldnames or [])
         if missing:
             raise ValueError(f"Real-site table missing fields: {sorted(missing)}")
-        rows: list[dict[str, Any]] = []
-        for row in reader:
-            rows.append(
-                {
-                    "site_id": str(row["site_id"]).strip(),
-                    "latitude": float(row["latitude"]),
-                    "longitude": float(row["longitude"]),
-                    "crabteam_habitat": str(row.get("crabteam_habitat") or "").strip(),
-                }
-            )
-    return rows
+        return [
+            {
+                "site_id": str(row["site_id"]).strip(),
+                "latitude": float(row["latitude"]),
+                "longitude": float(row["longitude"]),
+                "crabteam_habitat": str(row.get("crabteam_habitat") or "").strip(),
+            }
+            for row in reader
+        ]
 
 
 def split_years(years: Sequence[int], *, holdout_years: int = 2) -> tuple[tuple[int, ...], tuple[int, ...]]:
@@ -130,28 +119,20 @@ def habitat_detection_proxy(
     canonical_rows: Sequence[Mapping[str, Any]],
     calibration_years: Iterable[int],
 ) -> tuple[dict[str, float], dict[str, int], dict[str, tuple[int, int]]]:
-    """Build a deliberately weak habitat proxy from calibration years only.
-
-    We aggregate to site-year and use a Beta(1,1)-smoothed probability of at least
-    one observed detection. This is an *observation-derived proxy*, not latent habitat
-    suitability and not a causal habitat effect. It exists only so the habitat-family
-    simulator can be criticized on real monitoring context without inventing a score.
-    """
-    calibration = set(int(year) for year in calibration_years)
+    """Weak observation-derived habitat proxy; never latent suitability truth."""
+    allowed = set(int(year) for year in calibration_years)
     by_site_year: dict[tuple[str, int], dict[str, Any]] = {}
     for row in canonical_rows:
         year = int(row["year"])
-        if year not in calibration:
+        if year not in allowed:
             continue
-        key = (str(row["site_id"]), year)
-        current = by_site_year.setdefault(
-            key,
-            {"habitats": set(), "detected": False},
+        value = by_site_year.setdefault(
+            (str(row["site_id"]), year), {"habitats": set(), "detected": False}
         )
         habitat = str(row.get("habitat") or "").strip()
         if habitat:
-            current["habitats"].add(habitat)
-        current["detected"] = bool(current["detected"] or bool(row["detected"]))
+            value["habitats"].add(habitat)
+        value["detected"] = bool(value["detected"] or bool(row["detected"]))
 
     totals: dict[str, int] = defaultdict(int)
     positives: dict[str, int] = defaultdict(int)
@@ -163,41 +144,28 @@ def habitat_detection_proxy(
         totals[habitat] += 1
         positives[habitat] += int(bool(value["detected"]))
 
-    if not totals:
-        return {}, {}, {}
-
     scores = {
         habitat: (positives[habitat] + 1.0) / (totals[habitat] + 2.0)
         for habitat in sorted(totals)
     }
     support = {habitat: totals[habitat] for habitat in sorted(totals)}
-    counts = {
-        habitat: (positives[habitat], totals[habitat])
-        for habitat in sorted(totals)
-    }
+    counts = {habitat: (positives[habitat], totals[habitat]) for habitat in sorted(totals)}
     return scores, support, counts
 
 
-def _local_xy_km(
-    latitude: float,
-    longitude: float,
-    *,
-    origin_latitude: float,
-    origin_longitude: float,
-) -> tuple[float, float]:
-    x = (longitude - origin_longitude) * 111.32 * math.cos(math.radians(origin_latitude))
-    y = (latitude - origin_latitude) * 110.54
-    return x, y
+def _local_xy_km(lat: float, lon: float, *, lat0: float, lon0: float) -> tuple[float, float]:
+    return (
+        (lon - lon0) * 111.32 * math.cos(math.radians(lat0)),
+        (lat - lat0) * 110.54,
+    )
 
 
-def _site_habitat_score(category_text: str, score_by_category: Mapping[str, float]) -> float:
+def _habitat_score(category_text: str, scores: Mapping[str, float]) -> float:
     categories = [part.strip() for part in str(category_text).split("|") if part.strip()]
-    values = [float(score_by_category[category]) for category in categories if category in score_by_category]
+    values = [float(scores[category]) for category in categories if category in scores]
     if values:
         return sum(values) / len(values)
-    if score_by_category:
-        return median(score_by_category.values())
-    return 0.5
+    return median(scores.values()) if scores else 0.5
 
 
 def build_real_incident_context(
@@ -212,13 +180,10 @@ def build_real_incident_context(
     canonical_rows = read_canonical_rows(canonical_path)
     real_sites = read_real_sites(real_sites_path)
     edge_rows = load_graph_edges(edges_path)
-
     site_ids = [str(row["site_id"]) for row in real_sites]
+
     audit = audit_all_incident_seeds(
-        site_ids,
-        edge_rows,
-        max_sites=max_sites,
-        preferred_min_sites=preferred_min_sites,
+        site_ids, edge_rows, max_sites=max_sites, preferred_min_sites=preferred_min_sites
     )
     eligible = [
         row for row in audit["seed_rows"]
@@ -226,47 +191,33 @@ def build_real_incident_context(
     ]
     if not eligible:
         raise ValueError("No topology-only seed yields the preferred incident-graph size range.")
-    seed_site_id = min((str(row["seed_site_id"]) for row in eligible), key=_site_sort_key)
+    seed = min((str(row["seed_site_id"]) for row in eligible), key=_site_sort_key)
     selected_ids, selected_edges, incident_summary = extract_incident_subgraph(
         site_ids,
         edge_rows,
-        seed_site_id=seed_site_id,
+        seed_site_id=seed,
         max_sites=max_sites,
         preferred_min_sites=preferred_min_sites,
     )
 
     calibration_years, reality_years = split_years(
-        [int(row["year"]) for row in canonical_rows],
-        holdout_years=holdout_years,
+        [int(row["year"]) for row in canonical_rows], holdout_years=holdout_years
     )
-    habitat_scores, habitat_support, _ = habitat_detection_proxy(
-        canonical_rows,
-        calibration_years,
-    )
+    habitat_scores, habitat_support, _ = habitat_detection_proxy(canonical_rows, calibration_years)
 
-    selected = set(selected_ids)
     real_by_id = {str(row["site_id"]): row for row in real_sites}
-    missing_sites = selected.difference(real_by_id)
-    if missing_sites:
-        raise ValueError(f"Incident subgraph references missing real-site rows: {sorted(missing_sites)}")
-
-    origin_lat = median(float(real_by_id[site_id]["latitude"]) for site_id in selected_ids)
-    origin_lon = median(float(real_by_id[site_id]["longitude"]) for site_id in selected_ids)
+    lat0 = median(float(real_by_id[site_id]["latitude"]) for site_id in selected_ids)
+    lon0 = median(float(real_by_id[site_id]["longitude"]) for site_id in selected_ids)
     sites: list[Site] = []
     for site_id in selected_ids:
         row = real_by_id[site_id]
-        x, y = _local_xy_km(
-            float(row["latitude"]),
-            float(row["longitude"]),
-            origin_latitude=origin_lat,
-            origin_longitude=origin_lon,
-        )
+        x, y = _local_xy_km(float(row["latitude"]), float(row["longitude"]), lat0=lat0, lon0=lon0)
         sites.append(
             Site(
                 id=site_id,
                 x=x,
                 y=y,
-                habitat_score=_site_habitat_score(row["crabteam_habitat"], habitat_scores),
+                habitat_score=_habitat_score(row["crabteam_habitat"], habitat_scores),
                 q_model={"status": "OPEN", "semantics": "effective_protocol_detectability"},
             )
         )
@@ -281,16 +232,11 @@ def build_real_incident_context(
         )
         for row in selected_edges
     )
-    context = WorldModelContext(
-        sites=tuple(sites),
-        edges=edges,
-        initial_detection=seed_site_id,
-    )
     return RealContextBundle(
-        context=context,
+        context=WorldModelContext(tuple(sites), edges, seed),
         canonical_rows=tuple(canonical_rows),
         selected_site_ids=tuple(selected_ids),
-        seed_site_id=seed_site_id,
+        seed_site_id=seed,
         incident_summary=incident_summary,
         calibration_years=calibration_years,
         reality_check_years=reality_years,
@@ -300,34 +246,30 @@ def build_real_incident_context(
 
 
 def _adjacency(context: WorldModelContext) -> dict[str, set[str]]:
-    adjacency = {site.id: set() for site in context.sites}
+    result = {site.id: set() for site in context.sites}
     for edge in context.edges:
-        adjacency[edge.src].add(edge.dst)
-        adjacency[edge.dst].add(edge.src)
-    return adjacency
+        result[edge.src].add(edge.dst)
+        result[edge.dst].add(edge.src)
+    return result
 
 
 def _components(nodes: set[str], adjacency: Mapping[str, set[str]]) -> list[set[str]]:
     remaining = set(nodes)
-    components: list[set[str]] = []
+    result: list[set[str]] = []
     while remaining:
         start = min(remaining, key=_site_sort_key)
-        seen = {start}
-        queue: deque[str] = deque([start])
         remaining.remove(start)
+        component = {start}
+        queue: deque[str] = deque([start])
         while queue:
             node = queue.popleft()
             for neighbor in adjacency[node]:
                 if neighbor in remaining and neighbor in nodes:
                     remaining.remove(neighbor)
-                    seen.add(neighbor)
+                    component.add(neighbor)
                     queue.append(neighbor)
-        components.append(seen)
-    return components
-
-
-def _distance_km(a: Site, b: Site) -> float:
-    return math.hypot(float(a.x) - float(b.x), float(a.y) - float(b.y))
+        result.append(component)
+    return result
 
 
 def structural_signature(
@@ -337,37 +279,35 @@ def structural_signature(
     site_by_id = {site.id: site for site in context.sites}
     if set(occupied_by_site) != set(site_by_id):
         raise ValueError("occupied_by_site must align exactly with WorldModelContext sites.")
-    occupied = {site_id for site_id, value in occupied_by_site.items() if bool(value)}
+    occupied = {site_id for site_id, present in occupied_by_site.items() if bool(present)}
     if not occupied:
         return StructuralSignature(0, 0.0, 0, 0.0, None, None, None)
 
     adjacency = _adjacency(context)
     components = _components(occupied, adjacency)
-    with_neighbor = [
-        site_id for site_id in occupied
-        if any(neighbor in occupied for neighbor in adjacency[site_id])
-    ]
-
+    with_neighbor = sum(
+        any(neighbor in occupied for neighbor in adjacency[site_id]) for site_id in occupied
+    )
     nearest: list[float] = []
     if len(occupied) >= 2:
         for site_id in occupied:
+            site = site_by_id[site_id]
             nearest.append(
                 min(
-                    _distance_km(site_by_id[site_id], site_by_id[other])
+                    math.hypot(site.x - site_by_id[other].x, site.y - site_by_id[other].y)
                     for other in occupied
                     if other != site_id
                 )
             )
-
-    habitat_values = [float(site_by_id[site_id].habitat_score) for site_id in occupied]
+    habitat = [float(site_by_id[site_id].habitat_score) for site_id in occupied]
     return StructuralSignature(
         occupied_count=len(occupied),
         occupied_fraction=len(occupied) / len(site_by_id),
         occupied_components=len(components),
         largest_component_fraction=max(len(component) for component in components) / len(occupied),
-        occupied_with_neighbor_fraction=len(with_neighbor) / len(occupied),
+        occupied_with_neighbor_fraction=with_neighbor / len(occupied),
         median_nearest_neighbor_km=median(nearest) if nearest else None,
-        mean_habitat_score=sum(habitat_values) / len(habitat_values),
+        mean_habitat_score=sum(habitat) / len(habitat),
     )
 
 
@@ -376,17 +316,19 @@ def observed_positive_signature(
     *,
     years: Iterable[int] | None = None,
 ) -> StructuralSignature:
+    allowed = None if years is None else set(int(year) for year in years)
     selected = set(bundle.selected_site_ids)
-    allowed_years = None if years is None else set(int(year) for year in years)
-    positive_sites = {
+    positive = {
         str(row["site_id"])
         for row in bundle.canonical_rows
         if str(row["site_id"]) in selected
-        and (allowed_years is None or int(row["year"]) in allowed_years)
+        and (allowed is None or int(row["year"]) in allowed)
         and bool(row["detected"])
     }
-    occupancy = {site_id: site_id in positive_sites for site_id in bundle.selected_site_ids}
-    return structural_signature(bundle.context, occupancy)
+    return structural_signature(
+        bundle.context,
+        {site_id: site_id in positive for site_id in bundle.selected_site_ids},
+    )
 
 
 def effort_summary(
@@ -395,20 +337,15 @@ def effort_summary(
     site_ids: Iterable[str] | None = None,
 ) -> dict[str, Any]:
     selected = None if site_ids is None else set(str(site_id) for site_id in site_ids)
+    relevant = [row for row in canonical_rows if selected is None or str(row["site_id"]) in selected]
     effort = [
         float(row["trap_sets"])
-        for row in canonical_rows
-        if (selected is None or str(row["site_id"]) in selected)
-        and not bool(row["effort_missing"])
-        and row["trap_sets"] is not None
+        for row in relevant
+        if not bool(row["effort_missing"]) and row["trap_sets"] is not None
     ]
     return {
         "known_rows": len(effort),
-        "missing_rows": sum(
-            1 for row in canonical_rows
-            if (selected is None or str(row["site_id"]) in selected)
-            and bool(row["effort_missing"])
-        ),
+        "missing_rows": sum(bool(row["effort_missing"]) for row in relevant),
         "min": min(effort) if effort else None,
         "p10": _quantile(effort, 0.10),
         "median": median(effort) if effort else None,
@@ -427,18 +364,17 @@ def summarize_family(
     if draws <= 0:
         raise ValueError("draws must be positive.")
     signatures: list[StructuralSignature] = []
-    occupancy_keys: set[tuple[tuple[str, bool], ...]] = set()
+    patterns: set[tuple[tuple[str, bool], ...]] = set()
     for offset in range(draws):
         generated: GeneratedWorld = model.sample(context, seed=seed_start + offset)
         signatures.append(structural_signature(context, generated.occupied_by_site))
-        occupancy_keys.add(tuple(sorted((str(k), bool(v)) for k, v in generated.occupied_by_site.items())))
+        patterns.add(tuple(sorted((str(k), bool(v)) for k, v in generated.occupied_by_site.items())))
 
-    def summarize(name: str) -> dict[str, float | None]:
+    def stats(attribute: str) -> dict[str, float | None]:
         values = [
             float(value)
             for signature in signatures
-            for value in [getattr(signature, name)]
-            if value is not None
+            if (value := getattr(signature, attribute)) is not None
         ]
         return {
             "min": min(values) if values else None,
@@ -449,26 +385,26 @@ def summarize_family(
         }
 
     counts = [signature.occupied_count for signature in signatures]
-    site_count = len(context.sites)
+    n_sites = len(context.sites)
     return {
         "family_id": model.family_id,
         "draws": draws,
-        "unique_occupancy_patterns": len(occupancy_keys),
+        "unique_occupancy_patterns": len(patterns),
         "fraction_single_site": sum(count == 1 for count in counts) / draws,
-        "fraction_full_graph": sum(count == site_count for count in counts) / draws,
-        "occupied_count": summarize("occupied_count"),
-        "occupied_components": summarize("occupied_components"),
-        "largest_component_fraction": summarize("largest_component_fraction"),
-        "occupied_with_neighbor_fraction": summarize("occupied_with_neighbor_fraction"),
-        "median_nearest_neighbor_km": summarize("median_nearest_neighbor_km"),
-        "mean_habitat_score": summarize("mean_habitat_score"),
+        "fraction_full_graph": sum(count == n_sites for count in counts) / draws,
+        "occupied_count": stats("occupied_count"),
+        "occupied_components": stats("occupied_components"),
+        "largest_component_fraction": stats("largest_component_fraction"),
+        "occupied_with_neighbor_fraction": stats("occupied_with_neighbor_fraction"),
+        "median_nearest_neighbor_km": stats("median_nearest_neighbor_km"),
+        "mean_habitat_score": stats("mean_habitat_score"),
     }
 
 
-def _outside_envelope(value: float | None, summary: Mapping[str, Any]) -> bool | None:
-    if value is None or summary.get("p10") is None or summary.get("p90") is None:
-        return None
-    return not (float(summary["p10"]) <= float(value) <= float(summary["p90"]))
+def _outside(value: float | None, stats: Mapping[str, Any]) -> bool:
+    if value is None or stats.get("p10") is None or stats.get("p90") is None:
+        return False
+    return not (float(stats["p10"]) <= float(value) <= float(stats["p90"]))
 
 
 def simulator_criticism_report(
@@ -483,7 +419,7 @@ def simulator_criticism_report(
 
     observed_all = observed_positive_signature(bundle)
     observed_reality = observed_positive_signature(bundle, years=bundle.reality_check_years)
-    family_reports: list[dict[str, Any]] = []
+    families: list[dict[str, Any]] = []
     for index, model in enumerate(models):
         summary = summarize_family(
             model,
@@ -498,28 +434,19 @@ def simulator_criticism_report(
             warnings.append("mostly_single_site_worlds")
         if float(summary["fraction_full_graph"]) > 0.90:
             warnings.append("mostly_full_graph_worlds")
-        if observed_all.occupied_count > 0:
-            p90 = summary["occupied_count"].get("p90")
-            if p90 is not None and float(p90) < observed_all.occupied_count:
-                warnings.append("synthetic_extent_p90_below_all_year_observed_positive_sites")
-        if _outside_envelope(
-            observed_all.occupied_with_neighbor_fraction,
-            summary["occupied_with_neighbor_fraction"],
-        ):
+        p90_count = summary["occupied_count"].get("p90")
+        if p90_count is not None and observed_all.occupied_count > float(p90_count):
+            warnings.append("synthetic_extent_p90_below_all_year_observed_positive_sites")
+        if _outside(observed_all.occupied_with_neighbor_fraction, summary["occupied_with_neighbor_fraction"]):
             warnings.append("observed_positive_cohesion_outside_synthetic_p10_p90")
-        if _outside_envelope(
-            observed_all.median_nearest_neighbor_km,
-            summary["median_nearest_neighbor_km"],
-        ):
+        if _outside(observed_all.median_nearest_neighbor_km, summary["median_nearest_neighbor_km"]):
             warnings.append("observed_positive_spacing_outside_synthetic_p10_p90")
         summary["warnings"] = warnings
-        family_reports.append(summary)
+        families.append(summary)
 
-    habitat_counts_scores, _, habitat_counts = habitat_detection_proxy(
-        bundle.canonical_rows,
-        bundle.calibration_years,
-    )
-    assert habitat_counts_scores == dict(bundle.habitat_score_by_category)
+    scores, _, counts = habitat_detection_proxy(bundle.canonical_rows, bundle.calibration_years)
+    if scores != dict(bundle.habitat_score_by_category):
+        raise RuntimeError("Habitat proxy changed between context construction and criticism report.")
 
     return {
         "status": "SIMULATOR_CRITICISM_REALITY_CHECK_NOT_FIELD_VALIDATION",
@@ -537,22 +464,19 @@ def simulator_criticism_report(
             "rule": "last two observed years held out from habitat-proxy construction",
             "status": "CURRENT_DEFAULT_FOR_SIMULATOR_CRITICISM",
         },
-        "real_effort": effort_summary(
-            bundle.canonical_rows,
-            site_ids=bundle.selected_site_ids,
-        ),
+        "real_effort": effort_summary(bundle.canonical_rows, site_ids=bundle.selected_site_ids),
         "habitat_proxy": {
             "semantics": "Beta(1,1)-smoothed site-year observed-detection probability on calibration years; not latent habitat suitability",
             "scores": dict(bundle.habitat_score_by_category),
             "support_site_years": dict(bundle.habitat_support_by_category),
             "positive_over_total_site_years": {
                 habitat: {"positive": positive, "total": total}
-                for habitat, (positive, total) in habitat_counts.items()
+                for habitat, (positive, total) in counts.items()
             },
         },
-        "observed_positive_pattern_all_years": observed_all.__dict__,
-        "observed_positive_pattern_reality_years": observed_reality.__dict__,
-        "families": family_reports,
+        "observed_positive_pattern_all_years": asdict(observed_all),
+        "observed_positive_pattern_reality_years": asdict(observed_reality),
+        "families": families,
         "interpretation": [
             "Observed positive sites are imperfect-detection outcomes and therefore are not complete occupancy truth.",
             "All-year positive-site count is a descriptive lower-bound-style anchor, not a target prevalence for a single synthetic incident.",
