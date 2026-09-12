@@ -22,7 +22,7 @@ from .models import (
     PublicState,
     Site,
 )
-from .planners import FrontierPlanner, Planner
+from .planners import FrontierPlanner, InformationGainPlanner, Planner
 from .spatial_belief import (
     EcologicalHypothesis,
     QHypothesis,
@@ -60,6 +60,7 @@ __all__ = [
     "HabitatDrivenWorldModel",
     "HiddenWorld",
     "IncidentConfig",
+    "InformationGainPlanner",
     "LoopPhase",
     "MissionAction",
     "MissionAllocation",
