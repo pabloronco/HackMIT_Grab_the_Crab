@@ -2,63 +2,67 @@ from __future__ import annotations
 
 import argparse
 import csv
-import glob
 import json
 import math
-import os
-from collections import defaultdict
 from pathlib import Path
 
-
-WIDTH = 1400
-HEIGHT = 1000
-PADDING = 80
+from adaptive_response.shoreline_context import fetch_shoreline_context
 
 
-def _pick(row: dict, *names: str, default: str = "") -> str:
+WIDTH = 1500
+HEIGHT = 1050
+PADDING_X = 70
+PADDING_TOP = 135
+PADDING_BOTTOM = 60
+
+
+def _pick(row: dict[str, str], *names: str, default: str = "") -> str:
     for name in names:
         if name in row and row[name] not in ("", None):
-            return row[name]
+            return str(row[name])
     return default
 
 
-def load_sites(path: Path) -> list[dict]:
-    with path.open(newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        rows = []
+def load_sites(path: Path) -> list[dict[str, float | str]]:
+    with path.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        rows: list[dict[str, float | str]] = []
         for row in reader:
-            site_id = _pick(row, "site_id", "SiteID", "site")
-            lat = float(_pick(row, "latitude", "lat"))
-            lon = float(_pick(row, "longitude", "lon", "lng"))
             rows.append(
                 {
-                    "site_id": site_id,
-                    "latitude": lat,
-                    "longitude": lon,
+                    "site_id": _pick(row, "site_id", "SiteID", "site"),
+                    "latitude": float(_pick(row, "latitude", "lat")),
+                    "longitude": float(_pick(row, "longitude", "lon", "lng")),
                 }
             )
-        return rows
+    if not rows:
+        raise ValueError("Site table is empty.")
+    return rows
 
 
-def load_edges(path: Path) -> list[dict]:
-    with path.open(newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        rows = []
+def load_edges(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        edges: list[dict[str, str]] = []
         for row in reader:
             src = _pick(row, "src", "source", "u")
             dst = _pick(row, "dst", "target", "v")
             if src and dst:
-                rows.append({"src": src, "dst": dst})
-        return rows
+                edges.append({"src": src, "dst": dst})
+    return edges
 
 
-def bbox_for_sites(sites: list[dict], pad_ratio: float = 0.08) -> tuple[float, float, float, float]:
-    lats = [s["latitude"] for s in sites]
-    lons = [s["longitude"] for s in sites]
+def bbox_for_sites(
+    sites: list[dict[str, float | str]],
+    *,
+    pad_ratio: float = 0.06,
+) -> tuple[float, float, float, float]:
+    lats = [float(site["latitude"]) for site in sites]
+    lons = [float(site["longitude"]) for site in sites]
     min_lat, max_lat = min(lats), max(lats)
     min_lon, max_lon = min(lons), max(lons)
-    lat_pad = max((max_lat - min_lat) * pad_ratio, 0.03)
-    lon_pad = max((max_lon - min_lon) * pad_ratio, 0.03)
+    lat_pad = max((max_lat - min_lat) * pad_ratio, 0.025)
+    lon_pad = max((max_lon - min_lon) * pad_ratio, 0.025)
     return (
         min_lon - lon_pad,
         min_lat - lat_pad,
@@ -67,298 +71,222 @@ def bbox_for_sites(sites: list[dict], pad_ratio: float = 0.08) -> tuple[float, f
     )
 
 
-def project(lon: float, lat: float, bbox: tuple[float, float, float, float]) -> tuple[float, float]:
+def _projected_xy(lon: float, lat: float, lat0: float) -> tuple[float, float]:
+    # Equirectangular display projection; preserves local aspect much better than
+    # treating longitude and latitude as equal-width Cartesian coordinates.
+    return lon * math.cos(math.radians(lat0)), lat
+
+
+def make_projector(bbox: tuple[float, float, float, float]):
     min_lon, min_lat, max_lon, max_lat = bbox
-    x = PADDING + (lon - min_lon) / (max_lon - min_lon) * (WIDTH - 2 * PADDING)
-    y = HEIGHT - (
-        PADDING + (lat - min_lat) / (max_lat - min_lat) * (HEIGHT - 2 * PADDING)
-    )
-    return x, y
+    lat0 = (min_lat + max_lat) / 2.0
+    min_x, min_y = _projected_xy(min_lon, min_lat, lat0)
+    max_x, max_y = _projected_xy(max_lon, max_lat, lat0)
+    data_w = max_x - min_x
+    data_h = max_y - min_y
+    draw_w = WIDTH - 2 * PADDING_X
+    draw_h = HEIGHT - PADDING_TOP - PADDING_BOTTOM
+    scale = min(draw_w / data_w, draw_h / data_h)
+    used_w = data_w * scale
+    used_h = data_h * scale
+    left = (WIDTH - used_w) / 2.0
+    top = PADDING_TOP + (draw_h - used_h) / 2.0
+
+    def project(lon: float, lat: float) -> tuple[float, float]:
+        x, y = _projected_xy(lon, lat, lat0)
+        sx = left + (x - min_x) * scale
+        sy = top + used_h - (y - min_y) * scale
+        return sx, sy
+
+    return project
 
 
-def try_load_local_coastlines(bbox: tuple[float, float, float, float]) -> tuple[list[list[tuple[float, float]]], str]:
-    """
-    Cerca localmente eventuali geojson/json con shoreline/shorezone/coastline.
-    Se li trova, estrae LineString/MultiLineString e li filtra sul bbox dei siti.
-    """
-    patterns = [
-        "data/**/*shorezone*.geojson",
-        "data/**/*shorezone*.json",
-        "data/**/*shoreline*.geojson",
-        "data/**/*shoreline*.json",
-        "data/**/*coast*.geojson",
-        "data/**/*coast*.json",
-    ]
-    candidates = []
-    for pattern in patterns:
-        candidates.extend(glob.glob(pattern, recursive=True))
-
-    min_lon, min_lat, max_lon, max_lat = bbox
-    segments: list[list[tuple[float, float]]] = []
-
-    for filename in sorted(set(candidates)):
-        try:
-            with open(filename, "r", encoding="utf-8") as f:
-                obj = json.load(f)
-        except Exception:
-            continue
-
-        features = []
-        if isinstance(obj, dict) and obj.get("type") == "FeatureCollection":
-            features = obj.get("features", [])
-        elif isinstance(obj, dict) and obj.get("type") == "Feature":
-            features = [obj]
-        else:
-            continue
-
-        for feat in features:
-            geom = feat.get("geometry") or {}
-            gtype = geom.get("type")
-            coords = geom.get("coordinates", [])
-            if gtype == "LineString":
-                line = [(float(x), float(y)) for x, y in coords]
-                if line_intersects_bbox(line, bbox):
-                    segments.append(line)
-            elif gtype == "MultiLineString":
-                for part in coords:
-                    line = [(float(x), float(y)) for x, y in part]
-                    if line_intersects_bbox(line, bbox):
-                        segments.append(line)
-
-    if segments:
-        return segments, "local_geojson"
-    return [], "none"
-
-
-def line_intersects_bbox(line: list[tuple[float, float]], bbox: tuple[float, float, float, float]) -> bool:
-    min_lon, min_lat, max_lon, max_lat = bbox
-    for lon, lat in line:
-        if min_lon <= lon <= max_lon and min_lat <= lat <= max_lat:
-            return True
-    return False
-
-
-def build_components(sites: list[dict], edges: list[dict]) -> list[list[str]]:
-    site_ids = {s["site_id"] for s in sites}
-    adj = {sid: set() for sid in site_ids}
-    for e in edges:
-        if e["src"] in adj and e["dst"] in adj:
-            adj[e["src"]].add(e["dst"])
-            adj[e["dst"]].add(e["src"])
-
-    seen = set()
-    comps = []
-    for sid in sorted(site_ids):
-        if sid in seen:
-            continue
-        stack = [sid]
-        comp = []
-        seen.add(sid)
-        while stack:
-            u = stack.pop()
-            comp.append(u)
-            for v in adj[u]:
-                if v not in seen:
-                    seen.add(v)
-                    stack.append(v)
-        comps.append(comp)
-    return comps
-
-
-def fallback_coast_trace(sites: list[dict], edges: list[dict]) -> list[list[tuple[float, float]]]:
-    """
-    Fallback: se non troviamo geometrie costiere locali,
-    tracciamo una linea schematica per componente, seguendo i siti reali.
-    NON è shoreline vera: è solo contesto visivo.
-    """
-    by_id = {s["site_id"]: s for s in sites}
-    components = build_components(sites, edges)
-    traces = []
-
-    for comp in components:
-        pts = [by_id[sid] for sid in comp]
-        if len(pts) == 1:
-            traces.append([(pts[0]["longitude"], pts[0]["latitude"])])
-            continue
-
-        # start from westernmost point
-        remaining = pts[:]
-        current = min(remaining, key=lambda p: (p["longitude"], p["latitude"]))
-        path = [current]
-        remaining.remove(current)
-
-        while remaining:
-            nxt = min(
-                remaining,
-                key=lambda p: haversine_km(
-                    current["latitude"], current["longitude"],
-                    p["latitude"], p["longitude"]
-                ),
-            )
-            path.append(nxt)
-            remaining.remove(nxt)
-            current = nxt
-
-        traces.append([(p["longitude"], p["latitude"]) for p in path])
-
-    return traces
-
-
-def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    r = 6371.0
-    p1 = math.radians(lat1)
-    p2 = math.radians(lat2)
-    dp = math.radians(lat2 - lat1)
-    dl = math.radians(lon2 - lon1)
-    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
-    return 2 * r * math.asin(math.sqrt(a))
-
-
-def degrees_from_edges(sites: list[dict], edges: list[dict]) -> dict[str, int]:
-    deg = {s["site_id"]: 0 for s in sites}
-    for e in edges:
-        if e["src"] in deg:
-            deg[e["src"]] += 1
-        if e["dst"] in deg:
-            deg[e["dst"]] += 1
-    return deg
+def degrees_from_edges(
+    sites: list[dict[str, float | str]],
+    edges: list[dict[str, str]],
+) -> dict[str, int]:
+    degrees = {str(site["site_id"]): 0 for site in sites}
+    for edge in edges:
+        if edge["src"] in degrees:
+            degrees[edge["src"]] += 1
+        if edge["dst"] in degrees:
+            degrees[edge["dst"]] += 1
+    return degrees
 
 
 def render_svg(
-    sites: list[dict],
-    edges: list[dict],
-    coastlines: list[list[tuple[float, float]]],
-    coastline_mode: str,
+    sites: list[dict[str, float | str]],
+    edges: list[dict[str, str]],
+    coastline_paths: tuple[tuple[tuple[float, float], ...], ...],
+    *,
+    object_count: int,
+    source_url: str,
+    bbox: tuple[float, float, float, float],
     out_path: Path,
 ) -> None:
-    bbox = bbox_for_sites(sites)
-    by_id = {s["site_id"]: s for s in sites}
-    deg = degrees_from_edges(sites, edges)
+    project = make_projector(bbox)
+    by_id = {str(site["site_id"]): site for site in sites}
+    degrees = degrees_from_edges(sites, edges)
 
-    parts = []
-    parts.append(
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{WIDTH}" height="{HEIGHT}" viewBox="0 0 {WIDTH} {HEIGHT}">'
-    )
-    parts.append("<style>")
-    parts.append("""
-        .title { font: 700 28px Arial, sans-serif; fill: #0f172a; }
-        .subtitle { font: 400 15px Arial, sans-serif; fill: #334155; }
-        .legend { font: 400 14px Arial, sans-serif; fill: #334155; }
-        .small { font: 400 12px Arial, sans-serif; fill: #475569; }
-        .coast { fill: none; stroke: #94a3b8; stroke-width: 2; opacity: 0.9; }
-        .coast-fallback { fill: none; stroke: #cbd5e1; stroke-width: 2.2; stroke-dasharray: 6 5; opacity: 0.95; }
-        .edge { stroke: #64748b; stroke-width: 2; opacity: 0.40; }
-        .node { fill: #0f766e; stroke: white; stroke-width: 1.5; }
-        .node-isolated { fill: #d97706; stroke: white; stroke-width: 1.5; }
-        .label { font: 600 12px Arial, sans-serif; fill: #0f172a; }
-        .frame { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.2; rx: 18; }
-        .waterbg { fill: #f0f9ff; }
-    """)
-    parts.append("</style>")
+    parts: list[str] = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{WIDTH}" height="{HEIGHT}" viewBox="0 0 {WIDTH} {HEIGHT}">',
+        "<style>",
+        """
+        .title { font: 700 29px Arial, sans-serif; fill: #102a43; }
+        .subtitle { font: 400 15px Arial, sans-serif; fill: #486581; }
+        .source { font: 400 12px Arial, sans-serif; fill: #627d98; }
+        .coast-halo { fill: none; stroke: #ffffff; stroke-width: 4.6; opacity: 0.96; stroke-linejoin: round; stroke-linecap: round; }
+        .coast { fill: none; stroke: #526d82; stroke-width: 2.25; opacity: 0.92; stroke-linejoin: round; stroke-linecap: round; }
+        .edge-halo { stroke: #ffffff; stroke-width: 4.5; opacity: 0.84; }
+        .edge { stroke: #2f6f73; stroke-width: 2.0; opacity: 0.52; }
+        .node { fill: #0b7285; stroke: #ffffff; stroke-width: 1.8; }
+        .node-isolated { fill: #c96f12; stroke: #ffffff; stroke-width: 1.8; }
+        .label-halo { font: 700 11px Arial, sans-serif; fill: none; stroke: #ffffff; stroke-width: 3.5; stroke-linejoin: round; }
+        .label { font: 700 11px Arial, sans-serif; fill: #102a43; }
+        .legend { font: 400 13px Arial, sans-serif; fill: #334e68; }
+        .legend-title { font: 700 14px Arial, sans-serif; fill: #243b53; }
+        .legend-box { fill: #ffffff; fill-opacity: 0.93; stroke: #bcccdc; stroke-width: 1; }
+        .water { fill: #eef8fb; }
+        """,
+        "</style>",
+        f'<rect width="{WIDTH}" height="{HEIGHT}" class="water"/>',
+        '<text x="42" y="48" class="title">R2 Real Monitoring Graph v0</text>',
+        '<text x="42" y="75" class="subtitle">49 monitoring sites, primary adjacency, and real Washington DNR ShoreZone coastline</text>',
+        f'<text x="42" y="99" class="source">Shoreline context: DNR ShoreZone SZLine (layer 46) · {object_count} intersecting shoreline features · visual context only</text>',
+    ]
 
-    parts.append(f'<rect x="0" y="0" width="{WIDTH}" height="{HEIGHT}" class="waterbg"/>')
-    parts.append(f'<rect x="18" y="18" width="{WIDTH-36}" height="{HEIGHT-36}" class="frame"/>')
-
-    parts.append(f'<text x="40" y="55" class="title">R2 Real Graph v0</text>')
-    parts.append(
-        '<text x="40" y="82" class="subtitle">Real monitoring sites + primary adjacency + coastal context</text>'
-    )
-
-    if coastline_mode == "local_geojson":
-        parts.append(
-            '<text x="40" y="104" class="small">Coast context source: local shoreline/shorezone geometry found in data/</text>'
+    # Real shoreline first, beneath the graph. White halo helps preserve the
+    # coastline shape even where graph edges overlap it.
+    for path in coastline_paths:
+        points = " ".join(
+            f"{x:.1f},{y:.1f}" for x, y in (project(lon, lat) for lon, lat in path)
         )
-    else:
+        parts.append(f'<polyline points="{points}" class="coast-halo"/>')
+        parts.append(f'<polyline points="{points}" class="coast"/>')
+
+    for edge in edges:
+        a = by_id.get(edge["src"])
+        b = by_id.get(edge["dst"])
+        if a is None or b is None:
+            continue
+        x1, y1 = project(float(a["longitude"]), float(a["latitude"]))
+        x2, y2 = project(float(b["longitude"]), float(b["latitude"]))
         parts.append(
-            '<text x="40" y="104" class="small">Coast context source: schematic fallback trace from real site coordinates (visual aid only)</text>'
+            f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" class="edge-halo"/>'
+        )
+        parts.append(
+            f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" class="edge"/>'
         )
 
-    # coastlines
-    for line in coastlines:
-        if len(line) < 2:
-            continue
-        pts = [project(lon, lat, bbox) for lon, lat in line]
-        points_attr = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
-        cls = "coast" if coastline_mode == "local_geojson" else "coast-fallback"
-        parts.append(f'<polyline points="{points_attr}" class="{cls}"/>')
-
-    # edges
-    for e in edges:
-        a = by_id.get(e["src"])
-        b = by_id.get(e["dst"])
-        if not a or not b:
-            continue
-        x1, y1 = project(a["longitude"], a["latitude"], bbox)
-        x2, y2 = project(b["longitude"], b["latitude"], bbox)
-        parts.append(f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" class="edge"/>')
-
-    # nodes + labels
-    for s in sites:
-        x, y = project(s["longitude"], s["latitude"], bbox)
-        cls = "node-isolated" if deg[s["site_id"]] == 0 else "node"
-        radius = 6.8 if deg[s["site_id"]] == 0 else 5.8
+    for site in sites:
+        site_id = str(site["site_id"])
+        x, y = project(float(site["longitude"]), float(site["latitude"]))
+        cls = "node-isolated" if degrees[site_id] == 0 else "node"
+        radius = 6.8 if degrees[site_id] == 0 else 5.6
         parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius}" class="{cls}"/>')
-        parts.append(f'<text x="{x + 8:.1f}" y="{y - 8:.1f}" class="label">{s["site_id"]}</text>')
+        label_x, label_y = x + 8.0, y - 7.0
+        parts.append(f'<text x="{label_x:.1f}" y="{label_y:.1f}" class="label-halo">{site_id}</text>')
+        parts.append(f'<text x="{label_x:.1f}" y="{label_y:.1f}" class="label">{site_id}</text>')
 
-    # simple legend
-    lx = WIDTH - 390
-    ly = 55
-    parts.append(f'<rect x="{lx}" y="{ly}" width="330" height="118" class="frame"/>')
-    parts.append(f'<text x="{lx+18}" y="{ly+28}" class="legend">Legend</text>')
-    parts.append(f'<line x1="{lx+18}" y1="{ly+50}" x2="{lx+58}" y2="{ly+50}" class="edge"/>')
-    parts.append(f'<text x="{lx+70}" y="{ly+55}" class="legend">Primary graph edge</text>')
-    parts.append(f'<circle cx="{lx+38}" cy="{ly+77}" r="6" class="node"/>')
-    parts.append(f'<text x="{lx+70}" y="{ly+82}" class="legend">Connected site</text>')
-    parts.append(f'<circle cx="{lx+38}" cy="{ly+102}" r="6.5" class="node-isolated"/>')
-    parts.append(f'<text x="{lx+70}" y="{ly+107}" class="legend">Isolated site/component seed</text>')
+    lx, ly = WIDTH - 330, 34
+    parts.extend(
+        [
+            f'<rect x="{lx}" y="{ly}" width="286" height="132" rx="12" class="legend-box"/>',
+            f'<text x="{lx+16}" y="{ly+25}" class="legend-title">Map key</text>',
+            f'<line x1="{lx+18}" y1="{ly+49}" x2="{lx+58}" y2="{ly+49}" class="coast"/>',
+            f'<text x="{lx+70}" y="{ly+54}" class="legend">DNR ShoreZone coastline</text>',
+            f'<line x1="{lx+18}" y1="{ly+76}" x2="{lx+58}" y2="{ly+76}" class="edge"/>',
+            f'<text x="{lx+70}" y="{ly+81}" class="legend">Primary graph edge</text>',
+            f'<circle cx="{lx+38}" cy="{ly+102}" r="5.6" class="node"/>',
+            f'<text x="{lx+70}" y="{ly+107}" class="legend">Connected monitoring site</text>',
+            f'<circle cx="{lx+38}" cy="{ly+124}" r="6.5" class="node-isolated"/>',
+            f'<text x="{lx+70}" y="{ly+129}" class="legend">Isolated monitoring site</text>',
+        ]
+    )
 
+    parts.append(f'<!-- shoreline_source={source_url} -->')
     parts.append("</svg>")
-
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text("\n".join(parts), encoding="utf-8")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--sites",
-        default="data/processed/r2_real_sites.csv",
-        help="CSV with site_id, latitude, longitude",
+    parser = argparse.ArgumentParser(
+        description="Render the accepted R2 graph over real DNR ShoreZone coastline geometry."
     )
+    parser.add_argument("--sites", default="data/processed/r2_real_sites.csv")
+    parser.add_argument("--edges", default="data/processed/r2_real_graph_v0_edges.csv")
     parser.add_argument(
-        "--edges",
-        default="data/processed/r2_real_graph_v0_edges.csv",
-        help="CSV with src,dst",
+        "--cache",
+        default="data/cache/shorezone/r2_real_graph_v0_shoreline.json",
+        help="Gitignored cache for fetched DNR ShoreZone polylines.",
     )
     parser.add_argument(
         "--out",
-        default="reports/r2_real_graph_v0/real_graph_v0.svg",
-        help="Output SVG path",
+        default="reports/milestones/r2_real_graph_v0/real_graph_v0.svg",
+    )
+    parser.add_argument(
+        "--receipt",
+        default="reports/milestones/r2_real_graph_v0/shoreline_context_receipt.json",
     )
     args = parser.parse_args()
 
     sites_path = Path(args.sites)
     edges_path = Path(args.edges)
-    out_path = Path(args.out)
-
-    if not sites_path.exists():
+    if not sites_path.is_file():
         raise SystemExit(f"Missing sites CSV: {sites_path}")
-    if not edges_path.exists():
+    if not edges_path.is_file():
         raise SystemExit(f"Missing edges CSV: {edges_path}")
 
     sites = load_sites(sites_path)
     edges = load_edges(edges_path)
     bbox = bbox_for_sites(sites)
 
-    coastlines, mode = try_load_local_coastlines(bbox)
-    if not coastlines:
-        coastlines = fallback_coast_trace(sites, edges)
-        mode = "fallback_trace"
+    print("Fetching/reusing REAL DNR ShoreZone coastline geometry (SZLine layer 46)...")
+    print("No schematic fallback is allowed in this renderer.")
+    shoreline = fetch_shoreline_context(
+        bbox,
+        cache_path=Path(args.cache),
+    )
 
-    render_svg(sites, edges, coastlines, mode, out_path)
+    out_path = Path(args.out)
+    render_svg(
+        sites,
+        edges,
+        shoreline.paths,
+        object_count=shoreline.object_count,
+        source_url=shoreline.source_url,
+        bbox=bbox,
+        out_path=out_path,
+    )
+
+    receipt_path = Path(args.receipt)
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    receipt_path.write_text(
+        json.dumps(
+            {
+                "status": "VISUAL_CONTEXT_ONLY",
+                "source": "Washington DNR ShoreZone full inventory SZLine",
+                "layer_id": 46,
+                "source_url": shoreline.source_url,
+                "bbox_wgs84": list(bbox),
+                "shoreline_feature_count": shoreline.object_count,
+                "shoreline_path_count": shoreline.path_count,
+                "graph_sites": len(sites),
+                "graph_edges": len(edges),
+                "note": "Shoreline geometry improves map legibility; it is not dispersal probability or graph connectivity evidence.",
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
     print(f"SVG written to: {out_path}")
-    print(f"Coast mode: {mode}")
-    print(f"Sites: {len(sites)} | Edges: {len(edges)} | Coast polylines: {len(coastlines)}")
+    print(f"Shoreline receipt: {receipt_path}")
+    print(
+        f"REAL coastline features={shoreline.object_count} | paths={shoreline.path_count} | "
+        f"sites={len(sites)} | edges={len(edges)}"
+    )
 
 
 if __name__ == "__main__":
