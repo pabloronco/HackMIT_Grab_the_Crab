@@ -340,3 +340,15 @@ This file mirrors project-relevant decisions made after Project Freeze 3.0 for t
 **Validation**: full suite 253/253 (the pre-existing 100 + 135 from the r4/spatial-belief merge + `test_spatial_rl_integration.py` (10 new) + 3 new `InformationGainPlanner` effort-level tests). One mechanical smoke run (`r7_smoke_official`, 15 updates x 8 episodes, hidden_dim=32) proved the full pipeline end-to-end - real graph -> spatial belief + uncertain q -> GraphState -> planner -> MissionAction -> hidden simulator -> observation -> posterior -> replan - zero crashes, checkpoints/decision-log correct, periodic eval against Frontier/InformationGain ran without error. No learning-quality claim drawn from it. A longer training run (`r7_serious_v0`, 300 updates x 16 episodes, hidden_dim=64/num_layers=2) and the full id_test/ood_model_E/ood_q_low/ood_q_high benchmark are reported separately once complete.
 
 **Owner:** Demu.
+
+## 2026-09-12 — R7 serious training + required Frontier/IG/RL benchmark: first result, single seed
+
+**Status:** First formal-pipeline benchmark result under the ACKed R7 contract. Explicitly a single-seed, 300-update first pass, not a validated claim - see `docs/R7_BENCHMARK_REPORT.md` for the full write-up and all required fields (ID mean+dispersion, OOD model E, OOD q-low/q-high, visible failure cases, runtime/seed-stability note, claim guardrail).
+
+**What ran:** `scripts/train_spatial_gnn_policy.py` run `r7_serious_v0` (seed 0, hidden_dim=64/num_layers=2, 300 updates x 16 episodes/update = 4,800 episodes, 675.8s). `scripts/run_spatial_benchmark_r7.py` against its `final.pt`: 6 held-out real-graph seed sites x 5 cases x 4 groups (id_test, ood_model_E, ood_q_low, ood_q_high) x 3 planners = 360 episodes, 148.3s. Raw rows in `reports/r7_benchmark_v0.csv`.
+
+**Headline numbers (mean missed_occupied_fraction +/- stdev, n=30/group):** id_test - frontier 0.774+/-0.180, information_gain 0.760+/-0.194, gnn_rl 0.668+/-0.205. ood_model_E - frontier 0.753+/-0.168, information_gain 0.782+/-0.163, gnn_rl 0.709+/-0.191. ood_q_low - all three within 0.751-0.757 (expected: q_true=0.02 makes strategy matter little). ood_q_high - frontier 0.647+/-0.163, information_gain 0.664+/-0.206, gnn_rl 0.416+/-0.246 (the one visually large gap in this report).
+
+**What this does NOT license claiming:** per-case dispersion (~0.16-0.25) is large relative to the gaps between planners (~0.02-0.23); this is one training seed and one checkpoint. The prior D/E/F ablation on this branch already showed single-seed REINFORCE-style variance is real and can make an individual run look better or worse than the underlying setup reliably is - that finding carries over structurally here. Nothing above should be read as "GNN+RL beats Information Gain" until multiple independent training seeds are compared and averaged. Explicitly not a winner-only score, not a claim of ecological representativeness (world-model ranges/q values are declared benchmark scenario anchors in `configs/q_protocol_r7.json`, not calibrated estimates), not proven field effectiveness.
+
+**Owner:** Demu.
