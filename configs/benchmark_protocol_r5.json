@@ -1,7 +1,7 @@
 {
-  "version": "r5-v0",
-  "status": "CURRENT_DEFAULT_PREREGISTRATION_SKELETON",
-  "purpose": "Freeze planner-independent comparison structure before formal planner benchmarking. Numeric world-model ranges, budget grid, action granularity, and reward remain OPEN until simulator criticism and cross-team review.",
+  "version": "r5-v1",
+  "status": "R5_SIMULATOR_CRITICISM_REVIEWED",
+  "purpose": "Freeze planner-independent comparison structure and the first formal benchmark world-model design ranges after simulator criticism. These ranges are benchmark assumptions, not ecological parameter estimates.",
   "family_split": {
     "train": [
       "A_graph_diffusion",
@@ -11,6 +11,36 @@
     "ood_model_holdout": [
       "E_fragmented_patchy"
     ]
+  },
+  "world_model_design_ranges": {
+    "A_graph_diffusion": {
+      "transmission_range": [0.35, 0.75],
+      "habitat_effect_range": [0.0, 0.35],
+      "wave_range": [1, 4],
+      "status": "FROZEN_FOR_FIRST_FORMAL_BENCHMARK_DESIGN_NOT_ECOLOGICAL_ESTIMATE"
+    },
+    "B_spatial_cluster": {
+      "radius_scale_range": [0.65, 1.75],
+      "patchiness_range": [0.05, 0.35],
+      "status": "FROZEN_FOR_FIRST_FORMAL_BENCHMARK_DESIGN_NOT_ECOLOGICAL_ESTIMATE"
+    },
+    "C_habitat_driven": {
+      "prevalence_range": [0.08, 0.35],
+      "habitat_coefficient_range": [1.0, 4.0],
+      "local_boost_range": [0.0, 1.25],
+      "status": "FROZEN_FOR_FIRST_FORMAL_BENCHMARK_DESIGN_NOT_ECOLOGICAL_ESTIMATE"
+    },
+    "E_fragmented_patchy": {
+      "extra_patch_range": [1, 2],
+      "patch_radius_scale_range": [0.25, 0.65],
+      "dropout_range": [0.15, 0.45],
+      "status": "FROZEN_OOD_MODEL_HOLDOUT_FOR_FIRST_FORMAL_BENCHMARK"
+    }
+  },
+  "r5_criticism_decision": {
+    "decision": "KEEP_CURRENT_RANGES",
+    "reason": "No family showed gross degeneracy. The cohesion warnings for B and E arise against an incident context with only one observed positive site; treating that sparse observed pattern as complete latent occupancy would violate the imperfect-detection premise. Ranges are therefore frozen as diverse benchmark design assumptions rather than fit to observed detections.",
+    "parameter_retuning_after_planner_results": "FORBIDDEN_WITHOUT_NEW_VERSIONED_PROTOCOL"
   },
   "seed_namespaces": {
     "train": {
@@ -31,11 +61,11 @@
     },
     "ood_parameter_test": {
       "start": 40000,
-      "note": "Parameter shifts outside final train ranges; exact shifts OPEN pending R5 criticism."
+      "note": "Parameter shifts outside frozen train design ranges; exact shifts remain OPEN until q/action/benchmark integration is complete."
     },
     "ood_topology_test": {
       "start": 50000,
-      "note": "Graph-size/topology shifts; exact cases OPEN pending graph/evaluation freeze."
+      "note": "Graph-size/topology shifts; exact cases remain OPEN until evaluation integration is complete."
     }
   },
   "comparison_rules": [
@@ -77,7 +107,6 @@
     "real-data simulator-criticism statistics"
   ],
   "open_before_final_freeze": [
-    "numeric world-model parameter ranges after simulator criticism",
     "q support/range from defensible external evidence plus sensitivity",
     "formal budget grid",
     "action effort granularity",
