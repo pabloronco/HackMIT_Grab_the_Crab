@@ -34,6 +34,39 @@ class RoundLogRecord:
     extra: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class SpatialRoundLogRecord:
+    """One round under the R7 (site, effort) action contract.
+
+    Sibling of `RoundLogRecord` (the older autoregressive multi-site record),
+    not a replacement - the two action contracts produce genuinely different
+    per-round shapes (one chosen site+effort here vs. a variable-length list
+    of picks there), so reusing one schema for both would force one of them
+    into an awkward, ambiguous encoding. `node_logits`/`eligible_mask` are
+    [N][K] (K = number of effort levels), index-aligned with `node_ids` and
+    `effort_levels`.
+    """
+
+    episode_index: int
+    round_index: int
+    budget_before: int
+    budget_after: int
+    site_id: str
+    effort_units: int
+    node_ids: tuple[str, ...]
+    effort_levels: tuple[int, ...]
+    node_logits: tuple[tuple[float, ...], ...]
+    eligible_mask: tuple[tuple[bool, ...], ...]
+    value_estimate: float
+    entropy: float
+    log_prob: float
+    reward_components: dict[str, float]
+    reward_total: float
+    detection: bool
+    done: bool
+    extra: dict[str, Any] = field(default_factory=dict)
+
+
 class JsonlDecisionLogger:
     """Append-only JSONL writer: one line per `RoundLogRecord`.
 
@@ -48,7 +81,7 @@ class JsonlDecisionLogger:
         self._path.parent.mkdir(parents=True, exist_ok=True)
         self._file = self._path.open("a", encoding="utf-8")
 
-    def log_round(self, record: RoundLogRecord) -> None:
+    def log_round(self, record: RoundLogRecord | SpatialRoundLogRecord) -> None:
         self._file.write(json.dumps(asdict(record)) + "\n")
         self._file.flush()
 

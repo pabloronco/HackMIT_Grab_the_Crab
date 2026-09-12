@@ -8,6 +8,7 @@ import torch
 
 from .backbone import GNNActorCritic
 from .round_policy import RoundPolicy
+from .site_effort_policy import DEFAULT_EFFORT_LEVELS, SiteEffortRoundPolicy
 
 # Engineering hardening (see docs/CHECKPOINT_ENGINEERING_REPORT.md follow-up):
 # a checkpoint must be self-describing. Saving only a state_dict makes correct
@@ -38,18 +39,55 @@ class PolicyArchitectureConfig:
 
 
 @dataclass(frozen=True)
+class SiteEffortPolicyArchitectureConfig:
+    """Architecture config for the R7 (site, effort) action-contract policy.
+
+    Sibling of `PolicyArchitectureConfig` (the older autoregressive multi-site
+    policy), not a replacement: the older policy/toy AdaptiveMissionLoop path
+    stays supported, so both architectures must round-trip through the same
+    checkpoint format. See `_ARCHITECTURE_REGISTRY` below.
+    """
+
+    hidden_dim: int
+    num_layers: int
+    effort_levels: tuple[int, ...] = DEFAULT_EFFORT_LEVELS
+
+    def build(self) -> SiteEffortRoundPolicy:
+        backbone = GNNActorCritic(hidden_dim=self.hidden_dim, num_layers=self.num_layers)
+        return SiteEffortRoundPolicy(
+            backbone,
+            hidden_dim=self.hidden_dim,
+            effort_levels=self.effort_levels,
+        )
+
+
+_ARCHITECTURE_REGISTRY: dict[str, type] = {
+    "round_policy": PolicyArchitectureConfig,
+    "site_effort_policy": SiteEffortPolicyArchitectureConfig,
+}
+
+
+def _architecture_kind(architecture: PolicyArchitectureConfig | SiteEffortPolicyArchitectureConfig) -> str:
+    if isinstance(architecture, SiteEffortPolicyArchitectureConfig):
+        return "site_effort_policy"
+    if isinstance(architecture, PolicyArchitectureConfig):
+        return "round_policy"
+    raise TypeError(f"Unknown architecture config type: {type(architecture)!r}")
+
+
+@dataclass(frozen=True)
 class LoadedCheckpoint:
-    policy: RoundPolicy
-    architecture: PolicyArchitectureConfig
+    policy: RoundPolicy | SiteEffortRoundPolicy
+    architecture: PolicyArchitectureConfig | SiteEffortPolicyArchitectureConfig
     update_idx: int
     extra: dict[str, Any]
 
 
 def save_policy_checkpoint(
     path: str | Path,
-    policy: RoundPolicy,
+    policy: RoundPolicy | SiteEffortRoundPolicy,
     *,
-    architecture: PolicyArchitectureConfig,
+    architecture: PolicyArchitectureConfig | SiteEffortPolicyArchitectureConfig,
     update_idx: int,
     optimizer: torch.optim.Optimizer | None = None,
     extra: dict[str, Any] | None = None,
@@ -62,6 +100,7 @@ def save_policy_checkpoint(
 
     payload: dict[str, Any] = {
         "format_version": CHECKPOINT_FORMAT_VERSION,
+        "architecture_kind": _architecture_kind(architecture),
         "architecture": asdict(architecture),
         "update_idx": update_idx,
         "policy_state_dict": policy.state_dict(),
@@ -78,10 +117,15 @@ def save_policy_checkpoint(
 def load_policy_checkpoint(
     path: str | Path, *, map_location: str | torch.device = "cpu"
 ) -> LoadedCheckpoint:
-    """Reconstruct a ready-to-use `RoundPolicy` from a self-describing checkpoint.
+    """Reconstruct a ready-to-use policy from a self-describing checkpoint.
 
-    Raises `ValueError` on a checkpoint written by an incompatible/unknown
-    format rather than silently misloading it.
+    Dispatches on `architecture_kind` (written by save_policy_checkpoint) to
+    reconstruct either the older autoregressive `RoundPolicy` or the R7
+    `SiteEffortRoundPolicy`. A checkpoint written before this field existed
+    has no `architecture_kind` key and defaults to `"round_policy"` - the
+    only kind that could have been saved at that time, so this is a correct
+    default, not a guess. Raises `ValueError` on a checkpoint written by an
+    incompatible/unknown format rather than silently misloading it.
     """
 
     payload = torch.load(Path(path), map_location=map_location, weights_only=False)
@@ -96,7 +140,12 @@ def load_policy_checkpoint(
             f"supported (expected {CHECKPOINT_FORMAT_VERSION})."
         )
 
-    architecture = PolicyArchitectureConfig(**payload["architecture"])
+    kind = payload.get("architecture_kind", "round_policy")
+    config_cls = _ARCHITECTURE_REGISTRY.get(kind)
+    if config_cls is None:
+        raise ValueError(f"Unknown checkpoint architecture_kind {kind!r}.")
+
+    architecture = config_cls(**payload["architecture"])
     policy = architecture.build()
     policy.load_state_dict(payload["policy_state_dict"])
     policy.eval()

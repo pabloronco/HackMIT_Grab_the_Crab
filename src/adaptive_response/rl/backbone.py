@@ -129,6 +129,32 @@ class ActorHead(nn.Module):
         return logits.masked_fill(~feasibility_mask, _NEG_INF)
 
 
+class SiteEffortActorHead(nn.Module):
+    """Per-node scorer over a small fixed set of discrete effort levels.
+
+    R7 action contract (see docs/DEMU_HANDOFF_R7.md): the formal policy action
+    is exactly one (site, effort) pick per round rather than an autoregressive
+    multi-site sequence. This reuses the same per-node/per-edge encoder as
+    ActorHead - only the output width changes (1 -> num_effort_levels logits
+    per node), so it stays graph-size agnostic for the same reason ActorHead
+    does: a shared function applied identically to every node row.
+    """
+
+    def __init__(self, *, hidden_dim: int = 64, num_effort_levels: int = 3) -> None:
+        super().__init__()
+        if num_effort_levels <= 0:
+            raise ValueError("num_effort_levels must be positive.")
+        self.num_effort_levels = num_effort_levels
+        self.score = make_mlp(2 * hidden_dim, hidden_dim, num_effort_levels)
+
+    def forward(
+        self, node_embeddings: torch.Tensor, graph_context: torch.Tensor
+    ) -> torch.Tensor:
+        num_nodes = node_embeddings.shape[0]
+        context_per_node = graph_context.unsqueeze(0).expand(num_nodes, -1)
+        return self.score(torch.cat([node_embeddings, context_per_node], dim=-1))  # [N, K]
+
+
 class CriticHead(nn.Module):
     """Graph-level value estimate from the pooled/global context vector."""
 
