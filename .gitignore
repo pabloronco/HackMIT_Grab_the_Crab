@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
+*.egg-info/
 .venv/
 venv/
 .pytest_cache/
@@ -11,7 +12,10 @@ venv/
 .env
 .env.*
 
-# Data outputs
+# Data inputs/outputs
+/data/raw/*
+!/data/raw/.gitkeep
+!/data/raw/README.md
 /data/processed/*
 !/data/processed/.gitkeep
 /data/cache/

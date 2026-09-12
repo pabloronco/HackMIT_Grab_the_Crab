@@ -1,0 +1,48 @@
+{
+  "status": "CURRENT_DEFAULT_PRIMARY_ADJACENCY_NOT_ECOLOGICAL_TRUTH",
+  "sites": 49,
+  "primary_edges": 118,
+  "sampling_isolation_review_only_edges": 8,
+  "primary_graph": {
+    "edges": 118,
+    "components": 6,
+    "largest_component_sites": 17,
+    "isolated_sites": [
+      "219",
+      "367",
+      "74"
+    ],
+    "degree_min": 0,
+    "degree_median": 4,
+    "degree_max": 12,
+    "edge_distance_min_km": 0.7422470502223093,
+    "edge_distance_median_km": 11.315852868281869,
+    "edge_distance_max_km": 19.876249438624725,
+    "component_sizes": [
+      17,
+      15,
+      14,
+      1,
+      1,
+      1
+    ]
+  },
+  "straight_zero_water_edges_retained": 12,
+  "route_diagnostics": {
+    "total_route_proxy_km_median": 23.613200777145696,
+    "total_detour_ratio_median": 1.9430475113415289,
+    "edges_with_endpoint_snap_gt_1km": 73,
+    "edges_with_endpoint_snap_gt_2km": 61
+  },
+  "rejected_rule": "straight_marine_fraction == 0 => withhold edge; rejected because all audited zero-straight-water local edges had curved wet-grid routes",
+  "notes": [
+    "The <=20 km direct-radius rule is a candidate-generation design default, not an ecological dispersal threshold.",
+    "Straight-line open-water sampling is diagnostic only and no longer controls primary adjacency.",
+    "Curved SalishSeaCast route existence is used as a geometry sanity check; route length and detour ratio are not hard ecological thresholds.",
+    "Large site-to-grid snap distances lower confidence in route geometry for some pocket-estuary sites, so route metrics remain uncertainty/context metadata.",
+    "Sparse-monitoring review-only edges never repair connectivity automatically.",
+    "The primary graph may be disconnected and may contain isolated sites.",
+    "Connectivity weight remains OPEN; this v0 freezes a primary adjacency default only, not dispersal strength.",
+    "Retain route-threshold and alternative-radius topologies for robustness/OOD sensitivity tests."
+  ]
+}

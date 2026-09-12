@@ -1,0 +1,363 @@
+{
+  "sites": 49,
+  "max_sites": 20,
+  "preferred_min_sites": 12,
+  "seeds_in_preferred_size_range": 46,
+  "seeds_below_preferred_min": 3,
+  "seeds_capped_by_max": 0,
+  "selected_size_histogram": {
+    "1": 3,
+    "14": 14,
+    "15": 15,
+    "17": 17
+  },
+  "seed_rows": [
+    {
+      "seed_site_id": "108",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "128",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "133",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "138",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "153",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "161",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "173",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "177",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "198",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "201",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "204",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "207",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "214",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "219",
+      "source_component_sites": 1,
+      "selected_sites": 1,
+      "below_preferred_min": true,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "250",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "277",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "3",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "306",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "311",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "322",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "323",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "330",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "341",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "349",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "361",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "362",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "367",
+      "source_component_sites": 1,
+      "selected_sites": 1,
+      "below_preferred_min": true,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "378",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "379",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "380",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "382",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "383",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "384",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "508",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "516",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "527",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "528",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "533",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "536",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "540",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "541",
+      "source_component_sites": 17,
+      "selected_sites": 17,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "552",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "553",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "579",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "581",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "590",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "599",
+      "source_component_sites": 14,
+      "selected_sites": 14,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "74",
+      "source_component_sites": 1,
+      "selected_sites": 1,
+      "below_preferred_min": true,
+      "capped_by_max_sites": false
+    },
+    {
+      "seed_site_id": "97",
+      "source_component_sites": 15,
+      "selected_sites": 15,
+      "below_preferred_min": false,
+      "capped_by_max_sites": false
+    }
+  ],
+  "notes": [
+    "This audit uses topology/static geography only; it does not inspect future biological outcomes.",
+    "A demo seed should ultimately come from the chosen incident/replay framing, not from whichever seed later produces the nicest biological result."
+  ]
+}

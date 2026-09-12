@@ -1,0 +1,55 @@
+{
+  "version": "r7-v1",
+  "status": "FROZEN_BENCHMARK_SCENARIO_PROTOCOL_NOT_ECOLOGICAL_CALIBRATION",
+  "semantics": {
+    "q": "effective per-effort probability of at least one detection conditional on site occupancy",
+    "effort_unit": "trap deployment / trap-equivalent within the standardized overnight monitoring abstraction",
+    "observation_model": "P(no_detection | occupied, e, q) = (1-q)^e",
+    "false_positives": false
+  },
+  "source_grounded_constraints": [
+    "Washington Sea Grant Crab Team standard monitoring uses six baited traps per event: three Fukui and three minnow traps, typically over one nighttime high tide.",
+    "Published early-detection work supports the qualitative claim that greater trapping effort materially improves detection and that low-effort non-detection is weak evidence.",
+    "Available trap-catchability and trap-entry estimates are not the same estimand as site-level occupancy-conditional q in this project."
+  ],
+  "identifiability": {
+    "current_real_table_directly_identifies_q": false,
+    "reason": "site-month totals lack same-occasion trap-level replicate detection histories under a defensible occupancy-closure assumption",
+    "ecological_numeric_q_range_status": "OPEN"
+  },
+  "benchmark_design_support": {
+    "belief_q_values": [0.05, 0.10, 0.20],
+    "belief_prior_weights": [0.3333333333, 0.3333333333, 0.3333333334],
+    "simulator_q_true_train_values": [0.05, 0.10, 0.20],
+    "simulator_q_true_train_weights": [0.3333333333, 0.3333333333, 0.3333333334],
+    "selection_semantics": "engineering scenario support spanning weak/moderate/strong evidence; not an empirical biological prior"
+  },
+  "standard_event_detection_probability_if_occupied": {
+    "effort": 6,
+    "q_0.05": 0.2649081094,
+    "q_0.10": 0.4685590000,
+    "q_0.20": 0.7378560000
+  },
+  "ood_q_mismatch": [
+    {
+      "name": "low_detectability_shift",
+      "simulator_q_true": 0.02,
+      "belief_support_remains": [0.05, 0.10, 0.20],
+      "event_detection_probability_at_effort_6": 0.1141576191
+    },
+    {
+      "name": "high_detectability_shift",
+      "simulator_q_true": 0.35,
+      "belief_support_remains": [0.05, 0.10, 0.20],
+      "event_detection_probability_at_effort_6": 0.9245811094
+    }
+  ],
+  "information_firewall": [
+    "q_true is simulator/evaluator-only latent state",
+    "q_true must not appear in GraphState",
+    "q_true must not appear in planner constraints",
+    "q_true must not appear in field-observation metadata",
+    "planner may only react to posterior belief quantities produced by the explicit Bayesian engine"
+  ],
+  "claim_guardrail": "The numeric q values above are benchmark scenario anchors, not estimated green-crab site-detection probabilities."
+}

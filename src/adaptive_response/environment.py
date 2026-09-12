@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from copy import deepcopy
-from typing import Any
+from typing import Any, Mapping
 
 import networkx as nx
 import numpy as np
@@ -16,19 +16,36 @@ from .models import (
     PublicState,
     Site,
 )
+from .world_models import WorldModel, WorldModelContext
 
 
 class Environment:
-    """Minimal rehearsal environment for the adaptive first-response loop.
+    """Field-simulation environment with a strict hidden-truth boundary.
 
-    The current hidden-world generator is still a toy model, not an ecological
-    validity claim. The environment owns latent occupancy and field simulation;
-    planners receive only public/belief-derived state.
+    Backwards-compatible default behavior still uses the original toy hidden-world
+    generator and each site's scalar ``q_model`` as simulator q. For formal R6+
+    benchmark work callers may instead inject:
+
+    - ``world_model``: one explicit synthetic ecological family implementing the
+      shared ``WorldModel`` protocol;
+    - ``q_true``: a hidden simulator-only scalar or per-site map.
+
+    This separation matters because the inference engine must not be handed the
+    simulator's true q. Public observations therefore never include the q value used
+    to generate them. Belief-side q assumptions/posteriors live outside Environment.
     """
 
-    def __init__(self, config: IncidentConfig) -> None:
+    def __init__(
+        self,
+        config: IncidentConfig,
+        *,
+        world_model: WorldModel | None = None,
+        q_true: float | Mapping[str, float] | None = None,
+    ) -> None:
         self._validate_config(config)
         self._config = deepcopy(config)
+        self._world_model = world_model
+        self._q_true_by_site = self._normalize_q_true(q_true, self._config.sites)
         self._rng: np.random.Generator | None = None
         self._hidden_world: HiddenWorld | None = None
         self._public_state: PublicState | None = None
@@ -37,14 +54,28 @@ class Environment:
     def reset(self, seed: int | None = None) -> PublicState:
         """Reset the incident and return only observable state.
 
-        Same seed + same config produces the same hidden world. The returned
-        object never contains latent occupancy. Reveal is locked again on every
-        reset and can only be enabled by the orchestration/state-machine layer.
+        Same seed + same config/model produces the same hidden world. The returned
+        object never contains latent occupancy or simulator q_true. Reveal is locked
+        again on every reset and can only be enabled by the orchestration layer.
         """
 
         resolved_seed = self._config.seed if seed is None else seed
         self._rng = np.random.default_rng(resolved_seed)
-        self._hidden_world = self._generate_toy_hidden_world(self._rng)
+        if self._world_model is None:
+            self._hidden_world = self._generate_toy_hidden_world(self._rng)
+        else:
+            context = WorldModelContext(
+                sites=tuple(deepcopy(self._config.sites)),
+                edges=tuple(deepcopy(self._config.edges)),
+                initial_detection=self._config.initial_detection,
+            )
+            generated = self._world_model.sample(context, seed=resolved_seed)
+            expected = {site.id for site in self._config.sites}
+            if set(generated.occupied_by_site) != expected:
+                raise ValueError("WorldModel output must align exactly with IncidentConfig sites.")
+            if not bool(generated.occupied_by_site[self._config.initial_detection]):
+                raise ValueError("WorldModel must keep the confirmed initial detection occupied.")
+            self._hidden_world = generated.as_hidden_world()
         self._reveal_allowed = False
 
         public_sites = [self._reset_site(site) for site in self._config.sites]
@@ -57,7 +88,11 @@ class Environment:
             teams=self._config.teams,
             protocol=self._config.protocol,
             seed=resolved_seed,
-            world_model_id=self._config.world_model_id,
+            world_model_id=(
+                self._config.world_model_id
+                if self._config.world_model_id is not None
+                else getattr(self._world_model, "family_id", None)
+            ),
         )
         return deepcopy(self._public_state)
 
@@ -71,8 +106,11 @@ class Environment:
         field return for that site.
 
         Detection semantics remain explicit:
-        P(detection | occupied, effort=e) = 1 - (1-q)^e.
+        P(detection | occupied, effort=e) = 1 - (1-q_true)^e.
         An unoccupied site cannot generate a false positive in the MVP.
+
+        ``q_true`` is simulator-only and is intentionally absent from Observation
+        metadata and planner-facing state.
         """
 
         self._require_reset()
@@ -87,9 +125,9 @@ class Environment:
         site_lookup = {site.id: site for site in self._public_state.sites}
         for site_id, effort in effort_by_site.items():
             site = site_lookup[site_id]
-            q = self._resolve_q(site)
+            q_true = self._resolve_simulator_q(site)
             occupied = self._hidden_world.occupied_by_site[site_id]
-            detection_probability = 1.0 - (1.0 - q) ** effort if occupied else 0.0
+            detection_probability = 1.0 - (1.0 - q_true) ** effort if occupied else 0.0
             detection = bool(self._rng.random() < detection_probability)
 
             observation = Observation(
@@ -99,7 +137,7 @@ class Environment:
                 round=next_round,
                 metadata={
                     "protocol": self._public_state.protocol,
-                    "q_used": q,
+                    "observation_model": "binary_effort_imperfect_detection",
                 },
             )
             observations.append(observation)
@@ -183,16 +221,46 @@ class Environment:
 
         return dict(effort_by_site)
 
+    def _resolve_simulator_q(self, site: Site) -> float:
+        if self._q_true_by_site is not None:
+            return self._q_true_by_site[site.id]
+        return self._resolve_public_q_model(site)
+
     @staticmethod
-    def _resolve_q(site: Site) -> float:
+    def _resolve_public_q_model(site: Site) -> float:
         if isinstance(site.q_model, bool) or not isinstance(site.q_model, (int, float)):
             raise ValueError(
-                "The current MVP supports scalar q_model only; richer q models remain future work."
+                "Without an explicit simulator q_true, Environment requires scalar site.q_model."
             )
         q = float(site.q_model)
         if not 0.0 <= q <= 1.0:
             raise ValueError("q_model must be between 0 and 1.")
         return q
+
+    @staticmethod
+    def _normalize_q_true(
+        q_true: float | Mapping[str, float] | None,
+        sites: list[Site],
+    ) -> dict[str, float] | None:
+        if q_true is None:
+            return None
+        site_ids = {site.id for site in sites}
+        if isinstance(q_true, Mapping):
+            if set(q_true) != site_ids:
+                raise ValueError("Per-site q_true keys must exactly match IncidentConfig sites.")
+            values = {site_id: value for site_id, value in q_true.items()}
+        else:
+            values = {site_id: q_true for site_id in site_ids}
+
+        normalized: dict[str, float] = {}
+        for site_id, value in values.items():
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise ValueError("q_true values must be numeric probabilities.")
+            q = float(value)
+            if not 0.0 <= q <= 1.0:
+                raise ValueError("q_true values must be between 0 and 1.")
+            normalized[site_id] = q
+        return normalized
 
     def _reset_site(self, site: Site) -> Site:
         public_site = deepcopy(site)
@@ -212,12 +280,11 @@ class Environment:
     def _generate_toy_hidden_world(
         self, rng: np.random.Generator
     ) -> HiddenWorld:
-        """Generate a simple connected-ish latent footprint for the MVP kernel.
+        """Generate a simple connected-ish latent footprint for the legacy MVP kernel.
 
         MODEL ASSUMPTION: nearby nodes around the confirmed detection are more
-        likely to be occupied. This generator is deliberately temporary; later
-        simulator work must replace single-generator validation with multiple
-        real-data-constrained world-model families.
+        likely to be occupied. This path is deliberately legacy/testing-only; formal
+        benchmark work should inject one of the explicit multiple world-model families.
         """
 
         graph = nx.Graph()

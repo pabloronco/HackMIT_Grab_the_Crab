@@ -1,0 +1,182 @@
+version: 0
+status: working_audit
+
+sources:
+  - id: wsg_crabteam_dryad_cama
+    priority: A
+    authority: Washington Sea Grant / WDFW / University of Washington
+    type: published_csv_dataset
+    doi: 10.5061/dryad.0rxwdbsdt
+    target_species: Carcinus maenas
+    geography: Salish Sea, Washington
+    time_coverage: 2017-2023 subset
+    key_fields:
+      - Year
+      - SiteID
+      - Month
+      - habtype
+      - CAMA
+    supplemental_files:
+      - DailyMaxTemperature.csv
+      - species_codes.csv
+    intended_use:
+      - real_detection_count_outcomes
+      - habitat_class
+      - held_out_real_prediction
+      - simulator_criticism
+    caveats:
+      - exact_trap_effort_not_in_main_abundance_schema
+      - temperature_only_subset_of_sites
+
+  - id: wsg_crabteam_dryad_effort_geo
+    priority: A
+    authority: Washington Sea Grant / University of Washington
+    type: published_csv_dataset
+    doi: 10.5061/dryad.sqv9s4ndp
+    target_species: Palaemon macrodactylus_study_but_shared_crabteam_sampling_metadata
+    geography: Salish Sea, Washington
+    key_files:
+      - PAMA.Month.CPUE.csv
+      - Network_PAMA_CPUE.Map.csv
+      - WDFW.PAMA_2021_-2022.csv
+    reusable_fields:
+      - SiteID
+      - month
+      - Year
+      - trap.sets
+      - LatitudeDD
+      - LongitudeDD
+      - Trap_Type
+      - Trap_Effort
+      - DistanceMouth
+    intended_use:
+      - recover_crabteam_effort
+      - recover_site_coordinates
+      - understand_protocol_structure
+    caveats:
+      - PAMA_outcomes_must_never_be_used_as_CAMA_evidence
+      - key_overlap_with_CAMA_dataset_must_be_verified
+
+  - id: wsg_coastal_sentinel_reports
+    priority: A
+    authority: Washington Sea Grant
+    type: standardized_monitoring_reports
+    geography: Washington outer coast
+    time_coverage: 2021-2025_and_later_reports
+    intended_use:
+      - high_prevalence_external_validation
+      - cpue_and_seasonality_checks
+      - simulator_criticism
+    caveats:
+      - public_reports_are_more_aggregated_than_raw_site_visit_data
+      - attempt_tableau_or_raw_export_before_using_as_training_rows
+
+  - id: wdfw_green_crab_progress_reports
+    priority: A
+    authority: Washington Department of Fish and Wildlife
+    type: quarterly_annual_management_reports
+    geography: Washington marine waters
+    intended_use:
+      - independent_catch_effort_scale
+      - trap_set_day_budget_realism
+      - management_area_trends
+      - historical_response_context
+    caveats:
+      - aggregation_precludes_site_level_occupancy_fit
+
+  - id: wsg_wdfw_2016_rapid_assessment
+    priority: A
+    authority: Washington Sea Grant / WDFW
+    type: historical_incident_report
+    geography: Westcott Bay and Padilla Bay, Washington
+    intended_use:
+      - historical_replay
+    known_response_summary:
+      westcott_bay:
+        trapping_sites: 7
+        trap_sets: 174
+        radius_miles: 2
+        live_green_crabs_found: 0
+        molts_found: 1
+      padilla_bay:
+        trapping_sites: 31
+        trap_sets: 368
+        radius_miles: 4
+        live_green_crabs_found: 3
+        molts_found: 0
+
+  - id: wa_dnr_shorezone
+    priority: A
+    authority: Washington State Department of Natural Resources
+    type: gis_feature_services
+    geography: Washington marine shoreline
+    candidate_fields:
+      - substrate_type
+      - exposure_class
+      - shoreline_type
+      - eelgrass
+      - seagrass
+      - salt_marsh
+    intended_use:
+      - habitat_covariates
+      - real_graph_geometry
+      - spatial_connectivity_features
+    caveats:
+      - do_not_ingest_all_50_plus_attributes_without_ablation_or_coverage_reason
+
+  - id: wa_ecology_marine_waters
+    priority: B
+    authority: Washington State Department of Ecology
+    type: marine_water_quality_profiles_and_netCDF
+    time_coverage: 1999-present
+    candidate_fields:
+      - temperature
+      - salinity
+      - conductivity
+      - dissolved_oxygen
+      - turbidity
+      - pH
+      - fluorescence
+    intended_use:
+      - environmental_covariates
+      - sensitivity_analysis
+    caveats:
+      - shallow_estuary_sites_may_not_be_represented_by_nearest_deepwater_station
+      - spatial_temporal_depth_match_must_be_audited
+      - in_situ_crabteam_temperature_has_priority_when_available
+
+  - id: nerrs_cdmo_padilla
+    priority: B
+    authority: NOAA National Estuarine Research Reserve System
+    type: continuous_water_quality
+    geography: Padilla Bay
+    intended_use:
+      - high_resolution_environmental_context
+      - historical_replay_covariates
+    caveats:
+      - local_not_network_wide
+
+  - id: usgs_nas_carcinus_maenas
+    priority: B
+    authority: U.S. Geological Survey
+    type: occurrence_database
+    geography: North America_including_Washington
+    intended_use:
+      - occurrence_chronology
+      - first_detection_crosscheck
+      - external_spread_context
+    caveats:
+      - presence_biased
+      - no_standardized_non_detection_effort
+      - never_treat_unreported_locations_as_absence
+
+  - id: fukui_trap_capture_literature
+    priority: B
+    authority: peer_reviewed_literature
+    type: catchability_evidence
+    intended_use:
+      - constrain_detectability_sensitivity
+      - protocol_reasoning
+    caveats:
+      - entry_success_is_not_site_level_detection_probability_q
+      - different_geography_and_study_regime
