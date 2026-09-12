@@ -30,6 +30,7 @@ from .spatial_belief import (
     SpatialBeliefState,
     SpatialHypothesis,
 )
+from .spatial_mission_loop import SpatialAdaptiveMissionLoop
 from .world_models import (
     FragmentedPatchyWorldModel,
     GeneratedWorld,
@@ -72,6 +73,7 @@ __all__ = [
     "QHypothesis",
     "RoundTransition",
     "Site",
+    "SpatialAdaptiveMissionLoop",
     "SpatialBeliefEngine",
     "SpatialBeliefState",
     "SpatialClusterWorldModel",
