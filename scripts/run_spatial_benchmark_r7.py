@@ -161,7 +161,15 @@ def main() -> None:
     print(f"Loaded RL checkpoint: {args.rl_checkpoint} (update_idx={loaded.update_idx}, arch={loaded.architecture})")
 
     planners = {
-        "frontier": FrontierPlanner(),
+        # effort_per_site=1, max_sites=1: Frontier has no per-effort search
+        # (unlike the InformationGainPlanner effort_levels extension below), so
+        # it is pinned to the smallest action-contract effort level rather than
+        # left at its own defaults (effort_per_site=1, max_sites=None), which
+        # would let it pick many sites in a single round - violating "same
+        # action feasibility ... for every planner" (benchmark_protocol_r7.json
+        # comparison_rule). This is a real, disclosed asymmetry: Frontier here
+        # only ever uses effort=1, never 3 or 6.
+        "frontier": FrontierPlanner(effort_per_site=min(args.effort_levels), max_sites=1),
         "information_gain": InformationGainPlanner(
             max_sites=1, require_spatial_belief=True, effort_levels=tuple(args.effort_levels)
         ),

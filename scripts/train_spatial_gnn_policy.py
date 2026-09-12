@@ -129,7 +129,11 @@ def build_case_ingredients(seed_site_id: str, *, args, rl_rng: np.random.Generat
 
 def run_eval(policy, eval_seed_sites: list[str], *, args, rng: np.random.Generator) -> dict:
     rl_adapter = RLSpatialPlannerAdapter(policy)
-    frontier = FrontierPlanner()
+    # Pinned to one site per round at the smallest effort level, same reasoning
+    # as scripts/run_spatial_benchmark_r7.py: FrontierPlanner's defaults
+    # (max_sites=None) would let it pick many sites in a single round, breaking
+    # the "same action feasibility for every planner" comparison rule.
+    frontier = FrontierPlanner(effort_per_site=min(args.effort_levels), max_sites=1)
     ig = InformationGainPlanner(max_sites=1, require_spatial_belief=True, effort_levels=tuple(args.effort_levels))
 
     rows_by_planner: dict[str, list] = {"rl": [], "frontier": [], "information_gain": []}
