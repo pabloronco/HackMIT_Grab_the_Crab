@@ -7,6 +7,9 @@ from typing import Mapping, Sequence
 from .models import BeliefState, Observation, ObservationBatch
 
 
+_PROBABILITY_ROUNDOFF_TOLERANCE = 1e-12
+
+
 @dataclass(frozen=True, slots=True)
 class EcologicalHypothesis:
     """One plausible spatial occupancy pattern supplied by an ecological model.
@@ -59,14 +62,18 @@ class SpatialBeliefState:
     observed_history: tuple[Observation, ...] = field(default_factory=tuple)
 
     def p_by_site(self) -> dict[str, float]:
-        return {
-            site_id: sum(
+        result: dict[str, float] = {}
+        for index, site_id in enumerate(self.site_ids):
+            marginal = sum(
                 weight
                 for hypothesis, weight in zip(self.hypotheses, self.weights)
                 if hypothesis.presence[index]
             )
-            for index, site_id in enumerate(self.site_ids)
-        }
+            result[site_id] = _probability_with_roundoff_guard(
+                marginal,
+                name=f"occupancy marginal for {site_id!r}",
+            )
+        return result
 
     def uncertainty_by_site(self) -> dict[str, float]:
         return {
@@ -283,7 +290,10 @@ class SpatialBeliefEngine:
         for hypothesis, weight in zip(belief.hypotheses, belief.weights):
             if hypothesis.presence[index]:
                 probability += weight * (1.0 - (1.0 - hypothesis.q) ** effort)
-        return probability
+        return _probability_with_roundoff_guard(
+            probability,
+            name=f"predictive detection probability for {site_id!r}",
+        )
 
     @staticmethod
     def observation_likelihood(
@@ -352,7 +362,25 @@ class SpatialBeliefEngine:
             raise ValueError(f"{name} must be > 0.")
 
 
+def _probability_with_roundoff_guard(value: float, *, name: str) -> float:
+    """Clamp machine-epsilon boundary noise without hiding real probability bugs.
+
+    Finite-ensemble marginalization can produce values such as
+    1.0000000000000002 after summing normalized floating-point weights. That is a
+    numerical artifact, not a probabilistic state above one. Values materially
+    outside [0, 1] still raise so genuine inference errors remain visible.
+    """
+
+    value = float(value)
+    if not isfinite(value):
+        raise ValueError(f"{name} must be finite.")
+    if value < -_PROBABILITY_ROUNDOFF_TOLERANCE or value > 1.0 + _PROBABILITY_ROUNDOFF_TOLERANCE:
+        raise ValueError(f"{name} fell outside [0, 1]: {value!r}.")
+    return min(1.0, max(0.0, value))
+
+
 def _bernoulli_entropy(p: float) -> float:
+    p = _probability_with_roundoff_guard(p, name="Bernoulli probability")
     if p in (0.0, 1.0):
         return 0.0
     return -(p * log2(p) + (1.0 - p) * log2(1.0 - p))
