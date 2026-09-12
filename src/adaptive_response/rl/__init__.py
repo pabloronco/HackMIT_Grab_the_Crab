@@ -53,6 +53,15 @@ from .site_effort_policy import (
     SiteEffortDecision,
     SiteEffortRoundPolicy,
 )
+from .real_graph_cases import RealGraphCase, build_real_incident_case, eligible_incident_seed_sites
+from .spatial_benchmark import (
+    RLSpatialPlannerAdapter,
+    SpatialBenchmarkCase,
+    SpatialBenchmarkRow,
+    run_spatial_benchmark_suite,
+    run_spatial_planner_case,
+    write_spatial_benchmark_csv,
+)
 from .spatial_metrics import SpatialPrimaryMetrics, compute_spatial_primary_metrics
 from .spatial_training_env import SpatialEpisodeRollout, run_spatial_episode
 from .tensor_adapter import GraphTensors, graph_state_to_tensors
@@ -74,6 +83,8 @@ __all__ = [
     "LoadedCheckpoint",
     "PolicyArchitectureConfig",
     "RLPlannerAdapter",
+    "RLSpatialPlannerAdapter",
+    "RealGraphCase",
     "RewardConfig",
     "RoundDecision",
     "RoundLogRecord",
@@ -82,13 +93,17 @@ __all__ = [
     "SiteEffortDecision",
     "SiteEffortPolicyArchitectureConfig",
     "SiteEffortRoundPolicy",
+    "SpatialBenchmarkCase",
+    "SpatialBenchmarkRow",
     "SpatialEpisodeRollout",
     "SpatialPrimaryMetrics",
     "SpatialRewardConfig",
     "SpatialRoundLogRecord",
     "TrainerConfig",
     "UpdateStats",
+    "build_real_incident_case",
     "compute_spatial_primary_metrics",
+    "eligible_incident_seed_sites",
     "graph_state_to_tensors",
     "load_optimizer_state",
     "load_policy_checkpoint",
@@ -99,11 +114,14 @@ __all__ = [
     "run_benchmark_suite",
     "run_episode",
     "run_planner_episode",
+    "run_spatial_benchmark_suite",
     "run_spatial_episode",
+    "run_spatial_planner_case",
     "sample_incident",
     "save_policy_checkpoint",
     "spatial_round_reward_components",
     "spatial_terminal_reward_components",
     "terminal_missed_extent_penalty",
     "write_benchmark_csv",
+    "write_spatial_benchmark_csv",
 ]

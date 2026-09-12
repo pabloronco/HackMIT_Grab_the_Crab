@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import log2
-from typing import Any, Mapping, Protocol
+from typing import Any, Mapping, Protocol, Sequence
 
 from .graph_state import NODE_FEATURE_NAMES
 from .models import (
@@ -178,6 +178,7 @@ class InformationGainPlanner:
         effort_per_site: int = 1,
         max_sites: int | None = 1,
         require_spatial_belief: bool = False,
+        effort_levels: Sequence[int] | None = None,
     ) -> None:
         if isinstance(effort_per_site, bool) or not isinstance(effort_per_site, int) or effort_per_site <= 0:
             raise ValueError("effort_per_site must be a positive integer.")
@@ -185,9 +186,22 @@ class InformationGainPlanner:
             isinstance(max_sites, bool) or not isinstance(max_sites, int) or max_sites <= 0
         ):
             raise ValueError("max_sites must be a positive integer when provided.")
+        if effort_levels is not None:
+            if not effort_levels or any(
+                isinstance(e, bool) or not isinstance(e, int) or e <= 0 for e in effort_levels
+            ):
+                raise ValueError("effort_levels must be a non-empty sequence of positive ints.")
         self.effort_per_site = effort_per_site
         self.max_sites = max_sites
         self.require_spatial_belief = bool(require_spatial_belief)
+        # R7 action contract (docs/DEMU_HANDOFF_R7.md): when set, `plan()`
+        # searches (site, effort) jointly for every effort in effort_levels
+        # that fits the remaining budget, ranking by expected information gain
+        # *per effort unit* (absolute IG as tie-break), per
+        # benchmark_protocol_r7.json's recommended_information_gain_contract.
+        # None (default) preserves the original fixed-effort_per_site behavior
+        # exactly, unchanged - this is purely additive.
+        self.effort_levels = tuple(sorted(effort_levels)) if effort_levels is not None else None
 
     def plan(
         self,
@@ -229,6 +243,12 @@ class InformationGainPlanner:
         if spatial is None and not isinstance(q_by_site, Mapping):
             raise ValueError("constraints['q_by_site'] must be a mapping in site-local mode.")
 
+        candidate_efforts = (
+            [e for e in self.effort_levels if e <= remaining_budget]
+            if self.effort_levels is not None
+            else None
+        )
+
         scored: list[dict[str, Any]] = []
         for index, site_id in enumerate(graph_state.node_ids):
             if not graph_state.feasibility_mask[index]:
@@ -240,43 +260,89 @@ class InformationGainPlanner:
                 )
             belief = float(features[belief_idx])
             uncertainty = float(features[uncertainty_idx])
-            if spatial is not None:
-                score, p_detection, expected_after = self._spatial_score(
-                    spatial,
-                    site_id=site_id,
-                    effort=effort,
-                )
-                mode = "spatial_joint"
+
+            if candidate_efforts is not None:
+                if not candidate_efforts:
+                    continue
+                mode = "spatial_joint" if spatial is not None else "site_local_fallback"
+                best: dict[str, Any] | None = None
+                for candidate_effort in candidate_efforts:
+                    if spatial is not None:
+                        c_score, c_p_detection, c_expected_after = self._spatial_score(
+                            spatial, site_id=site_id, effort=candidate_effort,
+                        )
+                    else:
+                        if site_id not in q_by_site:
+                            raise ValueError(f"q_by_site is missing site {site_id!r}.")
+                        c_score, c_p_detection, c_expected_after = self._local_score(
+                            belief=belief, q=float(q_by_site[site_id]), effort=candidate_effort,
+                        )
+                    c_ig_per_effort = c_score / candidate_effort
+                    if best is None or (c_ig_per_effort, c_score) > (best["ig_per_effort"], best["score"]):
+                        best = {
+                            "effort": candidate_effort,
+                            "score": c_score,
+                            "ig_per_effort": c_ig_per_effort,
+                            "p_detection": c_p_detection,
+                            "expected_after": c_expected_after,
+                        }
+                assert best is not None
+                score, p_detection, expected_after = best["score"], best["p_detection"], best["expected_after"]
+                effort_for_site = best["effort"]
+                ig_per_effort = best["ig_per_effort"]
             else:
-                if site_id not in q_by_site:
-                    raise ValueError(f"q_by_site is missing site {site_id!r}.")
-                q = float(q_by_site[site_id])
-                score, p_detection, expected_after = self._local_score(
-                    belief=belief,
-                    q=q,
-                    effort=effort,
-                )
-                mode = "site_local_fallback"
+                if spatial is not None:
+                    score, p_detection, expected_after = self._spatial_score(
+                        spatial,
+                        site_id=site_id,
+                        effort=effort,
+                    )
+                    mode = "spatial_joint"
+                else:
+                    if site_id not in q_by_site:
+                        raise ValueError(f"q_by_site is missing site {site_id!r}.")
+                    q = float(q_by_site[site_id])
+                    score, p_detection, expected_after = self._local_score(
+                        belief=belief,
+                        q=q,
+                        effort=effort,
+                    )
+                    mode = "site_local_fallback"
+                effort_for_site = effort
+                ig_per_effort = score / effort if effort > 0 else 0.0
 
             scored.append(
                 {
                     "site_id": site_id,
                     "expected_information_gain_bits": score,
+                    "information_gain_per_effort_unit": ig_per_effort,
                     "predictive_detection_probability": p_detection,
                     "expected_entropy_after_bits": expected_after,
                     "belief": belief,
                     "uncertainty": uncertainty,
+                    "effort_units": effort_for_site,
                 }
             )
 
-        scored.sort(
-            key=lambda row: (
-                -float(row["expected_information_gain_bits"]),
-                -float(row["uncertainty"]),
-                -float(row["belief"]),
-                str(row["site_id"]),
+        if candidate_efforts is not None:
+            scored.sort(
+                key=lambda row: (
+                    -float(row["information_gain_per_effort_unit"]),
+                    -float(row["expected_information_gain_bits"]),
+                    -float(row["uncertainty"]),
+                    -float(row["belief"]),
+                    str(row["site_id"]),
+                )
             )
-        )
+        else:
+            scored.sort(
+                key=lambda row: (
+                    -float(row["expected_information_gain_bits"]),
+                    -float(row["uncertainty"]),
+                    -float(row["belief"]),
+                    str(row["site_id"]),
+                )
+            )
         selected = scored if self.max_sites is None else scored[: self.max_sites]
 
         budget_left = remaining_budget
@@ -285,7 +351,11 @@ class InformationGainPlanner:
         for row in selected:
             if budget_left <= 0:
                 break
-            allocated_effort = min(self.effort_per_site, budget_left)
+            allocated_effort = (
+                min(int(row["effort_units"]), budget_left)
+                if candidate_efforts is not None
+                else min(self.effort_per_site, budget_left)
+            )
             allocations.append(
                 MissionAllocation(
                     site_id=str(row["site_id"]),
