@@ -9,6 +9,7 @@ from .graph_state import (
     GraphStateExporter,
 )
 from .mission_loop import AdaptiveMissionLoop, LoopPhase, RoundTransition
+from .model_mismatch import PredictiveSurprise, posterior_predictive_surprise
 from .models import (
     BeliefState,
     Edge,
@@ -69,6 +70,7 @@ __all__ = [
     "Observation",
     "ObservationBatch",
     "Planner",
+    "PredictiveSurprise",
     "PublicState",
     "QHypothesis",
     "RoundTransition",
@@ -81,5 +83,6 @@ __all__ = [
     "WorldModel",
     "WorldModelContext",
     "default_world_model_split",
+    "posterior_predictive_surprise",
     "sample_ecological_hypotheses",
 ]
