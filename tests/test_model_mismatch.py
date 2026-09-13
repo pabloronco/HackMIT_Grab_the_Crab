@@ -1,7 +1,7 @@
 from math import isinf
 
 from adaptive_response.model_mismatch import posterior_predictive_surprise
-from adaptive_response.models import Observation
+from adaptive_response.models import Observation, ObservationBatch
 from adaptive_response.spatial_belief import (
     EcologicalHypothesis,
     QHypothesis,
@@ -86,7 +86,7 @@ def test_surprise_is_preupdate_and_q_shift_can_be_inspected_separately() -> None
     diagnostic = posterior_predictive_surprise(belief, observation)
     posterior = SpatialBeliefEngine.update(
         belief,
-        __import__("adaptive_response").ObservationBatch(
+        ObservationBatch(
             observations=(observation,),
             round=1,
             total_effort=6,
