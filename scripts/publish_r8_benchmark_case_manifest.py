@@ -31,6 +31,7 @@ def main() -> None:
 
     print("=== R8 FORMAL BENCHMARK CASE MANIFEST ===")
     print(f"status={manifest['status']}")
+    print(f"case count status={manifest['case_count_status']}")
     print(f"cases={manifest['case_count']}")
     print(f"split counts={manifest['split_counts']}")
     print(f"incident topology sizes={manifest['incident_topology_size_counts']}")
@@ -38,7 +39,7 @@ def main() -> None:
     print(f"belief q support={manifest['belief_q_support']}")
     print("hidden occupancy truth embedded=False")
     print("planner results embedded=False")
-    print("action/reward contract embedded=False (awaiting cross-team ACK)")
+    print("action/reward contract embedded=False (frozen externally in configs/benchmark_protocol_r8.json)")
     print(f"Wrote {OUT.relative_to(ROOT)}")
 
 
