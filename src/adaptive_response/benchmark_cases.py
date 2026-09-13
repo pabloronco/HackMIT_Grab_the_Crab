@@ -10,9 +10,8 @@ class BenchmarkCaseSpec:
 
     This object records only inputs that every planner must share: incident-subgraph
     seed, world-model family/seed, latent simulator q scenario, and belief-side q
-    support. It deliberately does NOT contain hidden occupancy truth and it does not
-    freeze the still-open action/reward contract or formal case counts before runtime
-    is checked.
+    support. It deliberately does NOT contain hidden occupancy truth, planner outputs,
+    or action/reward internals.
     """
 
     case_id: str
@@ -96,12 +95,11 @@ def build_benchmark_case_manifest(
     benchmark_r7: Mapping[str, Any],
     q_protocol: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Build the candidate planner-independent formal case manifest.
+    """Build the frozen planner-independent R8 formal case manifest.
 
-    It is generated before final planner comparison so case identity cannot drift in
-    response to results. The R7 case counts remain a runtime-gated recommendation,
-    therefore this R8 artifact is a candidate manifest until measured benchmark
-    runtime and the cross-team action/reward ACK are complete.
+    Case identity is frozen before the final planner comparison. The manifest contains
+    no planner result, reward, action, or latent occupancy vector. Action/reward and
+    baseline-fairness rules live in the versioned benchmark protocol, not in case id.
     """
 
     train_families = tuple(str(v) for v in benchmark_r7["frozen"]["family_split"]["train"])
@@ -110,8 +108,6 @@ def build_benchmark_case_manifest(
         raise ValueError("Expected >=3 train world families and >=1 OOD model holdout.")
 
     counts = benchmark_r7["formal_case_count_recommendation"]
-    if not str(counts.get("status", "")).startswith("OPEN_UNTIL_RUNTIME_CHECK"):
-        raise ValueError("R8 expects R7 formal case counts to remain runtime-gated at this stage.")
     validation_per_family = int(counts["validation_per_train_family"])
     id_per_family = int(counts["id_test_per_train_family"])
     ood_model_count = int(counts["ood_model_holdout_cases"])
@@ -200,9 +196,9 @@ def build_benchmark_case_manifest(
         topology_counts[str(case.incident_site_count)] = topology_counts.get(str(case.incident_site_count), 0) + 1
 
     return {
-        "version": "r8-v0",
-        "status": "CANDIDATE_PLANNER_INDEPENDENT_CASE_MANIFEST_PENDING_RUNTIME_AND_ACTION_REWARD_ACK",
-        "case_count_status": "OPEN_UNTIL_RUNTIME_CHECK",
+        "version": "r8-v1",
+        "status": "FROZEN_PLANNER_INDEPENDENT_CASE_MANIFEST",
+        "case_count_status": "FROZEN_AFTER_RUNTIME_GATE",
         "case_count": len(cases),
         "split_counts": split_counts,
         "incident_topology_size_counts": dict(sorted(topology_counts.items(), key=lambda item: int(item[0]))),
@@ -213,11 +209,10 @@ def build_benchmark_case_manifest(
         "contains_action_or_reward_contract": False,
         "cases": [asdict(case) for case in cases],
         "guardrails": [
-            "Every planner receives exactly the same realized case for a given case_id once the manifest is finally frozen.",
+            "Every planner receives exactly the same realized case for a given case_id.",
             "incident_seed_site_id comes only from the frozen topology audit; no biological future outcome is used to select it.",
             "simulator_q_true is latent simulator/evaluator state and must not enter policy-facing data.",
             "No simulator family/range may be retuned after formal planner results without a new versioned protocol.",
             "OOD topology remains a separate OPEN lane and is not silently claimed by this manifest.",
-            "Recommended case counts may be reduced only for measured runtime before final freeze, never in response to planner performance.",
         ],
     }
