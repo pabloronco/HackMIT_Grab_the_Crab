@@ -46,8 +46,10 @@ def test_r8_protocol_freezes_action_reward_cases_but_blocks_unfair_final_claim()
     assert protocol["frozen_rl_reward_contract"]["cross_team_ack"] is True
     assert protocol["frozen_case_manifest"]["total_cases"] == 240
     assert protocol["frozen_case_manifest"]["formal_reporting_cases"] == 180
-    assert protocol["baseline_fairness_gate"]["status"] == "BLOCKER_BEFORE_FINAL_PLANNER_CLAIM"
-    assert protocol["formal_information_gain"]["objective"] if "formal_information_gain" in protocol else True
+    fairness = protocol["baseline_fairness_gate"]
+    assert fairness["status"] == "BLOCKER_BEFORE_FINAL_PLANNER_CLAIM"
+    assert fairness["formal_frontier"]["effort_rule"].startswith("fixed standard-event effort 6")
+    assert fairness["formal_information_gain"]["objective"].startswith("maximize absolute expected reduction")
 
 
 def test_generated_r8_manifest_is_now_frozen_after_runtime_gate() -> None:
