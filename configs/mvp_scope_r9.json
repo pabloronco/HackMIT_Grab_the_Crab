@@ -1,0 +1,28 @@
+{
+  "version": "r9-v0",
+  "status": "FROZEN_MVP_SCOPE",
+  "rapid_response_episode": {
+    "latent_extent_dynamics": "static_within_episode",
+    "semantics": "During one short rapid-response mission episode, the hidden ecological extent is held fixed. Field evidence changes the posterior belief and therefore the next mission; the latent world does not evolve between modeled rounds.",
+    "design_scope": "days / few decision rounds",
+    "future_extension": "A long-mission model may introduce W_t -> W_t+1 dynamics, but that is outside the HackMIT MVP."
+  },
+  "graph_v0": {
+    "adjacency": "frozen R2 real graph v0",
+    "directionality": "undirected",
+    "ecological_edge_weighting": "unweighted",
+    "graph_state_implementation_note": "Missing connectivity_weight may be encoded as neutral 1.0 for tensor/interface compatibility; this is not a source-grounded dispersal probability.",
+    "future_extension": "Directed/weighted ecological connectivity may be introduced only with source-grounded ranges/families and sensitivity analysis; do not infer or tune weights to improve planner scores."
+  },
+  "benchmark_claims": {
+    "allowed": [
+      "performance on a static-extent sequential survey benchmark",
+      "robustness to the tested held-out model family and detectability shifts"
+    ],
+    "not_allowed": [
+      "dynamic spread forecasting during the mission",
+      "source-grounded directional dispersal inference",
+      "generic OOD robustness beyond the explicitly tested lanes"
+    ]
+  }
+}
