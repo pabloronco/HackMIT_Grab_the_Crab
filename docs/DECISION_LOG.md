@@ -364,3 +364,21 @@ This file mirrors project-relevant decisions made after Project Freeze 3.0 for t
 **What this still does not license:** n=3 seeds, 300 updates each (not run to convergence), one architecture/hyperparameter choice, and the case set is this branch's provisional real-graph sampling, not the team's eventual frozen OOD manifest. This is meaningfully stronger evidence than the single-seed result - a consistent direction across 3 independent runs is not nothing - but still not a claim to present as settled.
 
 **Owner:** Demu.
+
+## 2026-09-13 — R8 methodological review acknowledged: real-site context + corrected baseline fairness; retraining under way
+
+**Status:** ACKNOWLEDGED and acted on. Team's `docs/R8_DEMU_BENCHMARK_REVIEW.md` correctly identified two real defects in the R7 provisional benchmark and froze the corrected rules (`configs/benchmark_protocol_r8.json`, `configs/real_site_context_r8.json`) plus a frozen 240-case manifest (`reports/milestones/r8_benchmark_case_manifest/benchmark_cases.json`). Both are accepted without objection - they are correct.
+
+**BLOCKER 1 resolved (real-site context)**: `real_graph_cases.py` rewritten to use versioned real monitoring coordinates (`reports/milestones/r2_real_graph_v0/real_sites_v0.csv`, lat/lon locally projected to km) and the frozen R5 habitat proxy by `crabteam_habitat` class (`configs/real_site_context_r8.json`), replacing the R7-provisional graph-layout coordinates and neutral habitat placeholder. Topology (site ids, adjacency) is unchanged - it was already real in R7.
+
+**BLOCKER 2 resolved (baseline fairness)**: the team's own evidence was exactly right - Frontier/IG were structurally trapped at 6/18 effort while RL commonly used 18/18, confounding the R7 gap with resource utilization, not just policy quality. Corrected: `FrontierPlanner` gained an additive `effort_levels` mode (standard-event effort 6 when budget permits, else the largest feasible level); `InformationGainPlanner`'s effort search now ranks by ABSOLUTE expected information gain with IG-per-effort only a tie-break (reversed from R7's per-effort-primary ranking, which is exactly what caused the effort=1 bias).
+
+**Frozen manifest consumer built**: `r8_manifest_cases.py` loads the exact 240-case manifest and materializes runnable cases (180 formal: id_test 90, ood_model_test 30, ood_q_low 30, ood_q_high 30; 60 validation cases correctly excluded from formal reporting per the manifest doc). `scripts/run_spatial_benchmark_r8.py` runs Frontier/IG/RL against these exact cases and reports the mandatory secondary fields (effort_spent, detections_found, num_rounds, wall_clock_seconds) alongside the primary metrics.
+
+**Retraining**: because B/C/E world generation changes under real coordinates/habitat, all three formal RL seeds (0/1/2) are being retrained from scratch with identical hyperparameters to the R7 runs (hidden_dim=64/num_layers=2, 300 updates x 16 episodes) - no new architecture or hyperparameter search, per instruction. R7's checkpoints are not reused for the R8 report.
+
+**Full suite green** after the merge + corrections. Mechanical smoke-check (12-case subset spanning all 4 formal groups, using a stale R7 checkpoint only to prove the pipeline runs) confirms Frontier/IG now consistently spend the full budget (18/18 in 3 rounds at effort=6) instead of 6/18.
+
+**Claim discipline going forward, per the review's own wording**: until the corrected rerun completes, the right statement is "three provisional training seeds showed a repeatable learned-policy signal on an integration benchmark, but the final comparison is pending corrected real-site covariates, matched benchmark cases, and stronger budget-aware baselines." Report to follow once retraining + the frozen R8 benchmark are done.
+
+**Owner:** Demu.
