@@ -112,7 +112,6 @@ def build_case_ingredients(seed_site_id: str, *, args, rl_rng: np.random.Generat
         max_sites=args.incident_max_sites,
         preferred_min_sites=args.incident_preferred_min_sites,
         rl_seed=int(rl_rng.integers(0, 2**31 - 1)),
-        layout_seed=hash(seed_site_id) % (2**31 - 1),
     )
     context_sites = tuple(case.incident.sites)
     context_edges = tuple(case.incident.edges)
@@ -129,11 +128,13 @@ def build_case_ingredients(seed_site_id: str, *, args, rl_rng: np.random.Generat
 
 def run_eval(policy, eval_seed_sites: list[str], *, args, rng: np.random.Generator) -> dict:
     rl_adapter = RLSpatialPlannerAdapter(policy)
-    # Pinned to one site per round at the smallest effort level, same reasoning
-    # as scripts/run_spatial_benchmark_r7.py: FrontierPlanner's defaults
-    # (max_sites=None) would let it pick many sites in a single round, breaking
-    # the "same action feasibility for every planner" comparison rule.
-    frontier = FrontierPlanner(effort_per_site=min(args.effort_levels), max_sites=1)
+    # R8 baseline-fairness correction (docs/R8_DEMU_BENCHMARK_REVIEW.md,
+    # configs/benchmark_protocol_r8.json): Frontier uses the standard-event
+    # effort (largest feasible level) instead of a fixed small effort_per_site,
+    # and Information Gain ranks by absolute expected entropy reduction
+    # (IG-per-effort only a tie-break) - both corrected so this periodic eval
+    # is not misleading during retraining, same rules as the formal benchmark.
+    frontier = FrontierPlanner(max_sites=1, effort_levels=tuple(args.effort_levels))
     ig = InformationGainPlanner(max_sites=1, require_spatial_belief=True, effort_levels=tuple(args.effort_levels))
 
     rows_by_planner: dict[str, list] = {"rl": [], "frontier": [], "information_gain": []}

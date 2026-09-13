@@ -43,15 +43,34 @@ class FrontierPlanner:
     space. The planner never sees HiddenWorld and uses only GraphState + budget.
     """
 
-    def __init__(self, *, effort_per_site: int = 1, max_sites: int | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        effort_per_site: int = 1,
+        max_sites: int | None = None,
+        effort_levels: Sequence[int] | None = None,
+    ) -> None:
         if not isinstance(effort_per_site, int) or effort_per_site <= 0:
             raise ValueError("effort_per_site must be a positive integer.")
         if max_sites is not None and (
             not isinstance(max_sites, int) or max_sites <= 0
         ):
             raise ValueError("max_sites must be a positive integer when provided.")
+        if effort_levels is not None:
+            if not effort_levels or any(
+                isinstance(e, bool) or not isinstance(e, int) or e <= 0 for e in effort_levels
+            ):
+                raise ValueError("effort_levels must be a non-empty sequence of positive ints.")
         self.effort_per_site = effort_per_site
         self.max_sites = max_sites
+        # R8 baseline-fairness correction (docs/R8_DEMU_BENCHMARK_REVIEW.md,
+        # configs/benchmark_protocol_r8.json baseline_fairness_gate): when set,
+        # each pick uses the standard-event effort level (the largest in
+        # effort_levels) when the remaining budget allows it, otherwise the
+        # largest level that still fits - never a fixed effort_per_site that
+        # structurally strands most of the budget unused. None (default)
+        # preserves the original fixed-effort_per_site behavior unchanged.
+        self.effort_levels = tuple(sorted(effort_levels, reverse=True)) if effort_levels is not None else None
 
     def plan(
         self,
@@ -119,7 +138,13 @@ class FrontierPlanner:
         for site_id, belief, uncertainty, is_frontier in candidates:
             if budget_left <= 0:
                 break
-            effort = min(self.effort_per_site, budget_left)
+            if self.effort_levels is not None:
+                feasible_levels = [e for e in self.effort_levels if e <= budget_left]
+                if not feasible_levels:
+                    break
+                effort = feasible_levels[0]  # effort_levels is sorted descending
+            else:
+                effort = min(self.effort_per_site, budget_left)
             allocations.append(
                 MissionAllocation(site_id=site_id, effort_units=effort)
             )
@@ -278,7 +303,13 @@ class InformationGainPlanner:
                             belief=belief, q=float(q_by_site[site_id]), effort=candidate_effort,
                         )
                     c_ig_per_effort = c_score / candidate_effort
-                    if best is None or (c_ig_per_effort, c_score) > (best["ig_per_effort"], best["score"]):
+                    # R8 baseline-fairness correction: absolute IG is the
+                    # primary objective, IG-per-effort only a tie-break -
+                    # reversed from the R7-provisional per-effort-first
+                    # ranking, which systematically preferred effort=1 and
+                    # left most of the budget unused (docs/R8_DEMU_BENCHMARK_REVIEW.md
+                    # BLOCKER 2).
+                    if best is None or (c_score, c_ig_per_effort) > (best["score"], best["ig_per_effort"]):
                         best = {
                             "effort": candidate_effort,
                             "score": c_score,
@@ -325,10 +356,12 @@ class InformationGainPlanner:
             )
 
         if candidate_efforts is not None:
+            # R8: absolute expected IG is the primary ranking objective across
+            # sites too; IG-per-effort is only a tie-break (see comment above).
             scored.sort(
                 key=lambda row: (
-                    -float(row["information_gain_per_effort_unit"]),
                     -float(row["expected_information_gain_bits"]),
+                    -float(row["information_gain_per_effort_unit"]),
                     -float(row["uncertainty"]),
                     -float(row["belief"]),
                     str(row["site_id"]),

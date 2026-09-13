@@ -1,37 +1,26 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
-
-import networkx as nx
+from statistics import median
 
 from ..incident_subgraph import audit_all_incident_seeds, extract_incident_subgraph, load_graph_edges
 from ..models import Edge, IncidentConfig, Site
+from ..simulator_criticism import _habitat_score, _local_xy_km, read_real_sites
 
-# R7 benchmark cases must come from the real monitoring graph, not the toy
-# `sample_incident` generator (docs/DEMU_HANDOFF_R7.md engineering integration
-# requirements). The exact frozen OOD topology case manifest is explicitly
-# still open ("still_open_after_handoff" in configs/benchmark_protocol_r7.json)
-# - this module is a provisional, real-topology case sampler to unblock
-# integration/smoke/serious-training work now, not a claim of being the
-# team's final frozen case manifest.
-#
-# IMPORTANT LIMITATION (real, not a design choice): per-site latitude/longitude
-# and Crab Team habitat calibration live only in the raw Dryad-hosted CSVs
-# (data/raw/, see data/raw/README.md), which this environment cannot download
-# (Dryad returns HTTP 401/403 to the automated fetch - confirmed by attempting
-# scripts/fetch_r0_data.py). Per that same README's own instruction ("do not
-# substitute similar-looking files"), site x/y here are a deterministic graph
-# layout (not real geography) and habitat_score is a neutral constant (not a
-# calibrated value) - both clearly placeholders. The GRAPH TOPOLOGY itself
-# (site ids, which sites are adjacent) is real and unchanged: it is read
-# directly from the committed R2 milestone receipt
-# reports/milestones/r2_real_graph_v0/real_graph_v0_edges.csv plus the
-# isolated-site list from real_graph_v0_audit.json, both frozen artifacts of
-# the ecology team's own R2 work, not something generated here.
+# R8 real-site context (docs/R8_DEMU_BENCHMARK_REVIEW.md, configs/real_site_context_r8.json):
+# formal training/evaluation must use the versioned monitoring-authoritative
+# coordinates and the frozen R5 habitat proxy. Graph-layout coordinates and a
+# neutral habitat placeholder (this module's R7 provisional behavior) are
+# forbidden for the final benchmark. Topology (site ids, adjacency) was
+# already real in R7 and is unchanged here - only x/y and habitat_score move
+# from placeholders to the versioned real values.
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 REAL_GRAPH_EDGES_CSV = REPO_ROOT / "reports" / "milestones" / "r2_real_graph_v0" / "real_graph_v0_edges.csv"
+REAL_SITES_CSV = REPO_ROOT / "reports" / "milestones" / "r2_real_graph_v0" / "real_sites_v0.csv"
+REAL_SITE_CONTEXT_R8_JSON = REPO_ROOT / "configs" / "real_site_context_r8.json"
 ISOLATED_SITE_IDS = ("219", "367", "74")  # from real_graph_v0_audit.json primary_graph.isolated_sites
 
 
@@ -79,6 +68,15 @@ def eligible_incident_seed_sites(
     ]
 
 
+def _load_habitat_proxy_scores(context_json: Path = REAL_SITE_CONTEXT_R8_JSON) -> dict[str, float]:
+    context = json.loads(context_json.read_text(encoding="utf-8"))
+    return {str(k): float(v) for k, v in context["habitat_proxy"]["scores"].items()}
+
+
+def _real_site_rows(sites_csv: Path = REAL_SITES_CSV) -> dict[str, dict]:
+    return {row["site_id"]: row for row in read_real_sites(sites_csv)}
+
+
 def build_real_incident_case(
     seed_site_id: str,
     *,
@@ -88,16 +86,17 @@ def build_real_incident_case(
     preferred_min_sites: int = 12,
     rl_seed: int,
     edges_csv: Path = REAL_GRAPH_EDGES_CSV,
-    layout_seed: int = 0,
+    sites_csv: Path = REAL_SITES_CSV,
+    context_json: Path = REAL_SITE_CONTEXT_R8_JSON,
 ) -> RealGraphCase:
-    """Build one IncidentConfig from the real graph topology around `seed_site_id`.
+    """Build one IncidentConfig from the real graph topology + real site context.
 
-    See module docstring: topology (site ids, adjacency) is real; x/y is a
-    deterministic spring-layout placeholder and habitat_score is a neutral
-    constant, both because real coordinates/habitat calibration are not
-    fetchable in this environment. `rl_seed` seeds the Environment/world-model
-    sampling, not the topology extraction (which is a static, deterministic
-    audit of the frozen graph, independent of any RL seed).
+    Topology (site ids, adjacency) and now x/y (real lat/lon, locally
+    projected to km around the incident's own site median) and habitat_score
+    (frozen R5 habitat proxy by crabteam_habitat class) are all real, versioned
+    values - see module docstring. `rl_seed` seeds the Environment/world-model
+    sampling, not the topology/context extraction (both are static and
+    deterministic given the frozen R2/R8 receipts).
     """
 
     site_ids, edge_rows = load_real_site_ids_and_edges(edges_csv)
@@ -106,25 +105,28 @@ def build_real_incident_case(
         seed_site_id=seed_site_id, max_sites=max_sites, preferred_min_sites=preferred_min_sites,
     )
 
-    graph = nx.Graph()
-    graph.add_nodes_from(selected_ids)
-    for row in selected_edges:
-        graph.add_edge(str(row["src"]), str(row["dst"]))
-    if graph.number_of_edges() > 0:
-        positions = nx.spring_layout(graph, seed=layout_seed)
-    else:
-        positions = {selected_ids[0]: (0.0, 0.0)}
+    real_rows = _real_site_rows(sites_csv)
+    habitat_scores = _load_habitat_proxy_scores(context_json)
+    missing = [site_id for site_id in selected_ids if site_id not in real_rows]
+    if missing:
+        raise ValueError(f"real_sites_v0.csv is missing site ids: {missing}")
 
-    sites = [
-        Site(
-            id=site_id,
-            x=float(positions[site_id][0]),
-            y=float(positions[site_id][1]),
-            habitat_score=0.5,
-            q_model={"status": "OPEN", "semantics": "effective_protocol_detectability"},
+    lat0 = median(real_rows[site_id]["latitude"] for site_id in selected_ids)
+    lon0 = median(real_rows[site_id]["longitude"] for site_id in selected_ids)
+
+    sites = []
+    for site_id in selected_ids:
+        row = real_rows[site_id]
+        x, y = _local_xy_km(row["latitude"], row["longitude"], lat0=lat0, lon0=lon0)
+        sites.append(
+            Site(
+                id=site_id,
+                x=x,
+                y=y,
+                habitat_score=_habitat_score(row["crabteam_habitat"], habitat_scores),
+                q_model={"status": "OPEN", "semantics": "effective_protocol_detectability"},
+            )
         )
-        for site_id in selected_ids
-    ]
 
     def _edge_weight(row: dict) -> float:
         value = row.get("salishseacast_total_route_proxy_km")
@@ -145,7 +147,7 @@ def build_real_incident_case(
         initial_detection=seed_site_id,
         budget=budget,
         teams=teams,
-        protocol="r7_real_graph_v0",
+        protocol="r8_real_graph_v0",
         seed=rl_seed,
         world_model_id=None,  # filled in by the caller-selected WorldModel family
     )
