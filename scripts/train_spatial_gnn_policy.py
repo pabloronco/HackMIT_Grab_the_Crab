@@ -159,6 +159,59 @@ def run_eval(policy, eval_seed_sites: list[str], *, args, rng: np.random.Generat
     return result
 
 
+_ZERO_LIKELIHOOD_RETRY_COUNT = 0
+
+
+def _run_episode_with_retry(
+    policy, train_seed_sites: list[str], *, args, rl_rng: np.random.Generator,
+    reward_config, decision_logger, episode_index: int, max_attempts: int = 5,
+):
+    """Resample and retry on a rare, disclosed belief-engine edge case.
+
+    A finite Monte Carlo sample of ecological hypotheses (draws_per_model per
+    train family) does not exhaustively cover every possible occupancy
+    pattern. If the hidden simulator's realized world/observation happens to
+    be inconsistent with every sampled hypothesis,
+    SpatialBeliefEngine.update() raises ValueError("...zero probability
+    under every spatial/q hypothesis..."). This is a real, occasionally-hit
+    numerical edge case (observed once in ~14,000+ training rounds during the
+    R8 retrain), not a bug in the episode itself - retrying with a freshly
+    resampled incident/world/hypotheses is safe here because training
+    episodes are randomly drawn each time anyway (unlike frozen benchmark
+    cases, where this must never be silently retried - see
+    scripts/run_spatial_benchmark_r8.py, which surfaces it instead).
+    Occurrence count is tracked in _ZERO_LIKELIHOOD_RETRY_COUNT for reporting.
+    """
+
+    global _ZERO_LIKELIHOOD_RETRY_COUNT
+    for attempt in range(max_attempts):
+        seed_site_id = train_seed_sites[int(rl_rng.integers(0, len(train_seed_sites)))]
+        incident, world_model, q_true, hypotheses, q_hypotheses = build_case_ingredients(
+            seed_site_id, args=args, rl_rng=rl_rng,
+        )
+        try:
+            return run_spatial_episode(
+                policy, incident, world_model=world_model, q_true=q_true,
+                ecological_hypotheses=hypotheses, q_hypotheses=q_hypotheses,
+                max_rounds=args.max_rounds, reward_config=reward_config,
+                seed=int(rl_rng.integers(0, 2**31 - 1)),
+                decision_logger=decision_logger, episode_index=episode_index,
+            )
+        except ValueError as exc:
+            if "zero probability under every spatial/q hypothesis" not in str(exc):
+                raise
+            _ZERO_LIKELIHOOD_RETRY_COUNT += 1
+            print(
+                f"    [warn] zero-likelihood observation batch on {seed_site_id!r} "
+                f"(attempt {attempt + 1}/{max_attempts}), resampling and retrying. "
+                f"Total occurrences this run: {_ZERO_LIKELIHOOD_RETRY_COUNT}."
+            )
+    raise RuntimeError(
+        f"Gave up after {max_attempts} zero-likelihood retries in a row - "
+        "this is no longer a rare edge case, stop and investigate."
+    )
+
+
 def main() -> None:
     args = parse_args()
     if args.num_threads is not None:
@@ -242,17 +295,11 @@ def main() -> None:
 
             rollouts = []
             for _ in range(args.episodes_per_update):
-                seed_site_id = train_seed_sites[int(train_rng.integers(0, len(train_seed_sites)))]
-                incident, world_model, q_true, hypotheses, q_hypotheses = build_case_ingredients(
-                    seed_site_id, args=args, rl_rng=train_rng,
-                )
                 rollouts.append(
-                    run_spatial_episode(
-                        policy, incident, world_model=world_model, q_true=q_true,
-                        ecological_hypotheses=hypotheses, q_hypotheses=q_hypotheses,
-                        max_rounds=args.max_rounds, reward_config=reward_config,
-                        seed=int(train_rng.integers(0, 2**31 - 1)),
-                        decision_logger=decision_logger, episode_index=episode_counter,
+                    _run_episode_with_retry(
+                        policy, train_seed_sites, args=args, rl_rng=train_rng,
+                        reward_config=reward_config, decision_logger=decision_logger,
+                        episode_index=episode_counter,
                     )
                 )
                 episode_counter += 1
@@ -306,6 +353,7 @@ def main() -> None:
             extra={"run_name": args.run_name, "seed": args.seed},
         )
         print(f"Saved final checkpoint at update {update_idx} to {run_dir / 'final.pt'}")
+        print(f"Zero-likelihood retry count this run: {_ZERO_LIKELIHOOD_RETRY_COUNT}")
         if decision_logger is not None:
             decision_logger.close()
 
