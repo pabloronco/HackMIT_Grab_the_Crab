@@ -382,3 +382,19 @@ This file mirrors project-relevant decisions made after Project Freeze 3.0 for t
 **Claim discipline going forward, per the review's own wording**: until the corrected rerun completes, the right statement is "three provisional training seeds showed a repeatable learned-policy signal on an integration benchmark, but the final comparison is pending corrected real-site covariates, matched benchmark cases, and stronger budget-aware baselines." Report to follow once retraining + the frozen R8 benchmark are done.
 
 **Owner:** Demu.
+
+## 2026-09-13 — R8 corrected benchmark result: the R7 apparent RL advantage does not survive the fairness correction
+
+**Status:** Final result for the R8 rerun requested in `docs/R8_DEMU_BENCHMARK_REVIEW.md`. Full write-up: `docs/R8_BENCHMARK_REPORT.md`. This supersedes the R7 provisional numbers, which stay on record as exactly what the R8 review corrected and why.
+
+**What ran:** three RL seeds (0/1/2) retrained from scratch under the real-site context (real coordinates for B/E, frozen R5 habitat proxy for C), identical hyperparameters to R7 (hidden_dim=64/num_layers=2, 300 updates x 16 episodes). Benchmarked against the exact frozen 180-case manifest (id_test 90, ood_model_test 30, ood_q_low 30, ood_q_high 30) with the corrected budget-fair Frontier (effort=6 when possible) and Information Gain (absolute-IG-primary ranking) baselines.
+
+**Headline (mean missed_occupied_fraction, lower=better; RL is mean +/- stdev across 3 seeds, Frontier/IG deterministic given a fixed case):** id_test - frontier 0.589, information_gain 0.672, gnn_rl 0.595+/-0.004. ood_model_test - frontier 0.760, information_gain 0.742, gnn_rl 0.760+/-0.004. ood_q_low - frontier 0.744, information_gain 0.775, gnn_rl 0.755+/-0.008. ood_q_high - frontier 0.483, information_gain 0.613, gnn_rl 0.497+/-0.004. Every planner now spends exactly 18/18 effort in every case (the R7 confound - Frontier/IG spending 6/18 while RL spent 18/18 - is gone).
+
+**Honest reading:** GNN+RL is no longer clearly ahead of Frontier in any group once Frontier can use its full budget - it is close to Frontier in id_test/ood_q_low/ood_q_high and tied with it in ood_model_test. Information Gain is now the worst performer in three of four groups. The R7 finding that looked like a real learned-policy signal, especially in ood_q_high (where RL had looked dramatically better, 0.42-0.55 vs. Frontier/IG ~0.65), was substantially a resource-utilization confound exactly as the R8 review's BLOCKER 2 predicted - correcting it closes almost the entire gap. RL's own seed-to-seed variance also shrank sharply (stdev 0.004-0.008 vs. R7's 0.006-0.066), consistent with there being less room for one lucky/unlucky training run to look dramatically different once the baselines are no longer artificially weak.
+
+**What this does and does not support:** the RL policy is not broken - it spends its budget fully and detects at a comparable rate to Frontier. It does not, at this training scale (300 updates, 3 seeds, this reward/architecture), demonstrate measurable value over the simple Frontier heuristic. Per the review's own framing: "If it does not [add value], the project uses the best planner" - on this evidence, that is currently Frontier, not GNN+RL.
+
+**Real blocker found and disclosed, not hidden:** one training seed (2, first attempt) crashed mid-run with a genuine `SpatialBeliefEngine` edge case (a finite sampled hypothesis ensemble occasionally fails to cover the realized observation, causing a zero-likelihood ValueError - observed once in ~14,000+ training rounds). Mitigated with a disclosed, training-side-only resample-and-retry (never applied to the frozen benchmark); the corrected retrain completed cleanly with zero retries needed. See the 2026-09-13 entry above and `scripts/train_spatial_gnn_policy.py`.
+
+**Owner:** Demu.
