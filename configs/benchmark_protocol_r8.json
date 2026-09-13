@@ -1,0 +1,81 @@
+{
+  "version": "r8-v1",
+  "status": "FROZEN_CASE_ACTION_REWARD_CONTRACT_FINAL_COMPARISON_PENDING_FAIR_BASELINE_RERUN",
+  "inherits": [
+    "configs/benchmark_protocol_r5.json",
+    "configs/benchmark_protocol_r7.json",
+    "configs/q_protocol_r7.json",
+    "configs/real_site_context_r8.json"
+  ],
+  "frozen_action_contract": {
+    "cross_team_ack": true,
+    "mission_scope": "exactly one survey site per decision round",
+    "effort_levels": [1, 3, 6],
+    "site_revisit_across_rounds": true,
+    "duplicate_site_within_round": false,
+    "total_budget": 18,
+    "max_rounds": 6
+  },
+  "frozen_rl_reward_contract": {
+    "cross_team_ack": true,
+    "round_terms": {
+      "mean_uncertainty_reduction_weight": 2.0,
+      "new_detection_weight": 0.5
+    },
+    "terminal_terms": {
+      "missed_occupied_fraction_weight": -2.0
+    },
+    "effort_cost_term": null,
+    "watch_item": "Log dense-vs-terminal reward magnitude. One pre-declared reward-weight ablation is allowed only if the terminal term is demonstrably drowned out; it must not be selected after formal test results."
+  },
+  "frozen_case_manifest": {
+    "generator": "src/adaptive_response/benchmark_cases.py",
+    "receipt": "reports/milestones/r8_benchmark_case_manifest/benchmark_cases.json",
+    "total_cases": 240,
+    "validation_cases": 60,
+    "formal_reporting_cases": 180,
+    "id_test_cases": 90,
+    "ood_model_E_cases": 30,
+    "ood_q_low_cases": 30,
+    "ood_q_high_cases": 30,
+    "runtime_gate": "ACCEPTED",
+    "runtime_basis": "Demu provisional benchmark measured 148.3 seconds for 120 cases x 3 planners; the frozen 180 formal reporting cases are comfortably feasible at hackathon scale."
+  },
+  "primary_metrics": [
+    "missed_occupied_fraction",
+    "occupied_site_coverage",
+    "final_global_uncertainty"
+  ],
+  "mandatory_secondary_reporting": [
+    "effort_spent",
+    "detections_found",
+    "num_rounds",
+    "wall_clock_seconds"
+  ],
+  "real_context_requirement": {
+    "config": "configs/real_site_context_r8.json",
+    "rule": "Formal training and evaluation must use versioned monitoring coordinates and the frozen R5 habitat proxy. Graph-layout coordinates or neutral habitat placeholders are forbidden for the final benchmark."
+  },
+  "baseline_fairness_gate": {
+    "status": "BLOCKER_BEFORE_FINAL_PLANNER_CLAIM",
+    "evidence": "The provisional R7 CSV shows Frontier and spatial Information Gain spending 6 effort units in representative cases while GNN+RL spends 18 under the same nominal budget/horizon. This can confound planner quality with resource utilization.",
+    "formal_frontier": {
+      "site_rule": "existing frontier heuristic",
+      "effort_rule": "fixed standard-event effort 6 when budget permits; otherwise the largest allowed effort not exceeding remaining budget",
+      "reason": "Frontier remains a simple interpretable site heuristic, but it is no longer structurally prevented from using the available field budget."
+    },
+    "formal_information_gain": {
+      "candidate_actions": "all feasible (site, effort) pairs with effort in {1,3,6}",
+      "objective": "maximize absolute expected reduction in sum of marginal occupancy entropy from the explicit spatial posterior",
+      "tie_break": "higher information gain per effort, then uncertainty, belief, deterministic site id",
+      "reason": "IG-per-effort as the primary objective systematically preferred effort=1 under a six-round horizon and left most budget unused; absolute IG is the stronger baseline when effort has no reward/evaluation penalty and total budget already constrains resources."
+    },
+    "acceptance_rule": "Do not interpret provisional RL-vs-baseline gaps as evidence of learned planning advantage until all planners are rerun on the frozen R8 manifest with the real-site context and mandatory effort_spent reporting."
+  },
+  "training_seed_requirement": {
+    "minimum_independent_rl_seeds": 3,
+    "current_provisional_evidence": 3,
+    "formal_rule": "Retrain all formal seeds after real-site context replacement because B/C/E world generation changes when placeholder geometry/habitat are removed."
+  },
+  "claim_guardrail": "Final results support performance on the frozen synthetic sequential-decision benchmark and robustness to tested model/q assumptions only; they do not prove field effectiveness or superiority to operators."
+}
