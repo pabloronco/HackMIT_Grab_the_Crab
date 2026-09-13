@@ -1,0 +1,3396 @@
+{
+  "version": "r8-v1",
+  "status": "FROZEN_PLANNER_INDEPENDENT_CASE_MANIFEST",
+  "case_count_status": "FROZEN_AFTER_RUNTIME_GATE",
+  "case_count": 240,
+  "split_counts": {
+    "validation": 60,
+    "id_test": 90,
+    "ood_model_test": 30,
+    "ood_q_low": 30,
+    "ood_q_high": 30
+  },
+  "incident_topology_size_counts": {
+    "14": 72,
+    "15": 77,
+    "17": 91
+  },
+  "eligible_topology_seed_count": 46,
+  "belief_q_support": [
+    0.05,
+    0.1,
+    0.2
+  ],
+  "contains_hidden_occupancy_truth": false,
+  "contains_planner_results": false,
+  "contains_action_or_reward_contract": false,
+  "cases": [
+    {
+      "case_id": "validation__A_graph_diffusion__000",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10000,
+      "incident_seed_site_id": "311",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__001",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10001,
+      "incident_seed_site_id": "322",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__002",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10002,
+      "incident_seed_site_id": "323",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__003",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10003,
+      "incident_seed_site_id": "330",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__004",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10004,
+      "incident_seed_site_id": "341",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__005",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10005,
+      "incident_seed_site_id": "349",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__006",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10006,
+      "incident_seed_site_id": "361",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__007",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10007,
+      "incident_seed_site_id": "362",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__008",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10008,
+      "incident_seed_site_id": "378",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__009",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10009,
+      "incident_seed_site_id": "379",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__010",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10010,
+      "incident_seed_site_id": "380",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__011",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10011,
+      "incident_seed_site_id": "382",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__012",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10012,
+      "incident_seed_site_id": "383",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__013",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10013,
+      "incident_seed_site_id": "384",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__014",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10014,
+      "incident_seed_site_id": "508",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__015",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10015,
+      "incident_seed_site_id": "516",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__016",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10016,
+      "incident_seed_site_id": "527",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__017",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10017,
+      "incident_seed_site_id": "528",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__018",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10018,
+      "incident_seed_site_id": "533",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__A_graph_diffusion__019",
+      "split": "validation",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 10019,
+      "incident_seed_site_id": "536",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__000",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20000,
+      "incident_seed_site_id": "533",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__001",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20001,
+      "incident_seed_site_id": "536",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__002",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20002,
+      "incident_seed_site_id": "540",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__003",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20003,
+      "incident_seed_site_id": "541",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__004",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20004,
+      "incident_seed_site_id": "552",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__005",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20005,
+      "incident_seed_site_id": "553",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__006",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20006,
+      "incident_seed_site_id": "579",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__007",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20007,
+      "incident_seed_site_id": "581",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__008",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20008,
+      "incident_seed_site_id": "590",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__009",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20009,
+      "incident_seed_site_id": "599",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__010",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20010,
+      "incident_seed_site_id": "3",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__011",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20011,
+      "incident_seed_site_id": "97",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__012",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20012,
+      "incident_seed_site_id": "108",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__013",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20013,
+      "incident_seed_site_id": "128",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__014",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20014,
+      "incident_seed_site_id": "133",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__015",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20015,
+      "incident_seed_site_id": "138",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__016",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20016,
+      "incident_seed_site_id": "153",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__017",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20017,
+      "incident_seed_site_id": "161",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__018",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20018,
+      "incident_seed_site_id": "173",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__019",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20019,
+      "incident_seed_site_id": "177",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__020",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20020,
+      "incident_seed_site_id": "198",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__021",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20021,
+      "incident_seed_site_id": "201",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__022",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20022,
+      "incident_seed_site_id": "204",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__023",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20023,
+      "incident_seed_site_id": "207",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__024",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20024,
+      "incident_seed_site_id": "214",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__025",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20025,
+      "incident_seed_site_id": "250",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__026",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20026,
+      "incident_seed_site_id": "277",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__027",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20027,
+      "incident_seed_site_id": "306",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__028",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20028,
+      "incident_seed_site_id": "311",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__A_graph_diffusion__029",
+      "split": "id_test",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 20029,
+      "incident_seed_site_id": "322",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__000",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11000,
+      "incident_seed_site_id": "153",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__001",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11001,
+      "incident_seed_site_id": "161",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__002",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11002,
+      "incident_seed_site_id": "173",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__003",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11003,
+      "incident_seed_site_id": "177",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__004",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11004,
+      "incident_seed_site_id": "198",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__005",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11005,
+      "incident_seed_site_id": "201",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__006",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11006,
+      "incident_seed_site_id": "204",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__007",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11007,
+      "incident_seed_site_id": "207",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__008",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11008,
+      "incident_seed_site_id": "214",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__009",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11009,
+      "incident_seed_site_id": "250",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__010",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11010,
+      "incident_seed_site_id": "277",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__011",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11011,
+      "incident_seed_site_id": "306",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__012",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11012,
+      "incident_seed_site_id": "311",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__013",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11013,
+      "incident_seed_site_id": "322",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__014",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11014,
+      "incident_seed_site_id": "323",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__015",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11015,
+      "incident_seed_site_id": "330",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__016",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11016,
+      "incident_seed_site_id": "341",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__017",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11017,
+      "incident_seed_site_id": "349",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__018",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11018,
+      "incident_seed_site_id": "361",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__B_spatial_cluster__019",
+      "split": "validation",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 11019,
+      "incident_seed_site_id": "362",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__000",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21000,
+      "incident_seed_site_id": "361",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__001",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21001,
+      "incident_seed_site_id": "362",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__002",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21002,
+      "incident_seed_site_id": "378",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__003",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21003,
+      "incident_seed_site_id": "379",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__004",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21004,
+      "incident_seed_site_id": "380",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__005",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21005,
+      "incident_seed_site_id": "382",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__006",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21006,
+      "incident_seed_site_id": "383",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__007",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21007,
+      "incident_seed_site_id": "384",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__008",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21008,
+      "incident_seed_site_id": "508",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__009",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21009,
+      "incident_seed_site_id": "516",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__010",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21010,
+      "incident_seed_site_id": "527",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__011",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21011,
+      "incident_seed_site_id": "528",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__012",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21012,
+      "incident_seed_site_id": "533",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__013",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21013,
+      "incident_seed_site_id": "536",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__014",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21014,
+      "incident_seed_site_id": "540",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__015",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21015,
+      "incident_seed_site_id": "541",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__016",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21016,
+      "incident_seed_site_id": "552",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__017",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21017,
+      "incident_seed_site_id": "553",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__018",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21018,
+      "incident_seed_site_id": "579",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__019",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21019,
+      "incident_seed_site_id": "581",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__020",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21020,
+      "incident_seed_site_id": "590",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__021",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21021,
+      "incident_seed_site_id": "599",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__022",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21022,
+      "incident_seed_site_id": "3",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__023",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21023,
+      "incident_seed_site_id": "97",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__024",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21024,
+      "incident_seed_site_id": "108",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__025",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21025,
+      "incident_seed_site_id": "128",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__026",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21026,
+      "incident_seed_site_id": "133",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__027",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21027,
+      "incident_seed_site_id": "138",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__028",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21028,
+      "incident_seed_site_id": "153",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__B_spatial_cluster__029",
+      "split": "id_test",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 21029,
+      "incident_seed_site_id": "161",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__000",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12000,
+      "incident_seed_site_id": "552",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__001",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12001,
+      "incident_seed_site_id": "553",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__002",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12002,
+      "incident_seed_site_id": "579",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__003",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12003,
+      "incident_seed_site_id": "581",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__004",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12004,
+      "incident_seed_site_id": "590",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__005",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12005,
+      "incident_seed_site_id": "599",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__006",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12006,
+      "incident_seed_site_id": "3",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__007",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12007,
+      "incident_seed_site_id": "97",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__008",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12008,
+      "incident_seed_site_id": "108",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__009",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12009,
+      "incident_seed_site_id": "128",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__010",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12010,
+      "incident_seed_site_id": "133",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__011",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12011,
+      "incident_seed_site_id": "138",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__012",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12012,
+      "incident_seed_site_id": "153",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__013",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12013,
+      "incident_seed_site_id": "161",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__014",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12014,
+      "incident_seed_site_id": "173",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__015",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12015,
+      "incident_seed_site_id": "177",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__016",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12016,
+      "incident_seed_site_id": "198",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__017",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12017,
+      "incident_seed_site_id": "201",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__018",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12018,
+      "incident_seed_site_id": "204",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "validation__C_habitat_driven__019",
+      "split": "validation",
+      "family_id": "C_habitat_driven",
+      "world_seed": 12019,
+      "incident_seed_site_id": "207",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__000",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22000,
+      "incident_seed_site_id": "204",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__001",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22001,
+      "incident_seed_site_id": "207",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__002",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22002,
+      "incident_seed_site_id": "214",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__003",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22003,
+      "incident_seed_site_id": "250",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__004",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22004,
+      "incident_seed_site_id": "277",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__005",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22005,
+      "incident_seed_site_id": "306",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__006",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22006,
+      "incident_seed_site_id": "311",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__007",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22007,
+      "incident_seed_site_id": "322",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__008",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22008,
+      "incident_seed_site_id": "323",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__009",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22009,
+      "incident_seed_site_id": "330",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__010",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22010,
+      "incident_seed_site_id": "341",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__011",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22011,
+      "incident_seed_site_id": "349",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__012",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22012,
+      "incident_seed_site_id": "361",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__013",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22013,
+      "incident_seed_site_id": "362",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__014",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22014,
+      "incident_seed_site_id": "378",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__015",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22015,
+      "incident_seed_site_id": "379",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__016",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22016,
+      "incident_seed_site_id": "380",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__017",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22017,
+      "incident_seed_site_id": "382",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__018",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22018,
+      "incident_seed_site_id": "383",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__019",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22019,
+      "incident_seed_site_id": "384",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__020",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22020,
+      "incident_seed_site_id": "508",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__021",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22021,
+      "incident_seed_site_id": "516",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__022",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22022,
+      "incident_seed_site_id": "527",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__023",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22023,
+      "incident_seed_site_id": "528",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__024",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22024,
+      "incident_seed_site_id": "533",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__025",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22025,
+      "incident_seed_site_id": "536",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__026",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22026,
+      "incident_seed_site_id": "540",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__027",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22027,
+      "incident_seed_site_id": "541",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__028",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22028,
+      "incident_seed_site_id": "552",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "id_test__C_habitat_driven__029",
+      "split": "id_test",
+      "family_id": "C_habitat_driven",
+      "world_seed": 22029,
+      "incident_seed_site_id": "553",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__000",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30000,
+      "incident_seed_site_id": "173",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__001",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30001,
+      "incident_seed_site_id": "177",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__002",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30002,
+      "incident_seed_site_id": "198",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__003",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30003,
+      "incident_seed_site_id": "201",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__004",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30004,
+      "incident_seed_site_id": "204",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__005",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30005,
+      "incident_seed_site_id": "207",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__006",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30006,
+      "incident_seed_site_id": "214",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__007",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30007,
+      "incident_seed_site_id": "250",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__008",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30008,
+      "incident_seed_site_id": "277",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__009",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30009,
+      "incident_seed_site_id": "306",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__010",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30010,
+      "incident_seed_site_id": "311",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__011",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30011,
+      "incident_seed_site_id": "322",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__012",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30012,
+      "incident_seed_site_id": "323",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__013",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30013,
+      "incident_seed_site_id": "330",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__014",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30014,
+      "incident_seed_site_id": "341",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__015",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30015,
+      "incident_seed_site_id": "349",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__016",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30016,
+      "incident_seed_site_id": "361",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__017",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30017,
+      "incident_seed_site_id": "362",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__018",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30018,
+      "incident_seed_site_id": "378",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__019",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30019,
+      "incident_seed_site_id": "379",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__020",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30020,
+      "incident_seed_site_id": "380",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__021",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30021,
+      "incident_seed_site_id": "382",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__022",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30022,
+      "incident_seed_site_id": "383",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__023",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30023,
+      "incident_seed_site_id": "384",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__024",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30024,
+      "incident_seed_site_id": "508",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__025",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30025,
+      "incident_seed_site_id": "516",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__026",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30026,
+      "incident_seed_site_id": "527",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__027",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30027,
+      "incident_seed_site_id": "528",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.05,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__028",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30028,
+      "incident_seed_site_id": "533",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.1,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_model_test__E_fragmented_patchy__029",
+      "split": "ood_model_test",
+      "family_id": "E_fragmented_patchy",
+      "world_seed": 30029,
+      "incident_seed_site_id": "536",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.2,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__A_graph_diffusion__000",
+      "split": "ood_q_low",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 40000,
+      "incident_seed_site_id": "378",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__A_graph_diffusion__001",
+      "split": "ood_q_low",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 40001,
+      "incident_seed_site_id": "379",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__A_graph_diffusion__002",
+      "split": "ood_q_low",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 40002,
+      "incident_seed_site_id": "380",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__A_graph_diffusion__003",
+      "split": "ood_q_low",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 40003,
+      "incident_seed_site_id": "382",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__A_graph_diffusion__004",
+      "split": "ood_q_low",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 40004,
+      "incident_seed_site_id": "383",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__A_graph_diffusion__005",
+      "split": "ood_q_low",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 40005,
+      "incident_seed_site_id": "384",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__A_graph_diffusion__006",
+      "split": "ood_q_low",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 40006,
+      "incident_seed_site_id": "508",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__A_graph_diffusion__007",
+      "split": "ood_q_low",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 40007,
+      "incident_seed_site_id": "516",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__A_graph_diffusion__008",
+      "split": "ood_q_low",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 40008,
+      "incident_seed_site_id": "527",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__A_graph_diffusion__009",
+      "split": "ood_q_low",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 40009,
+      "incident_seed_site_id": "528",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__B_spatial_cluster__000",
+      "split": "ood_q_low",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 41000,
+      "incident_seed_site_id": "214",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__B_spatial_cluster__001",
+      "split": "ood_q_low",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 41001,
+      "incident_seed_site_id": "250",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__B_spatial_cluster__002",
+      "split": "ood_q_low",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 41002,
+      "incident_seed_site_id": "277",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__B_spatial_cluster__003",
+      "split": "ood_q_low",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 41003,
+      "incident_seed_site_id": "306",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__B_spatial_cluster__004",
+      "split": "ood_q_low",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 41004,
+      "incident_seed_site_id": "311",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__B_spatial_cluster__005",
+      "split": "ood_q_low",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 41005,
+      "incident_seed_site_id": "322",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__B_spatial_cluster__006",
+      "split": "ood_q_low",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 41006,
+      "incident_seed_site_id": "323",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__B_spatial_cluster__007",
+      "split": "ood_q_low",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 41007,
+      "incident_seed_site_id": "330",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__B_spatial_cluster__008",
+      "split": "ood_q_low",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 41008,
+      "incident_seed_site_id": "341",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__B_spatial_cluster__009",
+      "split": "ood_q_low",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 41009,
+      "incident_seed_site_id": "349",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__C_habitat_driven__000",
+      "split": "ood_q_low",
+      "family_id": "C_habitat_driven",
+      "world_seed": 42000,
+      "incident_seed_site_id": "108",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__C_habitat_driven__001",
+      "split": "ood_q_low",
+      "family_id": "C_habitat_driven",
+      "world_seed": 42001,
+      "incident_seed_site_id": "128",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__C_habitat_driven__002",
+      "split": "ood_q_low",
+      "family_id": "C_habitat_driven",
+      "world_seed": 42002,
+      "incident_seed_site_id": "133",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__C_habitat_driven__003",
+      "split": "ood_q_low",
+      "family_id": "C_habitat_driven",
+      "world_seed": 42003,
+      "incident_seed_site_id": "138",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__C_habitat_driven__004",
+      "split": "ood_q_low",
+      "family_id": "C_habitat_driven",
+      "world_seed": 42004,
+      "incident_seed_site_id": "153",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__C_habitat_driven__005",
+      "split": "ood_q_low",
+      "family_id": "C_habitat_driven",
+      "world_seed": 42005,
+      "incident_seed_site_id": "161",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__C_habitat_driven__006",
+      "split": "ood_q_low",
+      "family_id": "C_habitat_driven",
+      "world_seed": 42006,
+      "incident_seed_site_id": "173",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__C_habitat_driven__007",
+      "split": "ood_q_low",
+      "family_id": "C_habitat_driven",
+      "world_seed": 42007,
+      "incident_seed_site_id": "177",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__C_habitat_driven__008",
+      "split": "ood_q_low",
+      "family_id": "C_habitat_driven",
+      "world_seed": 42008,
+      "incident_seed_site_id": "198",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_low__C_habitat_driven__009",
+      "split": "ood_q_low",
+      "family_id": "C_habitat_driven",
+      "world_seed": 42009,
+      "incident_seed_site_id": "201",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.02,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__A_graph_diffusion__000",
+      "split": "ood_q_high",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 45000,
+      "incident_seed_site_id": "204",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__A_graph_diffusion__001",
+      "split": "ood_q_high",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 45001,
+      "incident_seed_site_id": "207",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__A_graph_diffusion__002",
+      "split": "ood_q_high",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 45002,
+      "incident_seed_site_id": "214",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__A_graph_diffusion__003",
+      "split": "ood_q_high",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 45003,
+      "incident_seed_site_id": "250",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__A_graph_diffusion__004",
+      "split": "ood_q_high",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 45004,
+      "incident_seed_site_id": "277",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__A_graph_diffusion__005",
+      "split": "ood_q_high",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 45005,
+      "incident_seed_site_id": "306",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__A_graph_diffusion__006",
+      "split": "ood_q_high",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 45006,
+      "incident_seed_site_id": "311",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__A_graph_diffusion__007",
+      "split": "ood_q_high",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 45007,
+      "incident_seed_site_id": "322",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__A_graph_diffusion__008",
+      "split": "ood_q_high",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 45008,
+      "incident_seed_site_id": "323",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__A_graph_diffusion__009",
+      "split": "ood_q_high",
+      "family_id": "A_graph_diffusion",
+      "world_seed": 45009,
+      "incident_seed_site_id": "330",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__B_spatial_cluster__000",
+      "split": "ood_q_high",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 46000,
+      "incident_seed_site_id": "3",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__B_spatial_cluster__001",
+      "split": "ood_q_high",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 46001,
+      "incident_seed_site_id": "97",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__B_spatial_cluster__002",
+      "split": "ood_q_high",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 46002,
+      "incident_seed_site_id": "108",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__B_spatial_cluster__003",
+      "split": "ood_q_high",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 46003,
+      "incident_seed_site_id": "128",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__B_spatial_cluster__004",
+      "split": "ood_q_high",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 46004,
+      "incident_seed_site_id": "133",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__B_spatial_cluster__005",
+      "split": "ood_q_high",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 46005,
+      "incident_seed_site_id": "138",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__B_spatial_cluster__006",
+      "split": "ood_q_high",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 46006,
+      "incident_seed_site_id": "153",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__B_spatial_cluster__007",
+      "split": "ood_q_high",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 46007,
+      "incident_seed_site_id": "161",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__B_spatial_cluster__008",
+      "split": "ood_q_high",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 46008,
+      "incident_seed_site_id": "173",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__B_spatial_cluster__009",
+      "split": "ood_q_high",
+      "family_id": "B_spatial_cluster",
+      "world_seed": 46009,
+      "incident_seed_site_id": "177",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__C_habitat_driven__000",
+      "split": "ood_q_high",
+      "family_id": "C_habitat_driven",
+      "world_seed": 47000,
+      "incident_seed_site_id": "527",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__C_habitat_driven__001",
+      "split": "ood_q_high",
+      "family_id": "C_habitat_driven",
+      "world_seed": 47001,
+      "incident_seed_site_id": "528",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__C_habitat_driven__002",
+      "split": "ood_q_high",
+      "family_id": "C_habitat_driven",
+      "world_seed": 47002,
+      "incident_seed_site_id": "533",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__C_habitat_driven__003",
+      "split": "ood_q_high",
+      "family_id": "C_habitat_driven",
+      "world_seed": 47003,
+      "incident_seed_site_id": "536",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__C_habitat_driven__004",
+      "split": "ood_q_high",
+      "family_id": "C_habitat_driven",
+      "world_seed": 47004,
+      "incident_seed_site_id": "540",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__C_habitat_driven__005",
+      "split": "ood_q_high",
+      "family_id": "C_habitat_driven",
+      "world_seed": 47005,
+      "incident_seed_site_id": "541",
+      "incident_site_count": 17,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__C_habitat_driven__006",
+      "split": "ood_q_high",
+      "family_id": "C_habitat_driven",
+      "world_seed": 47006,
+      "incident_seed_site_id": "552",
+      "incident_site_count": 14,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__C_habitat_driven__007",
+      "split": "ood_q_high",
+      "family_id": "C_habitat_driven",
+      "world_seed": 47007,
+      "incident_seed_site_id": "553",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__C_habitat_driven__008",
+      "split": "ood_q_high",
+      "family_id": "C_habitat_driven",
+      "world_seed": 47008,
+      "incident_seed_site_id": "579",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    {
+      "case_id": "ood_q_high__C_habitat_driven__009",
+      "split": "ood_q_high",
+      "family_id": "C_habitat_driven",
+      "world_seed": 47009,
+      "incident_seed_site_id": "581",
+      "incident_site_count": 15,
+      "simulator_q_true": 0.35,
+      "belief_q_support": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    }
+  ],
+  "guardrails": [
+    "Every planner receives exactly the same realized case for a given case_id.",
+    "incident_seed_site_id comes only from the frozen topology audit; no biological future outcome is used to select it.",
+    "simulator_q_true is latent simulator/evaluator state and must not enter policy-facing data.",
+    "No simulator family/range may be retuned after formal planner results without a new versioned protocol.",
+    "OOD topology remains a separate OPEN lane and is not silently claimed by this manifest."
+  ]
+}

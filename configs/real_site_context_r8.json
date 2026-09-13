@@ -1,0 +1,25 @@
+{
+  "version": "r8-v1",
+  "status": "FROZEN_REAL_SITE_CONTEXT_FOR_FORMAL_BENCHMARK",
+  "site_receipt": "reports/milestones/r2_real_graph_v0/real_sites_v0.csv",
+  "coordinate_semantics": "monitoring-authoritative latitude/longitude from the canonical Crab Team site table; ShoreZone nearest match is contextual only",
+  "habitat_class_field": "crabteam_habitat",
+  "habitat_proxy": {
+    "source_receipt": "reports/milestones/r5_simulator_criticism/simulator_criticism.json",
+    "calibration_years": [2017, 2018, 2019, 2020, 2021],
+    "held_out_reality_years": [2022, 2023],
+    "scores": {
+      "Channel": 0.09722222222222222,
+      "Lagoon": 0.022727272727272728,
+      "Tideflat": 0.06382978723404255
+    },
+    "semantics": "Beta(1,1)-smoothed site-year observed-detection probability by Crab Team habitat class on calibration years; MODEL PROXY, not latent habitat suitability"
+  },
+  "shorezone_rule": {
+    "accepted_distance_m": 100,
+    "status": "VISUAL_STATIC_HABITAT_CONTEXT_ONLY",
+    "site_138": "nearest thematic ShoreZone match rejected because distance exceeds accepted threshold; monitoring coordinate remains authoritative"
+  },
+  "formal_benchmark_rule": "Spatial world models B/E must use the versioned monitoring coordinates. Family C must use the frozen habitat proxy above rather than a neutral placeholder. No raw PAMA outcomes may enter any green-crab belief/world model.",
+  "claim_guardrail": "These coordinates and habitat classes anchor simulation context; the habitat proxy is an observation-derived design proxy, not ecological ground truth."
+}
