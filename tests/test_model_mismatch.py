@@ -34,8 +34,8 @@ def test_predictive_surprise_matches_observation_probability() -> None:
     result = posterior_predictive_surprise(belief, observation)
 
     # P(A occupied)=0.5 and P(detect|occupied,e=1)=0.2.
-    assert result.predictive_detection_probability == 0.1
-    assert result.observation_probability == 0.1
+    assert abs(result.predictive_detection_probability - 0.1) < 1e-12
+    assert abs(result.observation_probability - 0.1) < 1e-12
     assert abs(result.surprise_bits - 3.321928094887362) < 1e-12
     assert result.impossible_under_current_ensemble is False
 
@@ -93,6 +93,6 @@ def test_surprise_is_preupdate_and_q_shift_can_be_inspected_separately() -> None
         ),
     )
 
-    assert diagnostic.q_mean_before == 0.175
+    assert abs(diagnostic.q_mean_before - 0.175) < 1e-12
     assert posterior.q_mean() < diagnostic.q_mean_before
     assert diagnostic.observation_probability > 0.0
