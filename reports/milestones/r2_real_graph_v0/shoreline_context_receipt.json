@@ -1,0 +1,17 @@
+{
+  "status": "VISUAL_CONTEXT_ONLY",
+  "source": "Washington DNR ShoreZone full inventory SZLine",
+  "layer_id": 46,
+  "source_url": "https://gis.dnr.wa.gov/site3/rest/services/Aquatics/AQ_Environment/MapServer/46/query",
+  "bbox_wgs84": [
+    -124.216053026,
+    47.00754552,
+    -122.291890674,
+    49.07242008
+  ],
+  "shoreline_feature_count": 6861,
+  "shoreline_path_count": 7002,
+  "graph_sites": 49,
+  "graph_edges": 118,
+  "note": "Shoreline geometry improves map legibility; it is not dispersal probability or graph connectivity evidence."
+}

@@ -1,0 +1,119 @@
+{
+  "version": "r5-v1",
+  "status": "R5_SIMULATOR_CRITICISM_REVIEWED",
+  "purpose": "Freeze planner-independent comparison structure and the first formal benchmark world-model design ranges after simulator criticism. These ranges are benchmark assumptions, not ecological parameter estimates.",
+  "family_split": {
+    "train": [
+      "A_graph_diffusion",
+      "B_spatial_cluster",
+      "C_habitat_driven"
+    ],
+    "ood_model_holdout": [
+      "E_fragmented_patchy"
+    ]
+  },
+  "world_model_design_ranges": {
+    "A_graph_diffusion": {
+      "transmission_range": [0.35, 0.75],
+      "habitat_effect_range": [0.0, 0.35],
+      "wave_range": [1, 4],
+      "status": "FROZEN_FOR_FIRST_FORMAL_BENCHMARK_DESIGN_NOT_ECOLOGICAL_ESTIMATE"
+    },
+    "B_spatial_cluster": {
+      "radius_scale_range": [0.65, 1.75],
+      "patchiness_range": [0.05, 0.35],
+      "status": "FROZEN_FOR_FIRST_FORMAL_BENCHMARK_DESIGN_NOT_ECOLOGICAL_ESTIMATE"
+    },
+    "C_habitat_driven": {
+      "prevalence_range": [0.08, 0.35],
+      "habitat_coefficient_range": [1.0, 4.0],
+      "local_boost_range": [0.0, 1.25],
+      "status": "FROZEN_FOR_FIRST_FORMAL_BENCHMARK_DESIGN_NOT_ECOLOGICAL_ESTIMATE"
+    },
+    "E_fragmented_patchy": {
+      "extra_patch_range": [1, 2],
+      "patch_radius_scale_range": [0.25, 0.65],
+      "dropout_range": [0.15, 0.45],
+      "status": "FROZEN_OOD_MODEL_HOLDOUT_FOR_FIRST_FORMAL_BENCHMARK"
+    }
+  },
+  "r5_criticism_decision": {
+    "decision": "KEEP_CURRENT_RANGES",
+    "reason": "No family showed gross degeneracy. The cohesion warnings for B and E arise against an incident context with only one observed positive site; treating that sparse observed pattern as complete latent occupancy would violate the imperfect-detection premise. Ranges are therefore frozen as diverse benchmark design assumptions rather than fit to observed detections.",
+    "parameter_retuning_after_planner_results": "FORBIDDEN_WITHOUT_NEW_VERSIONED_PROTOCOL"
+  },
+  "seed_namespaces": {
+    "train": {
+      "start": 0,
+      "note": "Policy optimization only; not used for formal reporting."
+    },
+    "validation": {
+      "start": 10000,
+      "note": "Fresh seeds/parameter draws from train families."
+    },
+    "id_test": {
+      "start": 20000,
+      "note": "Frozen formal in-distribution evaluation seeds; no hyperparameter tuning."
+    },
+    "ood_model_test": {
+      "start": 30000,
+      "note": "Held-out world family E only."
+    },
+    "ood_parameter_test": {
+      "start": 40000,
+      "note": "Parameter shifts outside frozen train design ranges; exact shifts remain OPEN until q/action/benchmark integration is complete."
+    },
+    "ood_topology_test": {
+      "start": 50000,
+      "note": "Graph-size/topology shifts; exact cases remain OPEN until evaluation integration is complete."
+    }
+  },
+  "comparison_rules": [
+    "Same incident cases, seeds, budget, observable information and constraints for every planner.",
+    "Planner never receives HiddenWorld or synthetic occupancy truth.",
+    "Information Gain is the strong competitive baseline; Frontier is the interpretable fallback baseline.",
+    "Do not retune simulator families after seeing which planner wins.",
+    "Reward weights, if used by RL, are not the same object as primary evaluation metrics.",
+    "Report mean plus dispersion/confidence interval and visible failure cases, not winner-only averages."
+  ],
+  "primary_metrics": [
+    {
+      "name": "missed_occupied_sites",
+      "direction": "lower_is_better",
+      "availability": "synthetic_truth_only_evaluator"
+    },
+    {
+      "name": "occupied_site_coverage",
+      "direction": "higher_is_better",
+      "availability": "synthetic_truth_only_evaluator"
+    },
+    {
+      "name": "final_global_uncertainty",
+      "direction": "lower_is_better",
+      "availability": "belief_state"
+    }
+  ],
+  "secondary_metrics": [
+    "detections",
+    "effort_used",
+    "wasted_effort_if_defined",
+    "travel_or_access_cost_if_available",
+    "frontier_coverage",
+    "extent_reconstruction_error_if_defined"
+  ],
+  "reality_check_metrics": [
+    "historical_survey_overlap",
+    "later_detection_relevance",
+    "real-data simulator-criticism statistics"
+  ],
+  "open_before_final_freeze": [
+    "q support/range from defensible external evidence plus sensitivity",
+    "formal budget grid",
+    "action effort granularity",
+    "reward function and weights",
+    "number of formal cases per split",
+    "exact OOD parameter shifts",
+    "exact OOD topology cases"
+  ],
+  "claim_guardrail": "Benchmark results support only performance on the formalized synthetic task and robustness to tested simulator assumptions. Historical replay supports retrospective plausibility only."
+}

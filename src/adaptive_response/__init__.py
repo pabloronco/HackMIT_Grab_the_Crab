@@ -22,21 +22,46 @@ from .models import (
     PublicState,
     Site,
 )
-from .planners import FrontierPlanner, Planner
+from .planners import FrontierPlanner, InformationGainPlanner, Planner
+from .spatial_belief import (
+    EcologicalHypothesis,
+    QHypothesis,
+    SpatialBeliefEngine,
+    SpatialBeliefState,
+    SpatialHypothesis,
+)
+from .spatial_mission_loop import SpatialAdaptiveMissionLoop
+from .world_models import (
+    FragmentedPatchyWorldModel,
+    GeneratedWorld,
+    GraphDiffusionWorldModel,
+    HabitatDrivenWorldModel,
+    SpatialClusterWorldModel,
+    WorldModel,
+    WorldModelContext,
+    default_world_model_split,
+    sample_ecological_hypotheses,
+)
 
 __all__ = [
     "AdaptiveMissionLoop",
     "BeliefEngine",
     "BeliefState",
     "EDGE_FEATURE_NAMES",
+    "EcologicalHypothesis",
     "Edge",
     "Environment",
+    "FragmentedPatchyWorldModel",
     "FrontierPlanner",
     "GLOBAL_FEATURE_NAMES",
+    "GeneratedWorld",
+    "GraphDiffusionWorldModel",
     "GraphState",
     "GraphStateExporter",
+    "HabitatDrivenWorldModel",
     "HiddenWorld",
     "IncidentConfig",
+    "InformationGainPlanner",
     "LoopPhase",
     "MissionAction",
     "MissionAllocation",
@@ -45,6 +70,16 @@ __all__ = [
     "ObservationBatch",
     "Planner",
     "PublicState",
+    "QHypothesis",
     "RoundTransition",
     "Site",
+    "SpatialAdaptiveMissionLoop",
+    "SpatialBeliefEngine",
+    "SpatialBeliefState",
+    "SpatialClusterWorldModel",
+    "SpatialHypothesis",
+    "WorldModel",
+    "WorldModelContext",
+    "default_world_model_split",
+    "sample_ecological_hypotheses",
 ]

@@ -1,0 +1,50 @@
+site_id,latitude,longitude,crabteam_habitat,crabteam_habitat_ambiguous,shorezone_unit_id,shorezone_distance_m,shorezone_accepted,substrate,shoreline_type,exposure,eelgrass,salt_marsh,source_monitoring,source_shorezone
+3,47.1458712,-122.7319221,Lagoon,False,1751,4.5743675666397445,True,sand,Sand beach,VERY PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+74,47.3882213,-123.1163677,Lagoon,False,1014,3.4114121044152106,True,sand,Sand flat,PROTECTED,PATCHY,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+97,47.51654,-122.51575,Tideflat,False,3043,47.374915993687736,True,gravel and sand,Sand and gravel flat or fan,PROTECTED,PATCHY,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+108,47.5865962,-122.666069,Lagoon,False,3560,3.9386845596015343,True,mud and fines,Organics/fines,VERY PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+128,47.63813,-122.839,Lagoon,False,929,6.673570047653214,True,sand,Sand flat,VERY PROTECTED,PATCHY,ABSENT,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+133,47.6469551,-122.6830086,Lagoon,False,3646,10.666271955037232,True,mud and fines,Organics/fines,VERY PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+138,47.6489801,-122.9307717,Channel,False,1184,246.114980425172,False,,,,,,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+153,47.701444,-122.582722,Lagoon,False,3481,7.349271304967884,True,mud and fines,Organics/fines,PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+161,47.7113514,-122.8199679,Lagoon,False,1277,9.988342852947811,True,mud and fines,Organics/fines,VERY PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+173,47.7453912,-122.4946491,Channel,False,3250,16.177196850012354,True,mud and fines,Organics/fines,VERY PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+177,47.7943452,-122.5066661,Tideflat,False,3269,20.42963315141031,True,mud and fines,Organics/fines,VERY PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+198,47.9977512,-122.8825095,Lagoon,False,542,11.757538660574387,True,mud and fines,Mud flat,PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+201,48.0253804,-122.7165043,Lagoon,False,680,7.34273051135908,True,mud and fines,Organics/fines,SEMI-PROTECTED,PATCHY,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+204,48.05785,-122.7698,Lagoon,False,762,40.775597248156394,True,mud and fines,Organics/fines,VERY PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+207,48.0886291,-123.0432305,Channel,False,593,40.08853468809792,True,gravel and sand,"Sand and gravel beach, narrow",SEMI-EXPOSED,PATCHY,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+214,48.1499418,-123.1383572,Channel,False,597,27.648153359850372,True,mud and fines,Organics/fines,VERY PROTECTED,PATCHY,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+219,48.2056323,-124.1129729,Channel,False,515,31.197236795185404,True,mud and fines,Organics/fines,PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+250,47.1181638,-122.7619788,Lagoon,False,1545,12.376011144396351,True,sand,Sand flat,SEMI-PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+277,47.2488254,-122.5515108,Lagoon,False,1492,1.5336006953432497,True,sand,Sand flat,PROTECTED,CONTINUOUS,ABSENT,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+306,47.99458,-122.49186,Lagoon,False,3826,12.655540259359665,True,mud and fines,Mud flat,PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+311,48.23373,-122.7299722,Lagoon,False,4066,1.6155153069487396,True,sand,Sand beach,PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+322,48.4070743,-122.5550184,Lagoon,False,4264,11.543557305510483,True,gravel and sand,"Sand and gravel beach, narrow",PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+323,48.42112,-122.55775,Lagoon,False,4245,1.111694114908466,True,mud and fines,Organics/fines,PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+330,48.4604493,-122.8205968,Lagoon,False,7094,31.18828332484955,True,mud and fines,Organics/fines,PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+341,48.4930814,-122.5780734,Lagoon,False,5536,1.7603537233905908,True,mud and fines,Organics/fines,PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+349,48.5607255,-122.9502154,Tideflat,False,6682,1.605573573587741,True,mud and fines,Organics/fines,PROTECTED,CONTINUOUS,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+361,48.6978858,-122.5064085,Tideflat,False,5032,10.527399852526731,True,man-made,"Man-made, permeable",VERY PROTECTED,CONTINUOUS,ABSENT,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+362,48.7187437,-122.5155645,Lagoon,False,5015,1.748842527631817,True,mud and fines,Mud flat,PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+367,48.9618018,-122.7342225,Tideflat,False,4854,13.081000666033296,True,mud and fines,Organics/fines,SEMI-PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+378,48.4527805,-122.4735085,Channel,False,5156,36.68343656253701,True,mud and fines,Organics/fines,VERY PROTECTED,PATCHY,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+379,48.5485785,-122.4991599,Tideflat,False,5128,6.524721832946647,True,mud and fines,Mud flat,SEMI-PROTECTED,CONTINUOUS,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+380,48.4778014,-122.5733726,Tideflat,False,5408,7.600790769965717,True,gravel and sand,"Sand and gravel beach, narrow",PROTECTED,PATCHY,ABSENT,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+382,48.5017454,-122.4834569,Tideflat,False,5147,56.54789098251097,True,mud and fines,Mud flat,SEMI-EXPOSED,CONTINUOUS,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+383,48.1765981,-123.1277865,Lagoon,False,605,22.45711568111642,True,mud and fines,Organics/fines,SEMI-PROTECTED,ABSENT,ABSENT,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+384,48.1735046,-123.1366566,Channel,False,614,16.311841367248544,True,mud and fines,Organics/fines,VERY PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+508,48.191825,-122.6006242,Lagoon,False,4012,12.196291729627974,True,mud and fines,Organics/fines,VERY PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+516,48.21409,-122.446426,Channel,False,4544,44.58119415365113,True,mud and fines,Organics/fines,PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+527,48.4611739,-122.5225262,Channel,False,5395,4.819237272393618,True,man-made,"Man-made, permeable",SEMI-PROTECTED,ABSENT,ABSENT,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+528,48.4718416,-122.4702043,Tideflat,False,5155,58.901803435638826,True,mud and fines,Mud flat,SEMI-EXPOSED,CONTINUOUS,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+533,48.6083411,-123.1435999,Channel,False,5915,72.6602984319638,True,mud and fines,Mud flat,PROTECTED,CONTINUOUS,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+536,48.46161,-122.9751923,Lagoon,False,5655,66.68084926572132,True,gravel and sand,Sand and gravel flat or fan,SEMI-PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+540,48.5358345,-122.8552321,Lagoon,False,7145,6.144044350569017,True,mud and fines,Organics/fines,SEMI-PROTECTED,PATCHY,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+541,48.5512078,-122.6964201,Channel,False,5292,54.20009140094018,True,mud and fines,Mud flat,PROTECTED,PATCHY,ABSENT,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+552,48.1312959,-122.470491,Channel,False,4461,45.75018068313719,True,mud and fines,Organics/fines,SEMI-PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+553,47.595538,-122.516886,Lagoon,False,3115,0.5978953468023575,True,mud and fines,Mud flat,SEMI-PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+579,47.4227576,-122.4306703,Channel,False,2881,39.096588609227744,True,sand,Sand beach,PROTECTED,CONTINUOUS,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+581,47.392326,-122.433954,Lagoon,False,2836,2.489262305220708,True,gravel and sand,"Sand and gravel beach, narrow",PROTECTED,ABSENT,PATCHY,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+590,48.07932,-122.61137,Lagoon,False,3783,26.423866172884573,True,man-made,"Man-made, permeable",PROTECTED,ABSENT,ABSENT,canonical_site_visit.csv,r2_shorezone_site_matches.csv
+599,48.2401754,-122.3949708,Channel,False,4559,52.39855213891419,True,mud and fines,Mud flat,SEMI-PROTECTED,ABSENT,CONTINUOUS,canonical_site_visit.csv,r2_shorezone_site_matches.csv
