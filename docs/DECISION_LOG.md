@@ -414,3 +414,59 @@ This file mirrors project-relevant decisions made after Project Freeze 3.0 for t
 **Retraining launched:** three seeds (0/1/2), identical hyperparameters to R7/R8 (hidden_dim=64/num_layers=2, 300 updates x 16 episodes/update), this time with `--decision-log` enabled to support three requested observation-only diagnostics (validation-curve plateau check, reward-term magnitude breakdown, action statistics) without any additional training-code changes. Per instruction: no reward/architecture/hyperparameter changes will be made based on the R8 rerun's results; if either diagnostic trigger condition fires (still materially improving at update 300, or the reward contract's terminal-term-drowned-out watch-item), that will be reported before any further training, not acted on unilaterally. A new paired case-wise comparison (`scripts/r8_paired_comparison.py`, bootstrap 95% CI on the missed-fraction delta, Frontier<->RL and Information Gain<->RL) will accompany the rerun report.
 
 **Owner:** Demu.
+
+## 2026-09-15 — R8 corrected-corrected rerun complete: RL still does not beat Frontier; now backed by a paired bootstrap analysis
+
+**Status:** Closes the review from earlier today. Full write-up:
+`docs/R8_BENCHMARK_REPORT.md` (rewritten in place; the pre-fix 2026-09-13
+version is preserved in git history), `reports/r8_paired_comparison.md`
+(new paired case-wise bootstrap analysis), `reports/r8_training_diagnostics.md`
+(the three requested diagnostics). Training and benchmark both completed
+cleanly: zero finite-ensemble support failure retries across all three
+seeds (down from 1 occurrence in the prior retrain).
+
+**Headline (mean missed_occupied_fraction across 3 seeds; Frontier/IG
+deterministic and confirmed identical across all three seed benchmark
+CSVs):** id_test - frontier 0.601, information_gain 0.684, gnn_rl
+0.610+/-0.014. ood_model_test - frontier 0.750, information_gain 0.749,
+gnn_rl 0.762+/-0.017. ood_q_low - frontier 0.739, information_gain 0.778,
+gnn_rl 0.752+/-0.015. ood_q_high - frontier 0.502, information_gain 0.571,
+gnn_rl 0.507+/-0.008. Close to the pre-fix numbers - both corrections were
+narrow (one world-model family's hypothesis independence, one geometry
+input), not a protocol or algorithm change, so a similar qualitative result
+is the expected outcome of a correct fix, not evidence the fixes didn't
+matter.
+
+**New this round - paired case-wise bootstrap (the statistically
+load-bearing addition):** Frontier<->RL delta (baseline_missed -
+rl_missed, positive = RL better), pooled across 3 seeds with a
+case-clustered bootstrap: ALL groups -0.0095, 95% CI [-0.0202, +0.0010] -
+not distinguishable from 0. No group or seed shows RL statistically ahead
+of Frontier; one seed (2) shows RL statistically *behind* Frontier overall
+(CI [-0.0416,-0.0054]) and one seed (0) statistically behind on
+ood_model_test specifically. Information Gain<->RL delta: ALL groups
++0.0499, 95% CI [+0.0305,+0.0698] - RL statistically beats Information
+Gain overall, and on id_test specifically in all 3 individual seeds
+(smallest per-seed CI lower bound +0.0292). The other three groups are not
+statistically distinguishable for the IG comparison.
+
+**Diagnostics (observation-only, no changes made because of them):** no
+trigger fired. All three seeds' validation curves were flat/plateaued by
+update 300 (tail slope +0.0006 to +0.0017 missed_fraction/update - not
+"still improving"). Terminal reward term's mean magnitude is 2.5-2.65x the
+summed dense terms per episode across all three seeds - not drowned out,
+closing the R7/R8 reward contract's preregistered watch-item with a clean
+answer. Effort-level usage and site-revisit rate look like ordinary
+exploration, not degenerate collapse.
+
+**Decision, per the review's own pre-declared rule ("if RL doesn't beat
+Frontier after this correction, use Frontier"):** RL does not beat
+Frontier here - it ties on point estimates and loses on one seed's paired
+comparison. **Frontier is the benchmark-supported planner from this
+result, not GNN+RL.** RL's real, replicated advantage is specifically over
+Information Gain, not over the strongest baseline - worth keeping on
+record (GNN+RL is not broken, trains to a genuine plateau, isn't reward-
+starved) but not sufficient to recommend it as the project's planner on
+this evidence.
+
+**Owner:** Demu.
