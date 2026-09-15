@@ -159,31 +159,43 @@ def run_eval(policy, eval_seed_sites: list[str], *, args, rng: np.random.Generat
     return result
 
 
-_ZERO_LIKELIHOOD_RETRY_COUNT = 0
+# R8 correction (review 2026-09-15): renamed from the earlier
+# "zero-likelihood"/"numerical edge case" framing. The actual cause is not a
+# floating-point/numerical issue: a FINITE Monte Carlo sample of ecological
+# hypotheses (draws_per_model per train family) does not exhaustively cover
+# every possible occupancy pattern, so the hidden simulator's realized
+# observation can fall outside the support of the sampled hypothesis set.
+# That is a finite-ensemble support failure - precise language matters here
+# because "numerical edge case" reads as something perturbation/precision
+# tuning could fix, which it cannot; only a larger/different hypothesis
+# sample changes the support.
+_FINITE_ENSEMBLE_SUPPORT_FAILURE_RETRY_COUNT = 0
 
 
 def _run_episode_with_retry(
     policy, train_seed_sites: list[str], *, args, rl_rng: np.random.Generator,
     reward_config, decision_logger, episode_index: int, max_attempts: int = 5,
 ):
-    """Resample and retry on a rare, disclosed belief-engine edge case.
+    """Resample and retry on a rare, disclosed finite-ensemble support failure.
 
     A finite Monte Carlo sample of ecological hypotheses (draws_per_model per
     train family) does not exhaustively cover every possible occupancy
     pattern. If the hidden simulator's realized world/observation happens to
-    be inconsistent with every sampled hypothesis,
+    fall outside the support of every sampled hypothesis,
     SpatialBeliefEngine.update() raises ValueError("...zero probability
     under every spatial/q hypothesis..."). This is a real, occasionally-hit
-    numerical edge case (observed once in ~14,000+ training rounds during the
-    R8 retrain), not a bug in the episode itself - retrying with a freshly
-    resampled incident/world/hypotheses is safe here because training
-    episodes are randomly drawn each time anyway (unlike frozen benchmark
-    cases, where this must never be silently retried - see
+    finite-ensemble support failure (observed once in ~14,000+ training
+    rounds during the R8 retrain), not a bug in the episode itself and not a
+    generic numerical edge case - retrying with a freshly resampled
+    incident/world/hypotheses is safe here because training episodes are
+    randomly drawn each time anyway (unlike frozen benchmark cases, where
+    this must never be silently retried - see
     scripts/run_spatial_benchmark_r8.py, which surfaces it instead).
-    Occurrence count is tracked in _ZERO_LIKELIHOOD_RETRY_COUNT for reporting.
+    Occurrence count is tracked in
+    _FINITE_ENSEMBLE_SUPPORT_FAILURE_RETRY_COUNT for reporting.
     """
 
-    global _ZERO_LIKELIHOOD_RETRY_COUNT
+    global _FINITE_ENSEMBLE_SUPPORT_FAILURE_RETRY_COUNT
     for attempt in range(max_attempts):
         seed_site_id = train_seed_sites[int(rl_rng.integers(0, len(train_seed_sites)))]
         incident, world_model, q_true, hypotheses, q_hypotheses = build_case_ingredients(
@@ -200,14 +212,14 @@ def _run_episode_with_retry(
         except ValueError as exc:
             if "zero probability under every spatial/q hypothesis" not in str(exc):
                 raise
-            _ZERO_LIKELIHOOD_RETRY_COUNT += 1
+            _FINITE_ENSEMBLE_SUPPORT_FAILURE_RETRY_COUNT += 1
             print(
-                f"    [warn] zero-likelihood observation batch on {seed_site_id!r} "
+                f"    [warn] finite-ensemble support failure on {seed_site_id!r} "
                 f"(attempt {attempt + 1}/{max_attempts}), resampling and retrying. "
-                f"Total occurrences this run: {_ZERO_LIKELIHOOD_RETRY_COUNT}."
+                f"Total occurrences this run: {_FINITE_ENSEMBLE_SUPPORT_FAILURE_RETRY_COUNT}."
             )
     raise RuntimeError(
-        f"Gave up after {max_attempts} zero-likelihood retries in a row - "
+        f"Gave up after {max_attempts} finite-ensemble support failure retries in a row - "
         "this is no longer a rare edge case, stop and investigate."
     )
 
@@ -353,7 +365,7 @@ def main() -> None:
             extra={"run_name": args.run_name, "seed": args.seed},
         )
         print(f"Saved final checkpoint at update {update_idx} to {run_dir / 'final.pt'}")
-        print(f"Zero-likelihood retry count this run: {_ZERO_LIKELIHOOD_RETRY_COUNT}")
+        print(f"Finite-ensemble support failure retry count this run: {_FINITE_ENSEMBLE_SUPPORT_FAILURE_RETRY_COUNT}")
         if decision_logger is not None:
             decision_logger.close()
 

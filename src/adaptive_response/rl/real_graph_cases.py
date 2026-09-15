@@ -128,15 +128,25 @@ def build_real_incident_case(
             )
         )
 
-    def _edge_weight(row: dict) -> float:
+    def _route_proxy_km(row: dict) -> float | None:
         value = row.get("salishseacast_total_route_proxy_km")
-        return float(value) if value not in (None, "") else float(row["distance_km"])
+        return float(value) if value not in (None, "") else None
 
+    # R8 correction (review 2026-09-15): distance_km is the direct edge
+    # distance and is what Edge.distance / the GraphState edge-distance
+    # feature must carry - it is what the planner (including the GNN) sees.
+    # salishseacast_total_route_proxy_km is a real navigable-route distance
+    # but is audit/context metadata only; it must not silently replace the
+    # direct-distance graph input. Kept on Edge.travel_cost, which no
+    # GraphState feature currently reads (graph_state.py builds edge
+    # features from (distance, connectivity_weight) only) - so this
+    # preserves the value without it leaking into the planner graph.
     edges = [
         Edge(
             src=str(row["src"]),
             dst=str(row["dst"]),
-            distance=_edge_weight(row),
+            distance=float(row["distance_km"]),
+            travel_cost=_route_proxy_km(row),
         )
         for row in selected_edges
     ]
