@@ -279,3 +279,194 @@ This file mirrors project-relevant decisions made after Project Freeze 3.0 for t
 **What Demu does next, per the freeze's own instruction:** wait for Pablo/Fede's real-data/world-model/action-space freeze before any further training aimed at a project result. In the meantime, permitted work is explicitly non-ecological: backbone robustness, deterministic inference, logging, checkpointing, training-pipeline reliability, and tests - i.e. engineering hardening of what already exists, not new experiments on the toy generator.
 
 **Owner:** Demu; acknowledging Pablo + Fede's team-approved freeze (PR #10).
+
+## 2026-09-12 — Engineering block complete: checkpointing, hardening, benchmark runner, decision logging
+
+**Status:** DONE, per the team's engineering-block instruction (non-ecological work permitted while the second ecological handoff is pending). No action-space/reward/evaluation semantics changed. Full detail in `docs/ENGINEERING_BLOCK_REPORT.md`; this entry is the Decision Log pointer to it.
+
+**Decision/what changed:**
+- `src/adaptive_response/rl/checkpointing.py` (commit `22a257e`): self-describing checkpoints (`PolicyArchitectureConfig` embedded alongside weights), `save_policy_checkpoint`/`load_policy_checkpoint`/`load_optimizer_state`, inference-only loads supported, foreign files rejected with a clear `ValueError`. `train_gnn_policy.py` now builds policies through `PolicyArchitectureConfig.build()` and saves through this module instead of ad hoc `torch.save`.
+- `tests/test_hardening.py` (commit `50327bb`, 18 tests): variable graph size N in {1,2,12,20,24,30,40} including a ~40-episode stochastic stress test against the real `Environment` (no duplicate picks, no budget overrun, terminates within a safety cap), plus widened structural/signature checks that no module under `src/adaptive_response/rl/` can import or accept `HiddenWorld`.
+- `src/adaptive_response/rl/benchmark.py` + `scripts/run_benchmark.py` (commit `5ad0e87`): planner-agnostic benchmark runner (`Planner` protocol only - Frontier/RL/future InformationGain are interchangeable). `BenchmarkRow` is deliberately a raw fact table with no score/rank/winner field, pinned by `test_benchmark_row_has_no_ranking_metric_baked_in`, so this does not freeze evaluation metrics.
+- Per-round decision logging: `RoundDecision` gained `node_ids`/`node_logits` (commit `c607402`); `reward.py` gained `round_reward_components()` (value-preserving refactor, `round_reward()` is now its sum); `decision_logger.py` (new) writes one `RoundLogRecord` per round (logits, entropy, value, log-prob, reward components, chosen sites, budget before/after); `training_env.run_episode()` takes an opt-in `decision_logger` param; `train_gnn_policy.py` exposes it as `--decision-log` (commit `d6ad9fc`), off by default.
+
+**Validation:** Full suite 100/100 (`test_belief`8, `test_benchmark`7, `test_checkpointing`7, `test_decision_logging`4, `test_environment`6, `test_frontier_planner`9, `test_gnn_backbone`11, `test_graph_state`8, `test_hardening`18, `test_mission_loop`8, `test_round_policy_training`6, `test_simulator_step`8). Team-authorized smoke run after all four pieces landed together (`engineering_block_smoke`, 10 updates x 4 episodes/update, `--decision-log` on): zero crashes, checkpoints saved/loadable, `decisions.jsonl` produced 175 well-formed records with `done`/`terminal_missed_extent` set only on each episode's true final round. No hyperparameter campaign, no claim of learning quality drawn from this run.
+
+**Owner:** Demu.
+
+## 2026-09-12 — Team ecology/data update acknowledged; engineering block confirmed still frozen; tiny eligible-mask hardening added
+
+**Status:** ACKNOWLEDGED. Recording the team's substantive real-data progress for traceability, confirming compliance with their explicit instruction to keep the engineering block frozen, and logging the one small permitted addition. No design decision made unilaterally here.
+
+**What the team reported:** real monitoring network now at 49 sites; primary real graph v0 (variable degree, disconnected allowed, 118 local routed edges) - straight-line-water rejection was explicitly discarded after curved SalishSeaCast routing showed all 12 previously-rejected local edges actually have viable water routes; incident extraction is now deterministic from the initial detection + static graph only; 46/49 possible seeds naturally produce 14-17-site incident graphs, 3 genuinely isolated monitoring sites stay size-1 rather than being artificially bridged; monthly monitoring table has 1,975 site-year-month observations at 99.6% effort coverage.
+
+**Important ecological finding, not a design choice:** per-effort detectability `q` is **not identifiable** from this dataset alone - the team will not infer it from raw detection fraction. The functional form `P(no detection | occupied, e, q) = (1-q)^e` is FROZEN; the numeric value of `q` is explicitly NOT frozen yet. Current MVP direction (leaning, not decided): an uncertain effective protocol-level `q` - simulator-side `q_true` sampled from a constrained distribution, belief-side uncertainty over `q`, plus dedicated q-shift/OOD tests. **No `q` node feature or GraphState schema change is authorized yet.**
+
+**Explicit instruction, reconfirmed:** the engineering block stays FROZEN. No serious training, no reward tuning, no variance reduction, no Information Gain implementation, no GraphState/action-schema changes - all still "yet," pending the second ecological handoff (spatial belief + world-model/validation contracts).
+
+**Two notes recorded for that eventual integration:**
+1. Final benchmark cases must come from the externally frozen ecological benchmark/world-model pack, not the current toy `sample_incident` generator. The team confirmed `BenchmarkCase` (added this engineering block, see the entry above) "looks suitable for that" - no interface change anticipated, just a different case source plugged in later.
+2. When integration begins: rebase/sync once against the then-current ecological branch and rerun the combined suite. Branches have evolved in parallel and diverged in size - this branch is at 100 tests, the team's data/ecology branch is already at 135 - purely a consequence of parallel work, not a discrepancy to resolve now.
+
+**Tiny hardening actually done (explicitly authorized as "optional, only if genuinely quick," no policy-behavior change permitted):** `RoundDecision`/`RoundLogRecord` gained `eligible_mask: tuple[bool, ...]`, index-aligned with the existing `node_ids`/`node_logits`, so a later reader can tell a genuinely low-scoring legal action apart from a high-scoring one that was never legal - a direct read-out of the feasibility mask `act()` already computes, not a new computation (commit `4888f0f`). Full 100/100 suite still green; verified with a real `--decision-log` CLI smoke run.
+
+**What happens next:** nothing else, per instruction. Waiting for the real second ecological handoff (real graph + observation model/q + spatial belief + world-model families + frozen validation splits/metrics) before resuming any training-adjacent work.
+
+**Owner:** Demu; acknowledging Pablo + Fede's ecology/data update.
+
+## 2026-09-12 — Second ecological handoff (R7): ACK on action contract, ACK-with-a-watch-item on reward; GNN/RL integrated with SpatialAdaptiveMissionLoop
+
+**Status:** ACK delivered per docs/DEMU_HANDOFF_R7.md's explicit request ("either ACK the recommended action/reward contract or return one concrete counterproposal"). Both read in full, along with configs/benchmark_protocol_r7.json and configs/q_protocol_r7.json, before responding - not answered from the chat summary alone.
+
+**Action contract: ACK, no counterproposal.** One (site, effort) pick per round, effort in {1,3,6}, revisits allowed across rounds, budget 18, horizon 6. This is a real simplification versus the Checkpoint-B autoregressive multi-site design (no STOP token, no within-round duplicate-exclusion logic - moot with one pick per round), reuses the existing GNN encoder/critic unchanged, and is more REINFORCE-friendly (one discrete choice per round instead of an autoregressive sequence). No RL-engineering reason to prefer the old contract.
+
+**Reward contract: ACK, with one flagged watch-item, not a counterproposal.** The recommended terminal weight (-2.0 x missed_occupied_fraction) is smaller in raw magnitude than the missed_extent_weight=8.0 this branch's own D/E/F ablation found necessary to avoid the terminal term being drowned out by cumulative per-round dense reward - but the underlying quantities changed (mean entropy and a *fraction*, not a per-round sum and a raw *count*), so that old number does not mechanically transfer as evidence for a different one here. The protocol itself already reserves room for this ("a single reward-weight ablation is acceptable later if runtime permits"). Decision: use the recommended weights as given; watch the logged reward_components (dense vs. terminal magnitude) during training/benchmark and flag if the terminal term looks drowned out, rather than pre-emptively changing a number with no new evidence.
+
+**Integration delivered** (branch `demu/gnn-rl-backbone`, synced once from `origin/r4/spatial-belief` - commit `bb0e872`, no conflicts):
+- `backbone.py` +`SiteEffortActorHead` (K logits/node instead of 1); `site_effort_policy.py` (new `SiteEffortRoundPolicy`/`SiteEffortDecision`) - reuses the unchanged encoder/global-context/critic, no new message-passing (commit `2d3a6a6`).
+- `reward.py` +`SpatialRewardConfig`/`spatial_round_reward_components`/`spatial_terminal_reward_components`, matching the ACKed weights exactly, kept separate from the older `RewardConfig` (different normalization, different code path).
+- `spatial_metrics.py`: the three planner-independent primary metrics (missed occupied sites, occupied-site coverage, final global uncertainty), zero reward-weight coupling.
+- `spatial_training_env.py`: `run_spatial_episode` drives the real `SpatialAdaptiveMissionLoop`, same stash-before-execute_pending discipline as the original engineering-block fix to avoid the lookahead-misattribution bug, enforces the max_rounds horizon.
+- `spatial_mission_loop.py` (Pablo/Fede's file) +`force_complete()`: the one small hook needed to end an episode at the horizon (a concept the loop itself has no notion of, since it lives in the R7 action contract, not IncidentConfig/Environment) the same way budget-exhaustion already does.
+- `checkpointing.py` +`SiteEffortPolicyArchitectureConfig`, dispatched via a new `architecture_kind` payload field defaulting to `"round_policy"` for checkpoints written before this field existed - old checkpoints still load correctly.
+- `decision_logger.py` +`SpatialRoundLogRecord` (site, effort, [N,K] logits/eligibility, reward components) - sibling to the older `RoundLogRecord`, not an overload of its shape.
+- `real_graph_cases.py` (new): builds `IncidentConfig` from the real, committed 49-site/118-edge graph (`reports/milestones/r2_real_graph_v0/real_graph_v0_edges.csv`), not the toy `sample_incident` generator (commit `1d5f9b6`). Recomputing `eligible_incident_seed_sites()` reproduces the team's own reported 46/49-seeds-in-range finding exactly, confirming this is reading the real, correct graph.
+- `planners.py`: `InformationGainPlanner` gained an additive `effort_levels` parameter (default `None` = unchanged original behavior) so it searches (site, effort) jointly and ranks by information gain per effort unit, per `benchmark_protocol_r7.json`'s `recommended_information_gain_contract` - needed so IG and RL compete under the identical action contract.
+- `spatial_benchmark.py` + `scripts/run_spatial_benchmark_r7.py`: the required Frontier/IG/RL benchmark across id_test / ood_model_E / ood_q_low / ood_q_high groups, reporting mean+dispersion, visible failure cases, and the claim guardrail verbatim - no winner-only score.
+- **Real bug found and fixed while building the benchmark**: `FrontierPlanner()`'s own defaults (`max_sites=None`) let it pick many sites in one round with unbounded effort, silently violating "same feasibility constraints for every planner." Fixed by pinning it to `effort_per_site=1, max_sites=1` in both the training script's periodic eval and the benchmark script - a disclosed asymmetry (Frontier has no per-effort search, so it always uses the smallest level), not silently different action feasibility (commit `8e39ec2`).
+
+**Real, disclosed blocker**: raw Dryad monitoring CSVs (site coordinates, Crab Team habitat calibration) are not fetchable from this environment - `scripts/fetch_r0_data.py` returns HTTP 401/403 from datadryad.org, and `data/raw/README.md` itself says not to substitute look-alike files. `real_graph_cases.py` therefore uses a deterministic graph-layout placeholder for site x/y and a neutral constant for `habitat_score`, clearly labeled as such - the graph TOPOLOGY (site ids, adjacency) is the real, frozen R2 artifact, unaffected by this.
+
+**Validation**: full suite 253/253 (the pre-existing 100 + 135 from the r4/spatial-belief merge + `test_spatial_rl_integration.py` (10 new) + 3 new `InformationGainPlanner` effort-level tests). One mechanical smoke run (`r7_smoke_official`, 15 updates x 8 episodes, hidden_dim=32) proved the full pipeline end-to-end - real graph -> spatial belief + uncertain q -> GraphState -> planner -> MissionAction -> hidden simulator -> observation -> posterior -> replan - zero crashes, checkpoints/decision-log correct, periodic eval against Frontier/InformationGain ran without error. No learning-quality claim drawn from it. A longer training run (`r7_serious_v0`, 300 updates x 16 episodes, hidden_dim=64/num_layers=2) and the full id_test/ood_model_E/ood_q_low/ood_q_high benchmark are reported separately once complete.
+
+**Owner:** Demu.
+
+## 2026-09-12 — R7 serious training + required Frontier/IG/RL benchmark: first result, single seed
+
+**Status:** First formal-pipeline benchmark result under the ACKed R7 contract. Explicitly a single-seed, 300-update first pass, not a validated claim - see `docs/R7_BENCHMARK_REPORT.md` for the full write-up and all required fields (ID mean+dispersion, OOD model E, OOD q-low/q-high, visible failure cases, runtime/seed-stability note, claim guardrail).
+
+**What ran:** `scripts/train_spatial_gnn_policy.py` run `r7_serious_v0` (seed 0, hidden_dim=64/num_layers=2, 300 updates x 16 episodes/update = 4,800 episodes, 675.8s). `scripts/run_spatial_benchmark_r7.py` against its `final.pt`: 6 held-out real-graph seed sites x 5 cases x 4 groups (id_test, ood_model_E, ood_q_low, ood_q_high) x 3 planners = 360 episodes, 148.3s. Raw rows in `reports/r7_benchmark_v0.csv`.
+
+**Headline numbers (mean missed_occupied_fraction +/- stdev, n=30/group):** id_test - frontier 0.774+/-0.180, information_gain 0.760+/-0.194, gnn_rl 0.668+/-0.205. ood_model_E - frontier 0.753+/-0.168, information_gain 0.782+/-0.163, gnn_rl 0.709+/-0.191. ood_q_low - all three within 0.751-0.757 (expected: q_true=0.02 makes strategy matter little). ood_q_high - frontier 0.647+/-0.163, information_gain 0.664+/-0.206, gnn_rl 0.416+/-0.246 (the one visually large gap in this report).
+
+**What this does NOT license claiming:** per-case dispersion (~0.16-0.25) is large relative to the gaps between planners (~0.02-0.23); this is one training seed and one checkpoint. The prior D/E/F ablation on this branch already showed single-seed REINFORCE-style variance is real and can make an individual run look better or worse than the underlying setup reliably is - that finding carries over structurally here. Nothing above should be read as "GNN+RL beats Information Gain" until multiple independent training seeds are compared and averaged. Explicitly not a winner-only score, not a claim of ecological representativeness (world-model ranges/q values are declared benchmark scenario anchors in `configs/q_protocol_r7.json`, not calibrated estimates), not proven field effectiveness.
+
+**Owner:** Demu.
+
+## 2026-09-12 — R7 multi-seed replication: the id_test/ood_model_E/ood_q_high gap holds across 3 independent training seeds
+
+**Status:** Strengthens, does not settle, the single-seed R7 benchmark entry above. Full table in `docs/R7_BENCHMARK_REPORT.md` Section 6.
+
+**What ran:** two more independent training seeds (1, 2), same hyperparameters as `r7_serious_v0` (seed 0), benchmarked against the identical 120 cases (same `--seed 12345`). Raw rows: `reports/r7_benchmark_seed1.csv`, `reports/r7_benchmark_seed2.csv`.
+
+**Finding:** Frontier/Information Gain are near-deterministic across training seeds (stdev-across-seeds <=0.005 - they don't depend on RL training). GNN+RL carries real seed-to-seed variance (stdev 0.006-0.066, largest in ood_q_high) - the same single-seed-REINFORCE-variance lesson from the pre-R7 D/E/F ablation still applies. But the DIRECTION is now consistent across all three independent runs: every one of the three RL seeds landed clearly below both baselines in id_test, ood_model_E, and ood_q_high (mean missed_occupied_fraction across seeds: id_test 0.678 vs frontier 0.775/IG 0.760; ood_model_E 0.717 vs 0.754/0.779; ood_q_high 0.461 vs 0.646/0.661). ood_q_low stays indistinguishable across all three, as expected (q_true=0.02 makes strategy matter little).
+
+**What this still does not license:** n=3 seeds, 300 updates each (not run to convergence), one architecture/hyperparameter choice, and the case set is this branch's provisional real-graph sampling, not the team's eventual frozen OOD manifest. This is meaningfully stronger evidence than the single-seed result - a consistent direction across 3 independent runs is not nothing - but still not a claim to present as settled.
+
+**Owner:** Demu.
+
+## 2026-09-13 — R8 methodological review acknowledged: real-site context + corrected baseline fairness; retraining under way
+
+**Status:** ACKNOWLEDGED and acted on. Team's `docs/R8_DEMU_BENCHMARK_REVIEW.md` correctly identified two real defects in the R7 provisional benchmark and froze the corrected rules (`configs/benchmark_protocol_r8.json`, `configs/real_site_context_r8.json`) plus a frozen 240-case manifest (`reports/milestones/r8_benchmark_case_manifest/benchmark_cases.json`). Both are accepted without objection - they are correct.
+
+**BLOCKER 1 resolved (real-site context)**: `real_graph_cases.py` rewritten to use versioned real monitoring coordinates (`reports/milestones/r2_real_graph_v0/real_sites_v0.csv`, lat/lon locally projected to km) and the frozen R5 habitat proxy by `crabteam_habitat` class (`configs/real_site_context_r8.json`), replacing the R7-provisional graph-layout coordinates and neutral habitat placeholder. Topology (site ids, adjacency) is unchanged - it was already real in R7.
+
+**BLOCKER 2 resolved (baseline fairness)**: the team's own evidence was exactly right - Frontier/IG were structurally trapped at 6/18 effort while RL commonly used 18/18, confounding the R7 gap with resource utilization, not just policy quality. Corrected: `FrontierPlanner` gained an additive `effort_levels` mode (standard-event effort 6 when budget permits, else the largest feasible level); `InformationGainPlanner`'s effort search now ranks by ABSOLUTE expected information gain with IG-per-effort only a tie-break (reversed from R7's per-effort-primary ranking, which is exactly what caused the effort=1 bias).
+
+**Frozen manifest consumer built**: `r8_manifest_cases.py` loads the exact 240-case manifest and materializes runnable cases (180 formal: id_test 90, ood_model_test 30, ood_q_low 30, ood_q_high 30; 60 validation cases correctly excluded from formal reporting per the manifest doc). `scripts/run_spatial_benchmark_r8.py` runs Frontier/IG/RL against these exact cases and reports the mandatory secondary fields (effort_spent, detections_found, num_rounds, wall_clock_seconds) alongside the primary metrics.
+
+**Retraining**: because B/C/E world generation changes under real coordinates/habitat, all three formal RL seeds (0/1/2) are being retrained from scratch with identical hyperparameters to the R7 runs (hidden_dim=64/num_layers=2, 300 updates x 16 episodes) - no new architecture or hyperparameter search, per instruction. R7's checkpoints are not reused for the R8 report.
+
+**Full suite green** after the merge + corrections. Mechanical smoke-check (12-case subset spanning all 4 formal groups, using a stale R7 checkpoint only to prove the pipeline runs) confirms Frontier/IG now consistently spend the full budget (18/18 in 3 rounds at effort=6) instead of 6/18.
+
+**Claim discipline going forward, per the review's own wording**: until the corrected rerun completes, the right statement is "three provisional training seeds showed a repeatable learned-policy signal on an integration benchmark, but the final comparison is pending corrected real-site covariates, matched benchmark cases, and stronger budget-aware baselines." Report to follow once retraining + the frozen R8 benchmark are done.
+
+**Owner:** Demu.
+
+## 2026-09-13 — R8 corrected benchmark result: the R7 apparent RL advantage does not survive the fairness correction
+
+**Status:** Final result for the R8 rerun requested in `docs/R8_DEMU_BENCHMARK_REVIEW.md`. Full write-up: `docs/R8_BENCHMARK_REPORT.md`. This supersedes the R7 provisional numbers, which stay on record as exactly what the R8 review corrected and why.
+
+**What ran:** three RL seeds (0/1/2) retrained from scratch under the real-site context (real coordinates for B/E, frozen R5 habitat proxy for C), identical hyperparameters to R7 (hidden_dim=64/num_layers=2, 300 updates x 16 episodes). Benchmarked against the exact frozen 180-case manifest (id_test 90, ood_model_test 30, ood_q_low 30, ood_q_high 30) with the corrected budget-fair Frontier (effort=6 when possible) and Information Gain (absolute-IG-primary ranking) baselines.
+
+**Headline (mean missed_occupied_fraction, lower=better; RL is mean +/- stdev across 3 seeds, Frontier/IG deterministic given a fixed case):** id_test - frontier 0.589, information_gain 0.672, gnn_rl 0.595+/-0.004. ood_model_test - frontier 0.760, information_gain 0.742, gnn_rl 0.760+/-0.004. ood_q_low - frontier 0.744, information_gain 0.775, gnn_rl 0.755+/-0.008. ood_q_high - frontier 0.483, information_gain 0.613, gnn_rl 0.497+/-0.004. Every planner now spends exactly 18/18 effort in every case (the R7 confound - Frontier/IG spending 6/18 while RL spent 18/18 - is gone).
+
+**Honest reading:** GNN+RL is no longer clearly ahead of Frontier in any group once Frontier can use its full budget - it is close to Frontier in id_test/ood_q_low/ood_q_high and tied with it in ood_model_test. Information Gain is now the worst performer in three of four groups. The R7 finding that looked like a real learned-policy signal, especially in ood_q_high (where RL had looked dramatically better, 0.42-0.55 vs. Frontier/IG ~0.65), was substantially a resource-utilization confound exactly as the R8 review's BLOCKER 2 predicted - correcting it closes almost the entire gap. RL's own seed-to-seed variance also shrank sharply (stdev 0.004-0.008 vs. R7's 0.006-0.066), consistent with there being less room for one lucky/unlucky training run to look dramatically different once the baselines are no longer artificially weak.
+
+**What this does and does not support:** the RL policy is not broken - it spends its budget fully and detects at a comparable rate to Frontier. It does not, at this training scale (300 updates, 3 seeds, this reward/architecture), demonstrate measurable value over the simple Frontier heuristic. Per the review's own framing: "If it does not [add value], the project uses the best planner" - on this evidence, that is currently Frontier, not GNN+RL.
+
+**Real blocker found and disclosed, not hidden:** one training seed (2, first attempt) crashed mid-run with a genuine `SpatialBeliefEngine` edge case (a finite sampled hypothesis ensemble occasionally fails to cover the realized observation, causing a zero-likelihood ValueError - observed once in ~14,000+ training rounds). Mitigated with a disclosed, training-side-only resample-and-retry (never applied to the frozen benchmark); the corrected retrain completed cleanly with zero retries needed. See the 2026-09-13 entry above and `scripts/train_spatial_gnn_policy.py`.
+
+**Owner:** Demu.
+
+## 2026-09-15 — R8 review of the corrected benchmark: two methodological defects found and fixed; retraining under way
+
+**Status:** ACKNOWLEDGED and acted on. The team's review of the 2026-09-13 corrected-benchmark commit found two real defects in the case-materialization code itself (not in the frozen manifest/protocol, which stand). Both confirmed by reading the code directly, not assumed from the review text, before fixing.
+
+**Correction 1 - truth/belief seed leakage:** `r8_manifest_cases.py`'s `manifest_case_to_benchmark_case()` passed the same `spec["world_seed"]` as both the truth seed (`build_real_incident_case`'s `rl_seed`, which `Environment.reset()` uses to draw the actual hidden world) and the belief-ensemble seed (`sample_ecological_hypotheses()`). Traced mechanistically: `sample_ecological_hypotheses`'s `model_index=0, draw_index=0` world_seed is the input seed unmodified, and family A (`A_graph_diffusion`) is `train_models[0]` - so for every truth `family_id == "A_graph_diffusion"` case (a meaningful fraction of the 240-case manifest), hypothesis draw 0 was generated with the identical model/context/seed as the truth draw, making the true hidden world exactly recoverable inside what the belief update is supposed to treat as an uncertain prior. This is a real truth-vs-belief independence violation, not a style nit. Fixed by deriving a `belief_seed` via SHA256(case_id, world_seed) offset into a namespace (>=10,000,000,000) disjoint from the manifest's actual world_seed range (10,000-47,009); `tests/test_r8_manifest_cases.py` checks zero collisions against all 240 real frozen cases, not a synthetic example, plus a structural (not just empirical) disjointness check.
+
+**Correction 2 - edge-distance proxy substitution:** `real_graph_cases.py`'s edge-weight logic preferred `salishseacast_total_route_proxy_km` over `distance_km` whenever the proxy was present, so `Edge.distance` (what `graph_state.py` puts in the GraphState edge-distance feature every planner, including the GNN, reads) silently became a navigable-route-distance proxy instead of the direct distance on most edges - real data check: edge 108-128 has `distance_km`=14.2 vs. route proxy=113.2, an 8x difference. Fixed: `Edge.distance` is always `distance_km`; the route proxy is preserved on `Edge.travel_cost` (not read by any current GraphState feature) as audit/context metadata rather than dropped. `tests/test_real_graph_cases_r8_edge_distance.py` checks this against the real committed CSV.
+
+**Also renamed** the training-only retry mechanism from "zero-likelihood"/"numerical edge case" to "finite-ensemble support failure" throughout `scripts/train_spatial_gnn_policy.py`, per review: the cause is a finite Monte Carlo hypothesis sample not covering the realized observation's support, not a numerical-precision issue, and the old name invited exactly that wrong mental model.
+
+**No changes** to architecture, reward weights, q values, world-model ranges, the case manifest, budget, or the action contract. Full test suite green after both fixes (6 new tests). Because correction 2 changes a GNN input (edge distance is a frozen node/edge feature the encoder consumes), all three RL seeds must be retrained before the frozen benchmark is rerun - correction 1 alone would not have required this (training's own case sampler already draws truth and belief seeds independently from a continuing RNG stream; the leak was specific to the frozen-manifest materialization path used for benchmarking).
+
+**Retraining launched:** three seeds (0/1/2), identical hyperparameters to R7/R8 (hidden_dim=64/num_layers=2, 300 updates x 16 episodes/update), this time with `--decision-log` enabled to support three requested observation-only diagnostics (validation-curve plateau check, reward-term magnitude breakdown, action statistics) without any additional training-code changes. Per instruction: no reward/architecture/hyperparameter changes will be made based on the R8 rerun's results; if either diagnostic trigger condition fires (still materially improving at update 300, or the reward contract's terminal-term-drowned-out watch-item), that will be reported before any further training, not acted on unilaterally. A new paired case-wise comparison (`scripts/r8_paired_comparison.py`, bootstrap 95% CI on the missed-fraction delta, Frontier<->RL and Information Gain<->RL) will accompany the rerun report.
+
+**Owner:** Demu.
+
+## 2026-09-15 — R8 corrected-corrected rerun complete: RL still does not beat Frontier; now backed by a paired bootstrap analysis
+
+**Status:** Closes the review from earlier today. Full write-up:
+`docs/R8_BENCHMARK_REPORT.md` (rewritten in place; the pre-fix 2026-09-13
+version is preserved in git history), `reports/r8_paired_comparison.md`
+(new paired case-wise bootstrap analysis), `reports/r8_training_diagnostics.md`
+(the three requested diagnostics). Training and benchmark both completed
+cleanly: zero finite-ensemble support failure retries across all three
+seeds (down from 1 occurrence in the prior retrain).
+
+**Headline (mean missed_occupied_fraction across 3 seeds; Frontier/IG
+deterministic and confirmed identical across all three seed benchmark
+CSVs):** id_test - frontier 0.601, information_gain 0.684, gnn_rl
+0.610+/-0.014. ood_model_test - frontier 0.750, information_gain 0.749,
+gnn_rl 0.762+/-0.017. ood_q_low - frontier 0.739, information_gain 0.778,
+gnn_rl 0.752+/-0.015. ood_q_high - frontier 0.502, information_gain 0.571,
+gnn_rl 0.507+/-0.008. Close to the pre-fix numbers - both corrections were
+narrow (one world-model family's hypothesis independence, one geometry
+input), not a protocol or algorithm change, so a similar qualitative result
+is the expected outcome of a correct fix, not evidence the fixes didn't
+matter.
+
+**New this round - paired case-wise bootstrap (the statistically
+load-bearing addition):** Frontier<->RL delta (baseline_missed -
+rl_missed, positive = RL better), pooled across 3 seeds with a
+case-clustered bootstrap: ALL groups -0.0095, 95% CI [-0.0202, +0.0010] -
+not distinguishable from 0. No group or seed shows RL statistically ahead
+of Frontier; one seed (2) shows RL statistically *behind* Frontier overall
+(CI [-0.0416,-0.0054]) and one seed (0) statistically behind on
+ood_model_test specifically. Information Gain<->RL delta: ALL groups
++0.0499, 95% CI [+0.0305,+0.0698] - RL statistically beats Information
+Gain overall, and on id_test specifically in all 3 individual seeds
+(smallest per-seed CI lower bound +0.0292). The other three groups are not
+statistically distinguishable for the IG comparison.
+
+**Diagnostics (observation-only, no changes made because of them):** no
+trigger fired. All three seeds' validation curves were flat/plateaued by
+update 300 (tail slope +0.0006 to +0.0017 missed_fraction/update - not
+"still improving"). Terminal reward term's mean magnitude is 2.5-2.65x the
+summed dense terms per episode across all three seeds - not drowned out,
+closing the R7/R8 reward contract's preregistered watch-item with a clean
+answer. Effort-level usage and site-revisit rate look like ordinary
+exploration, not degenerate collapse.
+
+**Decision, per the review's own pre-declared rule ("if RL doesn't beat
+Frontier after this correction, use Frontier"):** RL does not beat
+Frontier here - it ties on point estimates and loses on one seed's paired
+comparison. **Frontier is the benchmark-supported planner from this
+result, not GNN+RL.** RL's real, replicated advantage is specifically over
+Information Gain, not over the strongest baseline - worth keeping on
+record (GNN+RL is not broken, trains to a genuine plateau, isn't reward-
+starved) but not sufficient to recommend it as the project's planner on
+this evidence.
+
+**Owner:** Demu.

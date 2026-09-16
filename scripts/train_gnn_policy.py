@@ -29,8 +29,9 @@ import torch
 from adaptive_response import FrontierPlanner
 from adaptive_response.rl import (
     ActorCriticTrainer,
-    GNNActorCritic,
     IncidentSamplerConfig,
+    JsonlDecisionLogger,
+    PolicyArchitectureConfig,
     RewardConfig,
     RLPlannerAdapter,
     RoundPolicy,
@@ -38,6 +39,7 @@ from adaptive_response.rl import (
     run_episode,
     run_planner_episode,
     sample_incident,
+    save_policy_checkpoint,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -78,6 +80,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--eval-every-updates", type=int, default=20)
     parser.add_argument("--eval-episodes", type=int, default=20)
     parser.add_argument("--checkpoint-every-updates", type=int, default=20)
+    parser.add_argument("--decision-log", action="store_true", help="Write a per-round JSONL decision log (logits, entropy, value, reward components, chosen actions, budget) alongside metrics.csv. Off by default: can grow large over a long run.")
     return parser.parse_args()
 
 
@@ -88,14 +91,23 @@ def make_run_dir(log_dir: str, run_name: str) -> Path:
     return run_dir
 
 
-def save_checkpoint(path: Path, policy: RoundPolicy, trainer: ActorCriticTrainer, update_idx: int) -> None:
-    torch.save(
-        {
-            "update_idx": update_idx,
-            "policy_state_dict": policy.state_dict(),
-            "optimizer_state_dict": trainer.optimizer.state_dict(),
-        },
+def save_checkpoint(
+    path: Path,
+    policy: RoundPolicy,
+    trainer: ActorCriticTrainer,
+    update_idx: int,
+    architecture: PolicyArchitectureConfig,
+    *,
+    run_name: str,
+    seed: int,
+) -> None:
+    save_policy_checkpoint(
         path,
+        policy,
+        architecture=architecture,
+        update_idx=update_idx,
+        optimizer=trainer.optimizer,
+        extra={"run_name": run_name, "seed": seed},
     )
 
 
@@ -148,8 +160,12 @@ def main() -> None:
     eval_incidents = [sample_incident(eval_rng, sampler_config) for _ in range(args.eval_episodes)]
     eval_seeds = [int(eval_rng.integers(0, 2**31 - 1)) for _ in range(args.eval_episodes)]
 
-    backbone = GNNActorCritic(hidden_dim=args.hidden_dim, num_layers=args.num_layers)
-    policy = RoundPolicy(backbone, hidden_dim=args.hidden_dim, effort_per_pick=args.effort_per_pick)
+    architecture = PolicyArchitectureConfig(
+        hidden_dim=args.hidden_dim,
+        num_layers=args.num_layers,
+        effort_per_pick=args.effort_per_pick,
+    )
+    policy = architecture.build()
     trainer = ActorCriticTrainer(
         policy,
         TrainerConfig(
@@ -185,6 +201,9 @@ def main() -> None:
     with eval_path.open("w", newline="") as f:
         csv.writer(f).writerow(eval_fields)
 
+    decision_logger = JsonlDecisionLogger(run_dir / "decisions.jsonl") if args.decision_log else None
+    episode_counter = 0
+
     start_time = time.time()
     max_seconds = args.max_hours * 3600.0
     update_idx = 0
@@ -204,15 +223,19 @@ def main() -> None:
             if args.max_updates is None and (time.time() - start_time) >= max_seconds:
                 break
 
-            rollouts = [
-                run_episode(
-                    policy,
-                    sample_incident(train_rng, sampler_config),
-                    reward_config=reward_config,
-                    seed=int(train_rng.integers(0, 2**31 - 1)),
+            rollouts = []
+            for _ in range(args.episodes_per_update):
+                rollouts.append(
+                    run_episode(
+                        policy,
+                        sample_incident(train_rng, sampler_config),
+                        reward_config=reward_config,
+                        seed=int(train_rng.integers(0, 2**31 - 1)),
+                        decision_logger=decision_logger,
+                        episode_index=episode_counter,
+                    )
                 )
-                for _ in range(args.episodes_per_update)
-            ]
+                episode_counter += 1
             stats = trainer.update(rollouts)
             update_idx += 1
             elapsed = time.time() - start_time
@@ -257,11 +280,22 @@ def main() -> None:
                 )
 
             if update_idx % args.checkpoint_every_updates == 0:
-                save_checkpoint(run_dir / f"checkpoint_{update_idx}.pt", policy, trainer, update_idx)
-                save_checkpoint(run_dir / "latest.pt", policy, trainer, update_idx)
+                save_checkpoint(
+                    run_dir / f"checkpoint_{update_idx}.pt", policy, trainer, update_idx,
+                    architecture, run_name=args.run_name, seed=args.seed,
+                )
+                save_checkpoint(
+                    run_dir / "latest.pt", policy, trainer, update_idx,
+                    architecture, run_name=args.run_name, seed=args.seed,
+                )
     finally:
-        save_checkpoint(run_dir / "final.pt", policy, trainer, update_idx)
+        save_checkpoint(
+            run_dir / "final.pt", policy, trainer, update_idx,
+            architecture, run_name=args.run_name, seed=args.seed,
+        )
         print(f"Saved final checkpoint at update {update_idx} to {run_dir / 'final.pt'}")
+        if decision_logger is not None:
+            decision_logger.close()
 
 
 if __name__ == "__main__":

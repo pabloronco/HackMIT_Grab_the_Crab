@@ -7,7 +7,8 @@ import torch
 from ..environment import Environment
 from ..mission_loop import AdaptiveMissionLoop
 from ..models import IncidentConfig, MissionAction
-from .reward import RewardConfig, round_reward, terminal_missed_extent_penalty
+from .decision_logger import JsonlDecisionLogger, RoundLogRecord
+from .reward import RewardConfig, round_reward_components, terminal_missed_extent_penalty
 from .round_policy import RoundPolicy
 
 
@@ -61,6 +62,8 @@ def run_episode(
     reward_config: RewardConfig | None = None,
     seed: int | None = None,
     deterministic: bool = False,
+    decision_logger: JsonlDecisionLogger | None = None,
+    episode_index: int = 0,
 ) -> EpisodeRollout:
     """Run one full incident from reset to budget exhaustion under `policy`.
 
@@ -70,6 +73,12 @@ def run_episode(
     is only reachable after the loop's own state machine reaches COMPLETE, and
     only this training/evaluator code calls it - `policy.act` only ever
     receives a `GraphState`, never the loop or the environment.
+
+    `decision_logger`/`episode_index` are opt-in (engineering block,
+    2026-09-12): when a logger is passed, one `RoundLogRecord` is written per
+    round with the raw logits/entropy/value/reward-components/chosen actions.
+    Omitting it (the default) leaves every existing caller's behavior and
+    timing unchanged.
     """
 
     cfg = reward_config or RewardConfig()
@@ -91,16 +100,18 @@ def run_episode(
         # this round's reward to the next round's log_prob/value/entropy.
         loop.plan_next()
         decision = adapter.last_decision
+        budget_before = loop.current_public_state.remaining_budget
         transition = loop.execute_pending()
         metrics = transition.simulator_metrics
 
-        reward = round_reward(
+        components = round_reward_components(
             belief_before=transition.belief_before,
             belief_after=transition.belief_after,
             detections_this_round=int(metrics["detections"]),
             effort_spent_this_round=int(metrics["effort_spent"]),
             config=cfg,
         )
+        reward = sum(components.values())
 
         rollout.log_probs.append(decision.log_prob)
         rollout.values.append(decision.value)
@@ -117,6 +128,7 @@ def run_episode(
                 hidden_world=hidden_world,
                 config=cfg,
             )
+            components["terminal_missed_extent"] = terminal_penalty
             reward += terminal_penalty
             rollout.occupied_sites_total = sum(hidden_world.occupied_by_site.values())
             rollout.occupied_sites_missed = sum(
@@ -125,6 +137,12 @@ def run_episode(
                 if hidden_world.occupied_by_site.get(site.id, False) and site.detections == 0
             )
             rollout.rewards.append(reward)
+            if decision_logger is not None:
+                _log_round(
+                    decision_logger, episode_index, rollout.num_rounds - 1,
+                    decision, transition, components, reward,
+                    budget_before=budget_before, done=True,
+                )
             # Returning here (rather than looping once more to let a
             # `while phase is not COMPLETE` condition catch it) matters:
             # reveal() just moved the loop's phase from COMPLETE to REVEALED,
@@ -132,5 +150,44 @@ def run_episode(
             break
 
         rollout.rewards.append(reward)
+        if decision_logger is not None:
+            _log_round(
+                decision_logger, episode_index, rollout.num_rounds - 1,
+                decision, transition, components, reward,
+                budget_before=budget_before, done=False,
+            )
 
     return rollout
+
+
+def _log_round(
+    logger: JsonlDecisionLogger,
+    episode_index: int,
+    round_index: int,
+    decision,
+    transition,
+    reward_components: dict[str, float],
+    reward_total: float,
+    *,
+    budget_before: int,
+    done: bool,
+) -> None:
+    record = RoundLogRecord(
+        episode_index=episode_index,
+        round_index=round_index,
+        budget_before=budget_before,
+        budget_after=transition.public_state_after.remaining_budget,
+        site_ids_picked=tuple(a.site_id for a in decision.mission.allocations),
+        num_picks=decision.num_picks,
+        node_ids=decision.node_ids,
+        node_logits=decision.node_logits,
+        eligible_mask=decision.eligible_mask,
+        value_estimate=float(decision.value.item()),
+        entropy=float(decision.entropy.item()),
+        log_prob=float(decision.log_prob.item()),
+        reward_components=dict(reward_components),
+        reward_total=float(reward_total),
+        detections_this_round=int(transition.simulator_metrics["detections"]),
+        done=done,
+    )
+    logger.log_round(record)

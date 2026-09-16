@@ -185,6 +185,35 @@ class SpatialAdaptiveMissionLoop:
             self.plan_next()
         return self.execute_pending()
 
+    def force_complete(self) -> None:
+        """Unlock reveal for a round-count/horizon cap the loop itself doesn't know.
+
+        R7 action contract (docs/DEMU_HANDOFF_R7.md): a formal episode also ends
+        at a fixed max-round horizon, independent of remaining budget - a
+        constraint that lives in the caller (training/eval driver), not in
+        IncidentConfig/Environment. Mirrors exactly what execute_pending()
+        already does when the environment reports budget-exhaustion (done),
+        so a horizon-terminated episode is revealed/evaluated the same way a
+        budget-terminated one is.
+
+        Valid right after execute_pending(): that method itself already plans
+        one round ahead whenever the just-executed round wasn't done (see its
+        own `next_mission = self.plan_next()` call), so phase may already be
+        MISSION_PLANNED with a pending mission that will simply never be
+        executed - discarding it here is safe, since discarding an unexecuted
+        MissionAction spends no budget and touches the environment nowhere.
+        """
+        self._require_initialized()
+        if self._phase not in (LoopPhase.READY_TO_PLAN, LoopPhase.MISSION_PLANNED):
+            raise RuntimeError(
+                "force_complete() requires phase READY_TO_PLAN or MISSION_PLANNED "
+                f"(got {self._phase.value!r}); the loop is already COMPLETE/REVEALED "
+                "or was never reset."
+            )
+        self._pending_mission = None
+        self._phase = LoopPhase.COMPLETE
+        self._environment._allow_reveal()
+
     def reveal(self) -> HiddenWorld:
         self._require_initialized()
         if self._phase is not LoopPhase.COMPLETE:

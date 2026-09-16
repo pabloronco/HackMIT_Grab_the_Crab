@@ -160,6 +160,55 @@ def test_zero_budget_returns_empty_valid_action() -> None:
     assert action.diagnostics["reason"] == "no_remaining_budget"
 
 
+def test_effort_levels_use_standard_event_effort_when_budget_permits() -> None:
+    """R8 baseline-fairness correction (docs/R8_DEMU_BENCHMARK_REVIEW.md,
+    configs/benchmark_protocol_r8.json): Frontier must use the standard-event
+    effort level (the largest in effort_levels) whenever the remaining budget
+    allows it, not a fixed small effort_per_site that strands most of the
+    budget unused."""
+
+    state = graph(
+        [
+            ("site_a", node_row(belief=0.9, uncertainty=0.9, frontier=1), True),
+            ("site_b", node_row(belief=0.5, uncertainty=0.5, frontier=1), True),
+            ("site_c", node_row(belief=0.1, uncertainty=0.1, frontier=1), True),
+        ]
+    )
+    planner = FrontierPlanner(effort_levels=(1, 3, 6))
+
+    action = planner.plan(state, remaining_budget=18, constraints={})
+
+    assert [(a.site_id, a.effort_units) for a in action.allocations] == [
+        ("site_a", 6), ("site_b", 6), ("site_c", 6),
+    ]
+    assert action.total_cost == 18
+
+
+def test_effort_levels_fall_back_to_largest_feasible_level() -> None:
+    state = graph(
+        [
+            ("site_a", node_row(belief=0.9, uncertainty=0.9, frontier=1), True),
+            ("site_b", node_row(belief=0.5, uncertainty=0.5, frontier=1), True),
+        ]
+    )
+    planner = FrontierPlanner(effort_levels=(1, 3, 6))
+
+    action = planner.plan(state, remaining_budget=4, constraints={})
+
+    # site_a takes the standard effort=3 (largest <=4 remaining), leaving 1
+    # for site_b - not stuck at a fixed effort_per_site=1 the whole time.
+    assert [(a.site_id, a.effort_units) for a in action.allocations] == [
+        ("site_a", 3), ("site_b", 1),
+    ]
+    assert action.total_cost == 4
+
+
+def test_effort_levels_default_none_preserves_original_fixed_effort_behavior() -> None:
+    state = graph([("site_a", node_row(belief=0.9, uncertainty=0.9, frontier=1), True)])
+    action = FrontierPlanner(effort_per_site=1).plan(state, remaining_budget=6, constraints={})
+    assert action.allocations[0].effort_units == 1
+
+
 def test_invalid_feature_width_is_rejected() -> None:
     state = GraphState(
         node_ids=("site_a",),

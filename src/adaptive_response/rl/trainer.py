@@ -6,6 +6,8 @@ import torch
 from torch import nn
 
 from .round_policy import RoundPolicy
+from .site_effort_policy import SiteEffortRoundPolicy
+from .spatial_training_env import SpatialEpisodeRollout
 from .training_env import EpisodeRollout
 
 # On-policy actor-critic (REINFORCE + learned baseline), explicitly one of
@@ -51,7 +53,16 @@ class UpdateStats:
 
 
 class ActorCriticTrainer:
-    def __init__(self, policy: RoundPolicy, config: TrainerConfig | None = None) -> None:
+    """Policy/reward-agnostic: works unchanged for the R7 `SiteEffortRoundPolicy`
+    + `SpatialEpisodeRollout` (docs/DEMU_HANDOFF_R7.md), not just the older
+    `RoundPolicy` + `EpisodeRollout` - update() only reads log_probs/values/
+    entropies/rewards, which both rollout types provide identically."""
+
+    def __init__(
+        self,
+        policy: RoundPolicy | SiteEffortRoundPolicy,
+        config: TrainerConfig | None = None,
+    ) -> None:
         self.policy = policy
         self.config = config or TrainerConfig()
         self.optimizer = torch.optim.Adam(policy.parameters(), lr=self.config.lr)
@@ -73,7 +84,7 @@ class ActorCriticTrainer:
         returns.reverse()
         return torch.tensor(returns, dtype=torch.float32)
 
-    def update(self, rollouts: list[EpisodeRollout]) -> UpdateStats:
+    def update(self, rollouts: list[EpisodeRollout] | list[SpatialEpisodeRollout]) -> UpdateStats:
         if not rollouts:
             raise ValueError("update() requires at least one episode rollout.")
 
