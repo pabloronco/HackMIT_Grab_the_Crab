@@ -132,6 +132,57 @@ def test_zero_budget_returns_empty_action() -> None:
     assert mission.total_cost == 0
 
 
+def test_effort_levels_search_maximizes_absolute_information_gain() -> None:
+    """R8 baseline-fairness correction (docs/R8_DEMU_BENCHMARK_REVIEW.md,
+    configs/benchmark_protocol_r8.json): when effort_levels is set, the
+    planner must search (site, effort) jointly and rank by ABSOLUTE expected
+    information gain, with information gain per effort only as a tie-break -
+    the reverse of the earlier R7-provisional ranking, which systematically
+    preferred effort=1 and left most of the budget unused."""
+
+    spatial = correlated_spatial_belief()
+    graph = graph_from_beliefs(spatial.p_by_site(), spatial.uncertainty_by_site())
+    planner = InformationGainPlanner(max_sites=1, require_spatial_belief=True, effort_levels=(1, 3, 6))
+
+    mission = planner.plan(graph, remaining_budget=18, constraints={"spatial_belief_state": spatial})
+
+    assert mission.allocations[0].site_id in ("a", "b")
+    # In this fixture, absolute IG strictly increases with effort (0.62 -> 1.43
+    # -> 1.88 bits) while IG-per-effort strictly decreases (0.62 -> 0.48 ->
+    # 0.31): a correct absolute-IG-primary ranking must pick effort=6 here,
+    # where the old per-effort-primary ranking would have picked effort=1.
+    assert mission.allocations[0].effort_units == 6
+    for row in mission.diagnostics["ranked_candidates"]:
+        assert "information_gain_per_effort_unit" in row
+        assert row["effort_units"] in (1, 3, 6)
+
+
+def test_effort_levels_never_exceed_remaining_budget() -> None:
+    spatial = correlated_spatial_belief()
+    graph = graph_from_beliefs(spatial.p_by_site(), spatial.uncertainty_by_site())
+    planner = InformationGainPlanner(max_sites=1, require_spatial_belief=True, effort_levels=(1, 3, 6))
+
+    mission = planner.plan(graph, remaining_budget=2, constraints={"spatial_belief_state": spatial})
+
+    assert mission.total_cost <= 2
+    assert mission.allocations[0].effort_units in (1,)
+
+
+def test_effort_levels_default_none_preserves_original_fixed_effort_behavior() -> None:
+    """effort_levels=None (the default) must reproduce exactly the same
+    selection as before this R7 extension existed."""
+
+    spatial = correlated_spatial_belief()
+    graph = graph_from_beliefs(spatial.p_by_site(), spatial.uncertainty_by_site())
+    planner = InformationGainPlanner(effort_per_site=1, max_sites=1, require_spatial_belief=True)
+
+    mission = planner.plan(graph, remaining_budget=5, constraints={"spatial_belief_state": spatial})
+
+    assert mission.allocations[0].site_id == "a"
+    assert mission.allocations[0].effort_units == 1
+    assert mission.diagnostics["mode"] == "spatial_joint"
+
+
 def test_information_gain_diagnostics_explicitly_deny_hidden_truth_use() -> None:
     spatial = correlated_spatial_belief()
     graph = graph_from_beliefs(spatial.p_by_site(), spatial.uncertainty_by_site())
