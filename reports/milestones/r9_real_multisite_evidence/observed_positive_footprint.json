@@ -1,0 +1,917 @@
+{
+  "status": "DESCRIPTIVE_OBSERVED_POSITIVE_FOOTPRINT_NOT_LATENT_OCCUPANCY",
+  "years": [
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "site_count": 49,
+  "component_count": 6,
+  "components": [
+    {
+      "component_id": "cc_01",
+      "site_count": 17,
+      "site_ids": [
+        "322",
+        "323",
+        "330",
+        "341",
+        "349",
+        "361",
+        "362",
+        "378",
+        "379",
+        "380",
+        "382",
+        "527",
+        "528",
+        "533",
+        "536",
+        "540",
+        "541"
+      ],
+      "ever_observed_positive_site_count": 5,
+      "ever_observed_positive_sites": [
+        "361",
+        "379",
+        "527",
+        "528",
+        "533"
+      ],
+      "max_observed_positive_sites_in_one_year": 1,
+      "timeline": [
+        {
+          "year": 2017,
+          "observed_positive_sites": [
+            "379"
+          ],
+          "observed_positive_site_count": 1,
+          "new_observed_positive_sites": [
+            "379"
+          ],
+          "new_observed_positive_site_count": 1,
+          "cumulative_observed_positive_sites": [
+            "379"
+          ],
+          "cumulative_observed_positive_site_count": 1
+        },
+        {
+          "year": 2018,
+          "observed_positive_sites": [
+            "533"
+          ],
+          "observed_positive_site_count": 1,
+          "new_observed_positive_sites": [
+            "533"
+          ],
+          "new_observed_positive_site_count": 1,
+          "cumulative_observed_positive_sites": [
+            "379",
+            "533"
+          ],
+          "cumulative_observed_positive_site_count": 2
+        },
+        {
+          "year": 2019,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [
+            "379",
+            "533"
+          ],
+          "cumulative_observed_positive_site_count": 2
+        },
+        {
+          "year": 2020,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [
+            "379",
+            "533"
+          ],
+          "cumulative_observed_positive_site_count": 2
+        },
+        {
+          "year": 2021,
+          "observed_positive_sites": [
+            "527"
+          ],
+          "observed_positive_site_count": 1,
+          "new_observed_positive_sites": [
+            "527"
+          ],
+          "new_observed_positive_site_count": 1,
+          "cumulative_observed_positive_sites": [
+            "379",
+            "527",
+            "533"
+          ],
+          "cumulative_observed_positive_site_count": 3
+        },
+        {
+          "year": 2022,
+          "observed_positive_sites": [
+            "361"
+          ],
+          "observed_positive_site_count": 1,
+          "new_observed_positive_sites": [
+            "361"
+          ],
+          "new_observed_positive_site_count": 1,
+          "cumulative_observed_positive_sites": [
+            "361",
+            "379",
+            "527",
+            "533"
+          ],
+          "cumulative_observed_positive_site_count": 4
+        },
+        {
+          "year": 2023,
+          "observed_positive_sites": [
+            "528"
+          ],
+          "observed_positive_site_count": 1,
+          "new_observed_positive_sites": [
+            "528"
+          ],
+          "new_observed_positive_site_count": 1,
+          "cumulative_observed_positive_sites": [
+            "361",
+            "379",
+            "527",
+            "528",
+            "533"
+          ],
+          "cumulative_observed_positive_site_count": 5
+        }
+      ],
+      "threshold_crossings": {
+        "3": {
+          "reached": true,
+          "first_year_reached": 2021
+        },
+        "5": {
+          "reached": true,
+          "first_year_reached": 2023
+        },
+        "8": {
+          "reached": false,
+          "first_year_reached": null
+        }
+      }
+    },
+    {
+      "component_id": "cc_02",
+      "site_count": 15,
+      "site_ids": [
+        "3",
+        "97",
+        "108",
+        "128",
+        "133",
+        "138",
+        "153",
+        "161",
+        "173",
+        "177",
+        "250",
+        "277",
+        "553",
+        "579",
+        "581"
+      ],
+      "ever_observed_positive_site_count": 1,
+      "ever_observed_positive_sites": [
+        "128"
+      ],
+      "max_observed_positive_sites_in_one_year": 1,
+      "timeline": [
+        {
+          "year": 2017,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2018,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2019,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2020,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2021,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2022,
+          "observed_positive_sites": [
+            "128"
+          ],
+          "observed_positive_site_count": 1,
+          "new_observed_positive_sites": [
+            "128"
+          ],
+          "new_observed_positive_site_count": 1,
+          "cumulative_observed_positive_sites": [
+            "128"
+          ],
+          "cumulative_observed_positive_site_count": 1
+        },
+        {
+          "year": 2023,
+          "observed_positive_sites": [
+            "128"
+          ],
+          "observed_positive_site_count": 1,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [
+            "128"
+          ],
+          "cumulative_observed_positive_site_count": 1
+        }
+      ],
+      "threshold_crossings": {
+        "3": {
+          "reached": false,
+          "first_year_reached": null
+        },
+        "5": {
+          "reached": false,
+          "first_year_reached": null
+        },
+        "8": {
+          "reached": false,
+          "first_year_reached": null
+        }
+      }
+    },
+    {
+      "component_id": "cc_03",
+      "site_count": 14,
+      "site_ids": [
+        "198",
+        "201",
+        "204",
+        "207",
+        "214",
+        "306",
+        "311",
+        "383",
+        "384",
+        "508",
+        "516",
+        "552",
+        "590",
+        "599"
+      ],
+      "ever_observed_positive_site_count": 4,
+      "ever_observed_positive_sites": [
+        "198",
+        "204",
+        "384",
+        "590"
+      ],
+      "max_observed_positive_sites_in_one_year": 2,
+      "timeline": [
+        {
+          "year": 2017,
+          "observed_positive_sites": [
+            "384",
+            "590"
+          ],
+          "observed_positive_site_count": 2,
+          "new_observed_positive_sites": [
+            "384",
+            "590"
+          ],
+          "new_observed_positive_site_count": 2,
+          "cumulative_observed_positive_sites": [
+            "384",
+            "590"
+          ],
+          "cumulative_observed_positive_site_count": 2
+        },
+        {
+          "year": 2018,
+          "observed_positive_sites": [
+            "204",
+            "384"
+          ],
+          "observed_positive_site_count": 2,
+          "new_observed_positive_sites": [
+            "204"
+          ],
+          "new_observed_positive_site_count": 1,
+          "cumulative_observed_positive_sites": [
+            "204",
+            "384",
+            "590"
+          ],
+          "cumulative_observed_positive_site_count": 3
+        },
+        {
+          "year": 2019,
+          "observed_positive_sites": [
+            "384"
+          ],
+          "observed_positive_site_count": 1,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [
+            "204",
+            "384",
+            "590"
+          ],
+          "cumulative_observed_positive_site_count": 3
+        },
+        {
+          "year": 2020,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [
+            "204",
+            "384",
+            "590"
+          ],
+          "cumulative_observed_positive_site_count": 3
+        },
+        {
+          "year": 2021,
+          "observed_positive_sites": [
+            "384"
+          ],
+          "observed_positive_site_count": 1,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [
+            "204",
+            "384",
+            "590"
+          ],
+          "cumulative_observed_positive_site_count": 3
+        },
+        {
+          "year": 2022,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [
+            "204",
+            "384",
+            "590"
+          ],
+          "cumulative_observed_positive_site_count": 3
+        },
+        {
+          "year": 2023,
+          "observed_positive_sites": [
+            "198",
+            "384"
+          ],
+          "observed_positive_site_count": 2,
+          "new_observed_positive_sites": [
+            "198"
+          ],
+          "new_observed_positive_site_count": 1,
+          "cumulative_observed_positive_sites": [
+            "198",
+            "204",
+            "384",
+            "590"
+          ],
+          "cumulative_observed_positive_site_count": 4
+        }
+      ],
+      "threshold_crossings": {
+        "3": {
+          "reached": true,
+          "first_year_reached": 2018
+        },
+        "5": {
+          "reached": false,
+          "first_year_reached": null
+        },
+        "8": {
+          "reached": false,
+          "first_year_reached": null
+        }
+      }
+    },
+    {
+      "component_id": "cc_04",
+      "site_count": 1,
+      "site_ids": [
+        "74"
+      ],
+      "ever_observed_positive_site_count": 0,
+      "ever_observed_positive_sites": [],
+      "max_observed_positive_sites_in_one_year": 0,
+      "timeline": [
+        {
+          "year": 2017,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2018,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2019,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2020,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2021,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2022,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2023,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        }
+      ],
+      "threshold_crossings": {
+        "3": {
+          "reached": false,
+          "first_year_reached": null
+        },
+        "5": {
+          "reached": false,
+          "first_year_reached": null
+        },
+        "8": {
+          "reached": false,
+          "first_year_reached": null
+        }
+      }
+    },
+    {
+      "component_id": "cc_05",
+      "site_count": 1,
+      "site_ids": [
+        "219"
+      ],
+      "ever_observed_positive_site_count": 0,
+      "ever_observed_positive_sites": [],
+      "max_observed_positive_sites_in_one_year": 0,
+      "timeline": [
+        {
+          "year": 2017,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2018,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2019,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2020,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2021,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2022,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2023,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        }
+      ],
+      "threshold_crossings": {
+        "3": {
+          "reached": false,
+          "first_year_reached": null
+        },
+        "5": {
+          "reached": false,
+          "first_year_reached": null
+        },
+        "8": {
+          "reached": false,
+          "first_year_reached": null
+        }
+      }
+    },
+    {
+      "component_id": "cc_06",
+      "site_count": 1,
+      "site_ids": [
+        "367"
+      ],
+      "ever_observed_positive_site_count": 1,
+      "ever_observed_positive_sites": [
+        "367"
+      ],
+      "max_observed_positive_sites_in_one_year": 1,
+      "timeline": [
+        {
+          "year": 2017,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2018,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2019,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [],
+          "cumulative_observed_positive_site_count": 0
+        },
+        {
+          "year": 2020,
+          "observed_positive_sites": [
+            "367"
+          ],
+          "observed_positive_site_count": 1,
+          "new_observed_positive_sites": [
+            "367"
+          ],
+          "new_observed_positive_site_count": 1,
+          "cumulative_observed_positive_sites": [
+            "367"
+          ],
+          "cumulative_observed_positive_site_count": 1
+        },
+        {
+          "year": 2021,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [
+            "367"
+          ],
+          "cumulative_observed_positive_site_count": 1
+        },
+        {
+          "year": 2022,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [
+            "367"
+          ],
+          "cumulative_observed_positive_site_count": 1
+        },
+        {
+          "year": 2023,
+          "observed_positive_sites": [],
+          "observed_positive_site_count": 0,
+          "new_observed_positive_sites": [],
+          "new_observed_positive_site_count": 0,
+          "cumulative_observed_positive_sites": [
+            "367"
+          ],
+          "cumulative_observed_positive_site_count": 1
+        }
+      ],
+      "threshold_crossings": {
+        "3": {
+          "reached": false,
+          "first_year_reached": null
+        },
+        "5": {
+          "reached": false,
+          "first_year_reached": null
+        },
+        "8": {
+          "reached": false,
+          "first_year_reached": null
+        }
+      }
+    }
+  ],
+  "network": {
+    "timeline": [
+      {
+        "year": 2017,
+        "observed_positive_sites": [
+          "379",
+          "384",
+          "590"
+        ],
+        "observed_positive_site_count": 3,
+        "new_observed_positive_sites": [
+          "379",
+          "384",
+          "590"
+        ],
+        "new_observed_positive_site_count": 3,
+        "cumulative_observed_positive_sites": [
+          "379",
+          "384",
+          "590"
+        ],
+        "cumulative_observed_positive_site_count": 3
+      },
+      {
+        "year": 2018,
+        "observed_positive_sites": [
+          "204",
+          "384",
+          "533"
+        ],
+        "observed_positive_site_count": 3,
+        "new_observed_positive_sites": [
+          "204",
+          "533"
+        ],
+        "new_observed_positive_site_count": 2,
+        "cumulative_observed_positive_sites": [
+          "204",
+          "379",
+          "384",
+          "533",
+          "590"
+        ],
+        "cumulative_observed_positive_site_count": 5
+      },
+      {
+        "year": 2019,
+        "observed_positive_sites": [
+          "384"
+        ],
+        "observed_positive_site_count": 1,
+        "new_observed_positive_sites": [],
+        "new_observed_positive_site_count": 0,
+        "cumulative_observed_positive_sites": [
+          "204",
+          "379",
+          "384",
+          "533",
+          "590"
+        ],
+        "cumulative_observed_positive_site_count": 5
+      },
+      {
+        "year": 2020,
+        "observed_positive_sites": [
+          "367"
+        ],
+        "observed_positive_site_count": 1,
+        "new_observed_positive_sites": [
+          "367"
+        ],
+        "new_observed_positive_site_count": 1,
+        "cumulative_observed_positive_sites": [
+          "204",
+          "367",
+          "379",
+          "384",
+          "533",
+          "590"
+        ],
+        "cumulative_observed_positive_site_count": 6
+      },
+      {
+        "year": 2021,
+        "observed_positive_sites": [
+          "384",
+          "527"
+        ],
+        "observed_positive_site_count": 2,
+        "new_observed_positive_sites": [
+          "527"
+        ],
+        "new_observed_positive_site_count": 1,
+        "cumulative_observed_positive_sites": [
+          "204",
+          "367",
+          "379",
+          "384",
+          "527",
+          "533",
+          "590"
+        ],
+        "cumulative_observed_positive_site_count": 7
+      },
+      {
+        "year": 2022,
+        "observed_positive_sites": [
+          "128",
+          "361"
+        ],
+        "observed_positive_site_count": 2,
+        "new_observed_positive_sites": [
+          "128",
+          "361"
+        ],
+        "new_observed_positive_site_count": 2,
+        "cumulative_observed_positive_sites": [
+          "128",
+          "204",
+          "361",
+          "367",
+          "379",
+          "384",
+          "527",
+          "533",
+          "590"
+        ],
+        "cumulative_observed_positive_site_count": 9
+      },
+      {
+        "year": 2023,
+        "observed_positive_sites": [
+          "128",
+          "198",
+          "384",
+          "528"
+        ],
+        "observed_positive_site_count": 4,
+        "new_observed_positive_sites": [
+          "198",
+          "528"
+        ],
+        "new_observed_positive_site_count": 2,
+        "cumulative_observed_positive_sites": [
+          "128",
+          "198",
+          "204",
+          "361",
+          "367",
+          "379",
+          "384",
+          "527",
+          "528",
+          "533",
+          "590"
+        ],
+        "cumulative_observed_positive_site_count": 11
+      }
+    ],
+    "threshold_crossings": {
+      "3": {
+        "reached": true,
+        "first_year_reached": 2017
+      },
+      "5": {
+        "reached": true,
+        "first_year_reached": 2018
+      },
+      "8": {
+        "reached": true,
+        "first_year_reached": 2022
+      }
+    },
+    "ever_observed_positive_site_count": 11,
+    "max_observed_positive_sites_in_one_year": 4
+  },
+  "components_reaching_cumulative_threshold": {
+    "3": 2,
+    "5": 1,
+    "8": 0
+  },
+  "semantics": {
+    "positive": "at least one recorded detection at a monitoring site in the year",
+    "new_positive": "first year in this table with a recorded detection at the site",
+    "cumulative_footprint": "sites ever observed positive up to that year",
+    "nondetection": "sampling outcome only; never treated as true absence",
+    "episode_proxy": "frozen real-graph connected component; not a claim of a single biological invasion episode"
+  },
+  "claim_guardrails": [
+    "Observed-positive footprint is not complete true occupancy because detection is imperfect.",
+    "Growth in cumulative observed-positive footprint can reflect detection, surveillance coverage, spread, persistence, or combinations of these.",
+    "This audit is descriptive reality-check evidence and does not calibrate simulator prevalence or world-model ranges by itself."
+  ]
+}
