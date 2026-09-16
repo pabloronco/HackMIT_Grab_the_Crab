@@ -17,6 +17,13 @@ dependencies = [
 dev = [
   "pytest>=8,<10",
 ]
+# GNN/RL backbone (Demu's learned-planner block). Deliberately kept out of the
+# core `dependencies` list: the environment/Bayes/UI side of the project must
+# never need torch installed just to run. Only `adaptive_response.rl` imports
+# it. Install with `pip install -e ".[dev,rl]"`.
+rl = [
+  "torch>=2.2,<3",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
