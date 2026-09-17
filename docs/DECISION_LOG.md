@@ -515,3 +515,27 @@ Protocol receipt:
 and `docs/R10_STATIC_VS_ADAPTIVE_PROTOCOL.md`.
 
 **Owner:** Pablo + Fede.
+
+## 2026-09-17 — R10 pre-result eligibility amendment
+
+**Status:** FROZEN BEFORE RESULTS.
+
+Implementation guardrail tests revealed that the already-confirmed initial
+detection remained planner-feasible and could be selected after frontier
+candidates were exhausted.
+
+This is inconsistent with the R10 experimental scope: the first detection is
+already known at t0, and R10 tests where to allocate the subsequent limited
+delimitation-survey effort.
+
+The initial-detection site is therefore pre-masked in both Static Frontier and
+Adaptive Frontier.
+
+This is a symmetric R10 eligibility rule, not a change to Frontier ranking and
+not an ecological claim. No formal R10 benchmark case had been run when this
+amendment was made. Randomness, q, world models, budget, effort, metrics and
+bootstrap protocol remain unchanged.
+
+Protocol version updated to `r10-v1.1`.
+
+**Owner:** Pablo + Fede.

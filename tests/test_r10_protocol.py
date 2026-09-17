@@ -21,7 +21,7 @@ def _protocol() -> dict:
 def test_r10_protocol_is_frozen_before_results() -> None:
     protocol = _protocol()
 
-    assert protocol["version"] == "r10-v1"
+    assert protocol["version"] == "r10-v1.1"
     assert protocol["status"] == "FROZEN_BEFORE_RESULTS"
     assert (
         protocol["analysis_role"]
@@ -131,3 +131,18 @@ def test_r10_post_result_tuning_is_forbidden() -> None:
     assert freeze["budget_or_effort_tuning_after_results"] is False
     assert freeze["randomness_protocol_tuning_after_results"] is False
     assert freeze["metric_redefinition_after_results"] is False
+
+
+
+def test_r10_confirmed_initial_detection_is_preexcluded() -> None:
+    protocol = _protocol()
+    shared = protocol["shared_contract"]
+
+    assert shared["confirmed_initial_detection_eligible"] is False
+
+    amendment = protocol["pre_result_amendment"]
+    assert amendment["status"] == "FROZEN_BEFORE_RESULTS_AMENDMENT"
+    assert amendment["changes_randomness_protocol"] is False
+    assert amendment["changes_frontier_ranking"] is False
+    assert amendment["changes_budget_or_effort"] is False
+    assert amendment["changes_metrics"] is False

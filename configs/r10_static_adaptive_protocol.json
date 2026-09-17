@@ -1,5 +1,5 @@
 {
-  "version": "r10-v1",
+  "version": "r10-v1.1",
   "status": "FROZEN_BEFORE_RESULTS",
   "purpose": "Test whether evidence-responsive replanning changes operational survey performance relative to precommitting the same Frontier strategy at t0.",
   "analysis_role": "SECONDARY_PAIRED_ANALYSIS_ON_PREVIOUSLY_SEEN_R8_FORMAL_CASES",
@@ -40,7 +40,9 @@
     "same_hidden_world": true,
     "same_q_true": true,
     "same_potential_observation_randomness": true,
-    "false_positives": false
+    "false_positives": false,
+    "confirmed_initial_detection_eligible": false,
+    "confirmed_initial_detection_rule": "The already-confirmed incident seed site is pre-masked in both arms and cannot consume R10 delimitation-survey budget."
   },
   "static_arm": {
     "name": "static_frontier",
@@ -123,5 +125,14 @@
     "randomness_protocol_tuning_after_results": false,
     "metric_redefinition_after_results": false,
     "allowed_changes": "Only implementation bug fixes that violate this frozen protocol, documented explicitly before rerunning."
+  },
+  "pre_result_amendment": {
+    "status": "FROZEN_BEFORE_RESULTS_AMENDMENT",
+    "reason": "Implementation guardrail tests showed that the confirmed initial detection remained feasible after frontier candidates were exhausted. R10 is a delimitation experiment that begins after that detection is already known, so the seed site is pre-masked symmetrically in both arms.",
+    "timing": "Made after implementation unit tests and before any R10 benchmark case was run.",
+    "changes_randomness_protocol": false,
+    "changes_frontier_ranking": false,
+    "changes_budget_or_effort": false,
+    "changes_metrics": false
   }
 }

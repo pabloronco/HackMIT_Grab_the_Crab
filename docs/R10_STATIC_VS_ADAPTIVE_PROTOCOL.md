@@ -241,3 +241,28 @@ in order to improve the result.
 
 Only genuine implementation bugs that violate this frozen protocol may be
 fixed and rerun, with the defect and correction documented explicitly.
+
+## 10. Pre-result amendment: confirmed initial detection is ineligible
+
+**Status: FROZEN BEFORE ANY R10 BENCHMARK RESULT**
+
+During implementation guardrail testing, before running any formal R10 case,
+the test fixture exposed an omitted eligibility rule: once Frontier candidates
+were exhausted, the already-confirmed initial detection could still be selected
+because it remained feasible and had occupancy belief 1.
+
+R10 begins after this detection is already known and is intended to test
+allocation of limited delimitation-survey effort beyond that known incident seed.
+
+Therefore the confirmed initial-detection site is pre-masked in both STATIC and
+ADAPTIVE and cannot consume R10 mission budget.
+
+This amendment:
+
+- applies identically to both arms;
+- does not modify Frontier ranking;
+- does not modify R8;
+- does not modify q or the spatial Bayesian update;
+- does not modify the SHA-256 paired-observation scheme;
+- does not modify budget, effort, metrics, or bootstrap inference;
+- was made before any formal R10 benchmark result was observed.
