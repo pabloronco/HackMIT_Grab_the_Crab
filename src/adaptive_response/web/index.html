@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Adaptive First-Response Mission Control</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div id="transition-layer" class="transition-layer hidden" aria-live="polite">
+    <div class="transition-scan"></div>
+    <div class="transition-copy">
+      <div id="transition-kicker" class="transition-kicker">FIELD RETURN</div>
+      <div id="transition-title" class="transition-title">Evidence received</div>
+      <div id="transition-detail" class="transition-detail"></div>
+    </div>
+  </div>
+
+  <div class="shell">
+    <header class="command-header">
+      <div class="brand-block">
+        <div class="eyebrow">MARINE RAPID RESPONSE / INCIDENT COMMAND</div>
+        <div class="brand-row">
+          <h1>Adaptive First-Response</h1>
+          <span class="slash">/</span>
+          <span class="brand-sub">MISSION CONTROL</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div id="phase-pill" class="phase-pill">INITIALIZING</div>
+        <button id="reset-btn" class="btn btn-ghost">RESET INCIDENT</button>
+      </div>
+    </header>
+
+    <section class="telemetry-strip">
+      <div class="incident-signal">
+        <span class="signal-beacon"></span>
+        <div>
+          <div class="telemetry-label">CONFIRMED FIRST DETECTION</div>
+          <div id="scenario-name" class="incident-name">Synthetic response theater</div>
+        </div>
+      </div>
+      <div class="telemetry-cell">
+        <span class="telemetry-label">SITE</span>
+        <strong id="initial-detection">—</strong>
+      </div>
+      <div class="telemetry-cell budget-cell">
+        <span class="telemetry-label">FIELD BUDGET</span>
+        <strong id="budget-left">—</strong>
+        <div class="budget-track"><span id="budget-fill"></span></div>
+      </div>
+      <div class="telemetry-cell">
+        <span class="telemetry-label">TEAMS</span>
+        <strong id="teams">—</strong>
+      </div>
+      <div class="telemetry-cell">
+        <span class="telemetry-label">ROUND</span>
+        <strong id="round">—</strong>
+      </div>
+      <div class="telemetry-cell truth-lock">
+        <span class="telemetry-label">LATENT EXTENT</span>
+        <strong id="truth-lock-copy">LOCKED</strong>
+      </div>
+    </section>
+
+    <main class="workspace">
+      <section class="theater panel-cut">
+        <div class="theater-head">
+          <div>
+            <div class="section-kicker">OBSERVABLE RESPONSE THEATER</div>
+            <h2>Belief, pathways & active survey frontier</h2>
+          </div>
+          <div class="map-legend">
+            <span><i class="legend-mark confirmed"></i>confirmed</span>
+            <span><i class="legend-mark mission"></i>assigned</span>
+            <span><i class="legend-mark frontier"></i>frontier</span>
+            <span><i class="legend-line pathway"></i>connectivity</span>
+          </div>
+        </div>
+
+        <div class="map-stage">
+          <svg id="graph" viewBox="0 0 1100 650" role="img" aria-label="Observable coastal response graph"></svg>
+          <div class="map-grid-mask"></div>
+          <div id="node-tooltip" class="tooltip hidden"></div>
+          <div class="map-label label-coast">COASTAL SHELF</div>
+          <div id="replan-callout" class="replan-callout hidden">
+            <div class="replan-tag">MISSION UPDATED</div>
+            <div id="replan-route" class="replan-route"></div>
+            <div id="replan-reason" class="replan-reason"></div>
+          </div>
+          <div class="map-footer-left" id="truth-status">HIDDEN EXTENT LOCKED</div>
+          <div class="map-footer-right">belief ≠ truth · non-detection ≠ absence</div>
+        </div>
+      </section>
+
+      <aside class="command-rail">
+        <section class="rail-block mission-block">
+          <div class="rail-heading">
+            <div>
+              <div class="section-kicker">DECIDE</div>
+              <h2>Next field mission</h2>
+            </div>
+            <div id="planner-chip" class="planner-chip">—</div>
+          </div>
+          <div id="mission-body" class="mission-body empty-state">No mission planned yet.</div>
+          <button id="primary-btn" class="btn btn-primary">PLAN MISSION</button>
+        </section>
+
+        <section class="rail-block evidence-block">
+          <div class="rail-heading">
+            <div>
+              <div class="section-kicker">OBSERVE → INFER</div>
+              <h2>Latest evidence packet</h2>
+            </div>
+          </div>
+          <div id="evidence-body" class="evidence-body empty-state">Awaiting first field return.</div>
+        </section>
+
+        <section class="rail-block causal-block">
+          <div class="section-kicker">CAUSAL LOOP</div>
+          <div id="causal-body" class="causal-body">
+            <div class="causal-step muted"><span>01</span><b>Field evidence</b><em>pending</em></div>
+            <div class="causal-arrow">↓</div>
+            <div class="causal-step muted"><span>02</span><b>Belief changed</b><em>pending</em></div>
+            <div class="causal-arrow">↓</div>
+            <div class="causal-step muted"><span>03</span><b>Mission changed</b><em>pending</em></div>
+          </div>
+          <button id="reveal-btn" class="btn btn-reveal" disabled>REVEAL TRUE EXTENT</button>
+        </section>
+      </aside>
+    </main>
+
+    <section class="mission-tape">
+      <div class="tape-label">
+        <span>INCIDENT TAPE</span>
+        <b>OBSERVE → INFER → DECIDE → SURVEY → LEARN → REPLAN</b>
+      </div>
+      <div id="timeline" class="timeline"></div>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
