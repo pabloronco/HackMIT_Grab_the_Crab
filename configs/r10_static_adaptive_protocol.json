@@ -1,0 +1,127 @@
+{
+  "version": "r10-v1",
+  "status": "FROZEN_BEFORE_RESULTS",
+  "purpose": "Test whether evidence-responsive replanning changes operational survey performance relative to precommitting the same Frontier strategy at t0.",
+  "analysis_role": "SECONDARY_PAIRED_ANALYSIS_ON_PREVIOUSLY_SEEN_R8_FORMAL_CASES",
+  "inherits": [
+    "configs/benchmark_protocol_r8.json",
+    "configs/mvp_scope_r9.json"
+  ],
+  "research_question": "Holding incident, initial belief, planner heuristic, budget, effort, hidden truth and potential field outcomes fixed, does evidence-responsive replanning improve delimitation relative to locking all future missions at t0?",
+  "case_contract": {
+    "manifest": "reports/milestones/r8_benchmark_case_manifest/benchmark_cases.json",
+    "formal_cases": 180,
+    "excluded_validation_cases": 60,
+    "splits": {
+      "id_test": 90,
+      "ood_model_test": 30,
+      "ood_q_low": 30,
+      "ood_q_high": 30
+    },
+    "interpretation": "These cases were already used in R8. R10 is therefore a secondary paired analysis, not a new untouched external test."
+  },
+  "shared_contract": {
+    "planner": "FrontierPlanner",
+    "planner_implementation": "src/adaptive_response/planners.py",
+    "frontier_ranking": [
+      "frontier first",
+      "higher occupancy belief",
+      "higher uncertainty",
+      "deterministic site_id tie-break"
+    ],
+    "total_budget": 18,
+    "missions": 3,
+    "effort_per_mission": 6,
+    "max_sites_per_mission": 1,
+    "distinct_sites_only": true,
+    "site_revisit_allowed": false,
+    "same_initial_public_state": true,
+    "same_initial_spatial_belief": true,
+    "same_hidden_world": true,
+    "same_q_true": true,
+    "same_potential_observation_randomness": true,
+    "false_positives": false
+  },
+  "static_arm": {
+    "name": "static_frontier",
+    "planning_time": "t0_only",
+    "precommitment_rule": "At t0, select three distinct sites sequentially from the same initial GraphState and initial belief. After each precommitted selection, only the already-selected site is made infeasible for the next selection. No field observation or posterior update may influence the remaining precommitted sites.",
+    "posterior_updates_during_execution": true,
+    "future_missions_may_change_after_evidence": false
+  },
+  "adaptive_arm": {
+    "name": "adaptive_frontier",
+    "planning_time": "before_each_mission",
+    "replanning_rule": "After each field observation, update the spatial posterior, rebuild observable GraphState, mark already-visited sites infeasible, and run the same FrontierPlanner again.",
+    "posterior_updates_during_execution": true,
+    "future_missions_may_change_after_evidence": true
+  },
+  "paired_observation_randomness": {
+    "scheme": "sha256_uniform_v1",
+    "key_format": "r10-v1|{case_id}|{site_id}",
+    "uniform_definition": "Interpret the first 8 bytes of SHA-256(key) as an unsigned big-endian integer and divide by 2^64, yielding u in [0,1).",
+    "detection_probability_if_occupied": "1 - (1 - q_true)^6",
+    "detection_rule": "detection = occupied AND u(case_id, site_id) < 1 - (1 - q_true)^6",
+    "unoccupied_detection_probability": 0.0,
+    "round_not_in_random_key": true,
+    "reason": "If both arms survey the same site in the same case, they must receive the same potential field outcome regardless of policy-dependent action order.",
+    "planner_forbidden_inputs": [
+      "hidden occupancy",
+      "q_true",
+      "paired uniform u",
+      "future observations"
+    ]
+  },
+  "metrics": {
+    "primary": [
+      "missed_occupied_fraction",
+      "occupied_site_coverage"
+    ],
+    "secondary": [
+      "detections_found",
+      "final_global_uncertainty",
+      "mission_2_divergence",
+      "mission_3_divergence",
+      "overall_mission_divergence_rate"
+    ],
+    "paired_primary_delta": {
+      "name": "delta_missed_occupied_fraction",
+      "definition": "static_missed_occupied_fraction - adaptive_missed_occupied_fraction",
+      "positive_means": "adaptive missed less occupied extent",
+      "negative_means": "adaptive missed more occupied extent"
+    },
+    "case_outcome_categories": [
+      "adaptive_better",
+      "equal",
+      "adaptive_worse"
+    ]
+  },
+  "inference_contract": {
+    "bootstrap_replicates": 10000,
+    "bootstrap_unit": "case",
+    "bootstrap_seed": 20260917,
+    "confidence_interval": 0.95,
+    "paired_analysis": true
+  },
+  "interpretation_guardrails": {
+    "adaptive_positive_ci": "Supports operational value of evidence-responsive replanning under the tested R10 benchmark regime.",
+    "ci_includes_zero": "No reliable difference detected under the tested R10 benchmark regime; do not claim equivalence.",
+    "adaptive_negative_ci": "Treat as a serious diagnostic result and investigate why evidence-responsive replanning degrades the tested operational metric.",
+    "not_supported": [
+      "proven real-world effectiveness",
+      "optimal ecological response",
+      "generic OOD robustness",
+      "superiority to field operators",
+      "causal benefit outside the tested simulator and benchmark regime"
+    ]
+  },
+  "post_result_change_policy": {
+    "planner_tuning_after_results": false,
+    "q_tuning_after_results": false,
+    "world_model_tuning_after_results": false,
+    "budget_or_effort_tuning_after_results": false,
+    "randomness_protocol_tuning_after_results": false,
+    "metric_redefinition_after_results": false,
+    "allowed_changes": "Only implementation bug fixes that violate this frozen protocol, documented explicitly before rerunning."
+  }
+}

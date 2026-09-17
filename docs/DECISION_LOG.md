@@ -470,3 +470,48 @@ starved) but not sufficient to recommend it as the project's planner on
 this evidence.
 
 **Owner:** Demu.
+
+## 2026-09-17 — R10 Static Frontier vs Adaptive Frontier protocol frozen before results
+
+**Status:** FROZEN BEFORE RESULTS.
+
+**Question:** does evidence-responsive replanning itself add operational value
+when the decision heuristic is held fixed?
+
+R10 is a secondary paired analysis over the already-observed 180 formal R8
+cases, not a new untouched test. Both arms use the same deterministic
+FrontierPlanner, same initial observable state/belief, same hidden incident,
+same q_true, same budget (18), three missions, effort 6 per mission and three
+distinct sites.
+
+STATIC precommits all three sites at t0 from the unchanged initial
+GraphState/belief, masking only already-selected sites to enforce distinct
+missions. Field evidence still updates the posterior during execution, but
+cannot change the locked future missions.
+
+ADAPTIVE selects one site, receives field evidence, updates the spatial
+posterior/GraphState and replans the next site using the same Frontier rule.
+Already-surveyed sites are masked identically.
+
+To prevent policy-dependent RNG consumption from confounding the paired
+comparison, potential field outcomes are frozen by `(case_id, site_id)` using
+SHA-256-derived uniforms. If both arms survey the same site in the same case,
+they receive the same potential outcome regardless of mission order. Hidden
+occupancy, q_true and the paired uniform remain evaluator-only and are never
+planner inputs.
+
+Primary metrics: `missed_occupied_fraction` and
+`occupied_site_coverage`. Primary paired delta:
+`static_missed - adaptive_missed`. Report a paired case-level 10,000-replicate
+bootstrap 95% CI with seed 20260917, plus detections, final uncertainty and
+mission-2/mission-3 divergence.
+
+No post-result tuning of planner rule, q, world models, budget/effort,
+randomness protocol or primary metrics is allowed. Only documented bug fixes
+that restore compliance with the frozen protocol may justify a rerun.
+
+Protocol receipt:
+`configs/r10_static_adaptive_protocol.json`
+and `docs/R10_STATIC_VS_ADAPTIVE_PROTOCOL.md`.
+
+**Owner:** Pablo + Fede.
