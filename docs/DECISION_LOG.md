@@ -529,3 +529,20 @@ The first technical smoke case (`incident_001`) was intentionally not selected f
 The selector must also report counts of Marine-better / equal / worse cases across the full 100-case UI library so illustrative selection cannot be mistaken for an aggregate performance result.
 
 **Claim rule:** any selected hero incident must be described as an illustrative blinded scenario chosen for causal legibility. Formal statements about whether replanning reliably improves performance remain governed by the frozen R10 paired analysis.
+
+
+## 2026-09-19 — UI audit correction: old MISSION UPDATED flag was not causal
+
+**Status:** BLOCKER FIXED before selecting the hero case.
+
+The first 100-case UI audit exposed a semantic bug in the judging adapter: `mission_changed` was computed by comparing the just-executed mission with the next mission. Under a no-revisit sequential campaign those are almost always different, so the flag could fire even when the new field evidence did not alter what Marine would otherwise have recommended. The first audit therefore reported `mission_changed_rounds=2` for every three-mission case and must **not** be used to freeze the hero case.
+
+The aggregate outcome counts from that scan (Marine better/equal/worse than Static) and the actual Marine/Static mission sequences remain descriptive outputs of those cases, but any criterion depending on `mission_changed_rounds` must be rerun after this fix.
+
+**Correct semantics now:** after each survey, construct a counterfactual public state that keeps the action itself (effort spent, remaining budget, round, observed effort) while erasing the just-returned ecological result (new detections/status). Hold occupancy belief at the pre-observation posterior. Run the same current Frontier product planner on that counterfactual state. `MISSION UPDATED` is true only when the actual post-evidence recommendation differs from this no-new-evidence counterfactual recommendation.
+
+This makes the UI statement causal and aligned with the project thesis:
+
+`FIELD EVIDENCE -> BELIEF/OBSERVABLE EVIDENCE CHANGED -> NEXT MISSION CHANGED`.
+
+The frozen hero-case rubric from the preceding entry remains unchanged, but the 100-case selector must be rerun on the corrected semantics before a hero case is chosen.
