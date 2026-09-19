@@ -222,3 +222,15 @@ def test_reveal_scores_marine_static_and_human_against_same_hidden_incident() ->
         assert row["curve"][0]["effort"] == 0
         assert row["curve"][-1]["effort"] == 18
         assert 0.0 <= row["curve"][-1]["detected_fraction"] <= 1.0
+
+
+def test_low_effort_judge_path_can_still_exhaust_budget_without_dead_end() -> None:
+    session = MissionControlSession()
+    snap = session.snapshot()
+
+    while not snap["can_reveal"]:
+        site_id = snap["global_recommendations"][0]["site_id"]
+        snap = session.deploy(site_id=site_id, effort=1)
+
+    assert snap["resources"]["remaining_budget"] == 0
+    assert snap["resources"]["spent_budget"] == 18
