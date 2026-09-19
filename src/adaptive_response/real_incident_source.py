@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import csv
 import json
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from statistics import median
@@ -29,6 +31,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 REAL_GRAPH_EDGES_CSV = REPO_ROOT / "reports" / "milestones" / "r2_real_graph_v0" / "real_graph_v0_edges.csv"
 REAL_SITES_CSV = REPO_ROOT / "reports" / "milestones" / "r2_real_graph_v0" / "real_sites_v0.csv"
 REAL_SITE_CONTEXT_R8_JSON = REPO_ROOT / "configs" / "real_site_context_r8.json"
+REAL_TEMPERATURE_CSV = REPO_ROOT / "data" / "raw" / "wsg_cama" / "DailyMaxTemperature.csv"
 ISOLATED_SITE_IDS = ("219", "367", "74")  # from real_graph_v0_audit.json primary_graph.isolated_sites
 
 
@@ -72,10 +75,78 @@ def _load_habitat_proxy_scores(context_json: Path) -> dict[str, float]:
     return {str(k): float(v) for k, v in context["habitat_proxy"]["scores"].items()}
 
 
+def _temperature_summary_by_site(
+    temperature_csv: Path,
+) -> dict[str, dict[str, object]]:
+    """Summarize directly observed Crab Team logger temperatures by site.
+
+    DailyMaxTemperature.csv is intentionally optional because raw source files are
+    not committed. No spatial or temporal imputation is performed: sites without
+    direct logger rows remain missing in the UI.
+    """
+
+    if not temperature_csv.exists():
+        return {}
+
+    values_by_site: dict[str, list[float]] = defaultdict(list)
+    years_by_site: dict[str, set[str]] = defaultdict(set)
+    with temperature_csv.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        required = {"SiteNum", "year", "x"}
+        missing = required.difference(reader.fieldnames or ())
+        if missing:
+            raise ValueError(
+                f"{temperature_csv}: missing expected columns {sorted(missing)}"
+            )
+        for row in reader:
+            site_raw = str(row.get("SiteNum") or "").strip()
+            value_raw = str(row.get("x") or "").strip()
+            year_raw = str(row.get("year") or "").strip()
+            if not site_raw or not value_raw:
+                continue
+            try:
+                site_numeric = float(site_raw)
+                site_id = (
+                    str(int(site_numeric))
+                    if site_numeric.is_integer()
+                    else site_raw
+                )
+                value = float(value_raw)
+            except ValueError:
+                continue
+            values_by_site[site_id].append(value)
+            if year_raw:
+                try:
+                    year_numeric = float(year_raw)
+                    year_raw = (
+                        str(int(year_numeric))
+                        if year_numeric.is_integer()
+                        else year_raw
+                    )
+                except ValueError:
+                    pass
+                years_by_site[site_id].add(year_raw)
+
+    summary: dict[str, dict[str, object]] = {}
+    for site_id, values in values_by_site.items():
+        if not values:
+            continue
+        summary[site_id] = {
+            "temperature_median_c": float(median(values)),
+            "temperature_min_c": float(min(values)),
+            "temperature_max_c": float(max(values)),
+            "temperature_n": len(values),
+            "temperature_years": sorted(years_by_site.get(site_id, set())),
+            "temperature_source": "Crab Team DailyMaxTemperature.csv direct logger rows",
+        }
+    return summary
+
+
 def real_site_display_metadata(
     site_ids: list[str] | tuple[str, ...] | set[str],
     *,
     sites_csv: Path = REAL_SITES_CSV,
+    temperature_csv: Path = REAL_TEMPERATURE_CSV,
 ) -> dict[str, dict[str, object]]:
     """Return source-grounded display metadata for real monitoring sites.
 
@@ -86,6 +157,7 @@ def real_site_display_metadata(
 
     wanted = {str(site_id) for site_id in site_ids}
     rows = {row["site_id"]: row for row in read_real_sites(sites_csv)}
+    temperature = _temperature_summary_by_site(temperature_csv)
     missing = sorted(wanted - set(rows))
     if missing:
         raise ValueError(f"real_sites_v0.csv is missing site ids: {missing}")
@@ -100,6 +172,12 @@ def real_site_display_metadata(
             "exposure": rows[site_id].get("exposure") or None,
             "eelgrass": rows[site_id].get("eelgrass") or None,
             "salt_marsh": rows[site_id].get("salt_marsh") or None,
+            "temperature_median_c": temperature.get(site_id, {}).get("temperature_median_c"),
+            "temperature_min_c": temperature.get(site_id, {}).get("temperature_min_c"),
+            "temperature_max_c": temperature.get(site_id, {}).get("temperature_max_c"),
+            "temperature_n": temperature.get(site_id, {}).get("temperature_n", 0),
+            "temperature_years": temperature.get(site_id, {}).get("temperature_years", []),
+            "temperature_source": temperature.get(site_id, {}).get("temperature_source"),
         }
         for site_id in sorted(wanted)
     }
