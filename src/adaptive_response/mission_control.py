@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .environment import Environment
-from .graph_state import NODE_FEATURE_NAMES
+from .graph_state import GraphStateExporter, NODE_FEATURE_NAMES
 from .mission_loop import LoopPhase, RoundTransition
 from .model_mismatch import posterior_predictive_surprise
 from .models import GraphState, HiddenWorld, MissionAction, MissionAllocation
@@ -236,6 +236,7 @@ class MissionControlSession:
         self._mission: MissionAction | None = None
         self._last_transition: RoundTransition | None = None
         self._last_surprise: dict[str, Any] | None = None
+        self._last_counterfactual_next: MissionAction | None = None
         self._revealed_world: HiddenWorld | None = None
         self._events: list[dict[str, Any]] = []
         self._judge_history: list[dict[str, Any]] = []
@@ -342,6 +343,7 @@ class MissionControlSession:
         self._mission = None
         self._last_transition = None
         self._last_surprise = None
+        self._last_counterfactual_next = None
         self._revealed_world = None
         self._judge_history = []
         self._world_mass_before = self._ecological_world_mass_map(
@@ -475,6 +477,9 @@ class MissionControlSession:
 
         transition = loop.execute_pending()
         self._last_transition = transition
+        self._last_counterfactual_next = self._counterfactual_next_without_evidence(
+            transition
+        )
 
         surprise_rows = []
         for observation in transition.observations.observations:
@@ -514,11 +519,20 @@ class MissionControlSession:
 
         if transition.next_mission is not None:
             self._mission = transition.next_mission
+            evidence_changed_mission = (
+                self._last_counterfactual_next is not None
+                and self._allocation_signature(self._last_counterfactual_next)
+                != self._allocation_signature(transition.next_mission)
+            )
             self._events.append(
                 {
-                    "kind": "replan",
+                    "kind": "replan" if evidence_changed_mission else "mission",
                     "round": transition.observations.round,
-                    "title": "Mission updated",
+                    "title": (
+                        "Mission updated by evidence"
+                        if evidence_changed_mission
+                        else "Next mission confirmed"
+                    ),
                     "detail": self._mission_text(transition.next_mission),
                 }
             )
@@ -613,21 +627,26 @@ class MissionControlSession:
         last_round = self._serialize_transition(self._last_transition)
         mission_changed = False
         if (
-            self._last_transition is not None
+            self._last_counterfactual_next is not None
+            and self._last_transition is not None
             and self._last_transition.next_mission is not None
         ):
             mission_changed = self._allocation_signature(
-                self._last_transition.mission
+                self._last_counterfactual_next
             ) != self._allocation_signature(
                 self._last_transition.next_mission
             )
 
+        counterfactual_next = self._serialize_mission(
+            self._last_counterfactual_next
+        )
         replan = None
         if last_round is not None:
             replan = {
                 "changed": mission_changed,
-                "from": last_round["previous_mission"],
+                "from": counterfactual_next,
                 "to": last_round["next_mission"],
+                "semantics": "same_post_survey_public_state_without_new_evidence",
             }
 
         top_worlds = self._top_worlds(spatial)
@@ -738,6 +757,38 @@ class MissionControlSession:
             )
 
         return rows if limit is None else rows[:limit]
+
+    def _counterfactual_next_without_evidence(
+        self,
+        transition: RoundTransition,
+    ) -> MissionAction | None:
+        """Compute the next Frontier mission with the survey recorded but evidence ignored.
+
+        This isolates the causal question shown in the UI: did the *field result*
+        change Marine's next recommendation, rather than merely advancing from the
+        just-executed site to another site? Public state after the survey is held
+        fixed (budget spent, site observed, detections recorded for operational
+        status), while occupancy marginals are held at their pre-observation values.
+        """
+
+        if transition.done:
+            return None
+
+        counterfactual_graph = GraphStateExporter().export(
+            transition.public_state_after,
+            transition.belief_before,
+        )
+        planner = (
+            self._planner
+            if isinstance(self._planner, MissionControlFrontierPlanner)
+            else MissionControlFrontierPlanner()
+        )
+        mission = planner.plan(
+            counterfactual_graph,
+            remaining_budget=transition.public_state_after.remaining_budget,
+            constraints={},
+        )
+        return mission
 
     @staticmethod
     def _ecological_world_mass_map(
