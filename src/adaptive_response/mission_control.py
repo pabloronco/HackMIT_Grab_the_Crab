@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import random
+from copy import deepcopy
 from dataclasses import asdict, replace
 from math import isfinite
 from pathlib import Path
@@ -766,16 +767,29 @@ class MissionControlSession:
 
         This isolates the causal question shown in the UI: did the *field result*
         change Marine's next recommendation, rather than merely advancing from the
-        just-executed site to another site? Public state after the survey is held
-        fixed (budget spent, site observed, detections recorded for operational
-        status), while occupancy marginals are held at their pre-observation values.
+        just-executed site to another site? The counterfactual keeps the survey action
+        itself (effort spent, budget and round advanced) but removes the newly returned
+        ecological outcome: detections/status and occupancy belief stay at their
+        pre-observation values.
         """
 
         if transition.done:
             return None
 
+        counterfactual_public = deepcopy(transition.public_state_after)
+        before_by_site = {
+            site.id: site for site in transition.public_state_before.sites
+        }
+        for site in counterfactual_public.sites:
+            before = before_by_site[site.id]
+            # Keep the fact that the survey occurred (effort/budget/round), but
+            # erase the just-returned ecological outcome itself. That prevents a
+            # detection from creating a new frontier in the counterfactual.
+            site.detections = before.detections
+            site.status = before.status
+
         counterfactual_graph = GraphStateExporter().export(
-            transition.public_state_after,
+            counterfactual_public,
             transition.belief_before,
         )
         planner = (
