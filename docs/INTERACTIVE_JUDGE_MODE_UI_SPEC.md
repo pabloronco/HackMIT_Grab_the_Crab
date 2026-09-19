@@ -181,3 +181,33 @@ The judging UI is ready for merge when:
 - reveal produces a same-incident comparator receipt;
 - existing core tests remain green;
 - a live browser rehearsal can be completed reliably in under ~90 seconds.
+
+
+## Local validation / rehearsal commands
+
+From the repository root:
+
+```bash
+git fetch origin
+git checkout ui/interactive-judge-mode
+git pull
+uv pip install -e ".[dev,ui]"
+
+pytest tests/test_frontier_planner.py tests/test_mission_control.py tests/test_spatial_mission_loop.py tests/test_real_incident_source.py -q
+pytest -q
+
+python scripts/smoke_interactive_judge_mode.py --case-id incident_001
+python -m adaptive_response.web_app
+```
+
+Then open `http://127.0.0.1:8000` and rehearse at least:
+
+1. follow Marine with effort 6 for a full incident;
+2. override Marine once, then continue;
+3. inspect a possible extent and return to posterior;
+4. use Probability / Habitat / Field History layers;
+5. reveal and inspect the three-track receipt;
+6. reset the same case and verify the same site+effort produces the same field outcome;
+7. run one low-effort path to confirm the interface does not dead-end.
+
+Do not merge the judging branch until the full suite and one ~90-second browser rehearsal are green.
