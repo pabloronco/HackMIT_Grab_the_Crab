@@ -542,7 +542,7 @@ function renderPerformance() {
     <div class="scorecard">
       <span>${label}</span>
       <strong>${row.detected_occupied} / ${row.occupied_total}</strong>
-      <small>occupied sites detected</small>
+      <small>occupied sites confirmed / detected</small>
     </div>`
   ).join("");
 
