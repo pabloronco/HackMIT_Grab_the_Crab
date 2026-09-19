@@ -5,7 +5,7 @@ import json
 import random
 from copy import deepcopy
 from dataclasses import asdict, replace
-from math import isfinite
+from math import atan2, cos, isfinite, radians, sin, sqrt
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -56,6 +56,24 @@ def _derive_belief_seed(case_id: str, world_seed: int) -> int:
     return _BELIEF_SEED_NAMESPACE_OFFSET + (
         int(digest[:16], 16) % 1_000_000_000
     )
+
+
+def _haversine_km(
+    lat1: float,
+    lon1: float,
+    lat2: float,
+    lon2: float,
+) -> float:
+    radius_km = 6371.0088
+    phi1 = radians(lat1)
+    phi2 = radians(lat2)
+    dphi = radians(lat2 - lat1)
+    dlambda = radians(lon2 - lon1)
+    a = (
+        sin(dphi / 2.0) ** 2
+        + cos(phi1) * cos(phi2) * sin(dlambda / 2.0) ** 2
+    )
+    return 2.0 * radius_km * atan2(sqrt(a), sqrt(max(0.0, 1.0 - a)))
 
 
 def _paired_uniform(case_id: str, site_id: str) -> float:
@@ -452,6 +470,8 @@ class MissionControlSession:
         self._last_transition: RoundTransition | None = None
         self._last_surprise: dict[str, Any] | None = None
         self._last_counterfactual_next: MissionAction | None = None
+        self._pending_decision_context: dict[str, Any] | None = None
+        self._last_decision_receipt: dict[str, Any] | None = None
         self._revealed_world: HiddenWorld | None = None
         self._events: list[dict[str, Any]] = []
         self._judge_history: list[dict[str, Any]] = []
@@ -577,6 +597,8 @@ class MissionControlSession:
         self._last_transition = None
         self._last_surprise = None
         self._last_counterfactual_next = None
+        self._pending_decision_context = None
+        self._last_decision_receipt = None
         self._revealed_world = None
         self._judge_history = []
         self._world_mass_before = self._ecological_world_mass_map(
@@ -649,6 +671,42 @@ class MissionControlSession:
             if marine_rank == 1
             else "human_override"
         )
+        selected_recommendation = next(
+            (row for row in recommendations if row["site_id"] == site_id),
+            None,
+        )
+        top_recommendation = recommendations[0] if recommendations else None
+        selected_recommended_effort = (
+            int(selected_recommendation["recommended_effort"])
+            if selected_recommendation is not None
+            else None
+        )
+        self._pending_decision_context = {
+            "selected_site_id": site_id,
+            "selected_effort": effort,
+            "marine_rank": marine_rank,
+            "marine_top_site_id": (
+                str(top_recommendation["site_id"])
+                if top_recommendation is not None
+                else None
+            ),
+            "marine_top_effort": (
+                int(top_recommendation["recommended_effort"])
+                if top_recommendation is not None
+                else None
+            ),
+            "marine_recommended_effort_for_selected_site": selected_recommended_effort,
+            "site_followed": bool(marine_rank == 1),
+            "effort_followed": bool(
+                selected_recommended_effort is not None
+                and effort == selected_recommended_effort
+            ),
+            "selected_recommendation": (
+                dict(selected_recommendation)
+                if selected_recommendation is not None
+                else None
+            ),
+        }
 
         diagnostics_row = next(
             (row for row in recommendations if row["site_id"] == site_id),
@@ -668,6 +726,11 @@ class MissionControlSession:
                 "planner": "human_in_loop",
                 "selection_source": source,
                 "marine_rank": marine_rank,
+                "marine_recommended_effort": selected_recommended_effort,
+                "effort_followed": bool(
+                    selected_recommended_effort is not None
+                    and effort == selected_recommended_effort
+                ),
                 "ranked_selected_sites": (
                     {**diagnostics_row, "effort_units": effort},
                 ),
@@ -734,6 +797,81 @@ class MissionControlSession:
                 }
             )
         self._last_surprise = surprise_rows[0] if surprise_rows else None
+
+        decision_context = self._pending_decision_context or {}
+        first_observation = (
+            transition.observations.observations[0]
+            if transition.observations.observations
+            else None
+        )
+        q_before = spatial_before.q_posterior()
+        selected_effort = (
+            int(first_observation.effort)
+            if first_observation is not None
+            else int(transition.mission.total_cost)
+        )
+        conditional_detection_if_occupied = sum(
+            weight * (1.0 - (1.0 - float(q)) ** selected_effort)
+            for q, weight in q_before.items()
+        )
+        selected_recommendation = decision_context.get("selected_recommendation")
+        if first_observation is not None:
+            site_followed = bool(decision_context.get("site_followed", False))
+            effort_followed = bool(decision_context.get("effort_followed", False))
+            aligned = site_followed and effort_followed
+            if aligned and first_observation.detection:
+                interpretation = (
+                    "Marine-aligned decision; the field return produced a detection."
+                )
+            elif aligned:
+                interpretation = (
+                    "Marine-aligned decision selected before the outcome. "
+                    "A non-detection remains possible under imperfect detection; "
+                    "the result does not retroactively make the decision wrong."
+                )
+            else:
+                interpretation = (
+                    "Operator override. Compare the realized outcome with Marine's "
+                    "pre-outcome recommendation rather than treating one stochastic "
+                    "return as a policy benchmark."
+                )
+            self._last_decision_receipt = {
+                "site_id": first_observation.site_id,
+                "effort": selected_effort,
+                "detection": bool(first_observation.detection),
+                "site_followed": site_followed,
+                "effort_followed": effort_followed,
+                "marine_aligned": aligned,
+                "marine_rank": decision_context.get("marine_rank"),
+                "marine_top_site_id": decision_context.get("marine_top_site_id"),
+                "marine_top_effort": decision_context.get("marine_top_effort"),
+                "marine_recommended_effort_for_selected_site": decision_context.get(
+                    "marine_recommended_effort_for_selected_site"
+                ),
+                "predictive_detection_probability": (
+                    selected_recommendation.get("predictive_detection", {}).get(
+                        str(selected_effort)
+                    )
+                    if isinstance(selected_recommendation, dict)
+                    else None
+                ),
+                "conditional_detection_if_occupied": conditional_detection_if_occupied,
+                "conditional_miss_if_occupied": 1.0 - conditional_detection_if_occupied,
+                "observation_probability": (
+                    self._last_surprise["observation_probability"]
+                    if self._last_surprise is not None
+                    else None
+                ),
+                "surprise_bits": (
+                    self._last_surprise["surprise_bits"]
+                    if self._last_surprise is not None
+                    else None
+                ),
+                "interpretation": interpretation,
+            }
+        else:
+            self._last_decision_receipt = None
+        self._pending_decision_context = None
 
         self._judge_history.append(
             {
@@ -839,6 +977,12 @@ class MissionControlSession:
                 "exposure": display_meta.get("exposure"),
                 "eelgrass": display_meta.get("eelgrass"),
                 "salt_marsh": display_meta.get("salt_marsh"),
+                "temperature_median_c": display_meta.get("temperature_median_c"),
+                "temperature_min_c": display_meta.get("temperature_min_c"),
+                "temperature_max_c": display_meta.get("temperature_max_c"),
+                "temperature_n": display_meta.get("temperature_n", 0),
+                "temperature_years": display_meta.get("temperature_years", []),
+                "temperature_source": display_meta.get("temperature_source"),
                 "belief": belief.p_by_site[site_id],
                 "uncertainty": belief.uncertainty_by_site[site_id],
                 "habitat": float(site.habitat_score),
@@ -860,12 +1004,40 @@ class MissionControlSession:
                     if site_id in recommendation_by_site
                     else {}
                 ),
+                "recommended_effort": (
+                    int(recommendation_by_site[site_id]["recommended_effort"])
+                    if site_id in recommendation_by_site
+                    else None
+                ),
+                "effort_recommendation": (
+                    dict(recommendation_by_site[site_id]["effort_recommendation"])
+                    if site_id in recommendation_by_site
+                    else None
+                ),
             }
             if self._revealed_world is not None:
                 node["true_occupied"] = bool(
                     self._revealed_world.occupied_by_site[site_id]
                 )
             nodes.append(node)
+
+        initial_meta = self._site_display_metadata.get(public.initial_detection, {})
+        initial_lat = initial_meta.get("latitude")
+        initial_lon = initial_meta.get("longitude")
+        if initial_lat is not None and initial_lon is not None:
+            for node in nodes:
+                if node["latitude"] is None or node["longitude"] is None:
+                    node["distance_from_detection_km"] = None
+                    continue
+                node["distance_from_detection_km"] = _haversine_km(
+                    float(initial_lat),
+                    float(initial_lon),
+                    float(node["latitude"]),
+                    float(node["longitude"]),
+                )
+        else:
+            for node in nodes:
+                node["distance_from_detection_km"] = None
 
         last_round = self._serialize_transition(self._last_transition)
         mission_changed = False
@@ -901,7 +1073,55 @@ class MissionControlSession:
                 "marine": self._comparison_receipt["marine"],
                 "static": self._comparison_receipt["static"],
                 "you": self._judge_performance(self._revealed_world),
+                "interpretation": (
+                    "Single-incident realized outcomes can favor any path by chance. "
+                    "Use ex-ante decision quality and aggregate frozen audits for policy claims."
+                ),
             }
+
+        q_posterior = spatial.q_posterior()
+        q_values = sorted(q_posterior)
+        low_q = q_values[0]
+        high_q = q_values[-1]
+        low_mass = float(q_posterior[low_q])
+        high_mass = float(q_posterior[high_q])
+        dominant_edge = "low" if low_mass >= high_mass else "high"
+        dominant_edge_mass = max(low_mass, high_mass)
+        q_diagnostics = {
+            "support": q_values,
+            "posterior": {str(q): float(weight) for q, weight in q_posterior.items()},
+            "mean": spatial.q_mean(),
+            "low_edge_mass": low_mass,
+            "high_edge_mass": high_mass,
+            "dominant_edge": dominant_edge,
+            "dominant_edge_mass": dominant_edge_mass,
+            "edge_concentrated": dominant_edge_mass >= 0.60,
+            "edge_note": (
+                "Posterior concentration at an edge of the tested q support can signal "
+                "limited support or q/occupancy confounding. It is not the same as "
+                "posterior-predictive model stress."
+            ),
+        }
+
+        temperature_count = sum(
+            node["temperature_median_c"] is not None for node in nodes
+        )
+        layers = {
+            "belief": {"available": True, "kind": "continuous"},
+            "uncertainty": {"available": True, "kind": "continuous"},
+            "habitat": {"available": True, "kind": "continuous"},
+            "temperature": {
+                "available": temperature_count > 0,
+                "kind": "continuous",
+                "observed_sites": temperature_count,
+                "total_sites": len(nodes),
+                "provenance": "direct Crab Team logger summaries; no imputation",
+            },
+            "exposure": {"available": any(node["exposure"] for node in nodes), "kind": "ordinal"},
+            "eelgrass": {"available": any(node["eelgrass"] for node in nodes), "kind": "ordinal"},
+            "salt_marsh": {"available": any(node["salt_marsh"] for node in nodes), "kind": "ordinal"},
+            "field_effort": {"available": True, "kind": "continuous"},
+        }
 
         return {
             "phase": loop.phase.value,
@@ -948,6 +1168,8 @@ class MissionControlSession:
             "replan": replan,
             "last_round": last_round,
             "model_stress": self._last_surprise,
+            "decision_receipt": self._last_decision_receipt,
+            "environment_layers": layers,
             "nodes": nodes,
             "edges": [asdict(edge) for edge in public.edges],
             "events": list(self._events),
@@ -955,11 +1177,9 @@ class MissionControlSession:
             "can_execute": loop.phase is LoopPhase.MISSION_PLANNED,
             "can_reveal": loop.phase is LoopPhase.COMPLETE,
             "revealed": loop.phase is LoopPhase.REVEALED,
-            "q_posterior": {
-                str(q): weight
-                for q, weight in spatial.q_posterior().items()
-            },
-            "q_mean": spatial.q_mean(),
+            "q_posterior": q_diagnostics["posterior"],
+            "q_mean": q_diagnostics["mean"],
+            "q_diagnostics": q_diagnostics,
             "live_curve": self._observable_live_curve(),
             "performance": performance,
         }
@@ -997,11 +1217,32 @@ class MissionControlSession:
                     if effort <= public.remaining_budget
                     else None
                 )
+            if hasattr(self._planner, "recommend_effort"):
+                effort_recommendation = self._planner.recommend_effort(
+                    spatial=spatial,
+                    site_id=str(row["site_id"]),
+                    remaining_budget=public.remaining_budget,
+                )
+            else:
+                feasible = [
+                    effort for effort in _EFFORT_LEVELS
+                    if effort <= public.remaining_budget
+                ]
+                recommended = feasible[-1] if feasible else None
+                effort_recommendation = {
+                    "recommended_effort": recommended,
+                    "effort_saved_vs_max": 0,
+                    "max_feasible_effort": recommended,
+                    "options": [],
+                    "rule": "planner_has_no_effort_optimizer",
+                }
             rows.append(
                 {
                     **row,
                     "rank": index,
                     "predictive_detection": predictive,
+                    "recommended_effort": effort_recommendation["recommended_effort"],
+                    "effort_recommendation": effort_recommendation,
                 }
             )
 
@@ -1368,8 +1609,11 @@ class MissionControlSession:
             "planner": diagnostics.get("planner", "unknown"),
             "selection_source": diagnostics.get("selection_source"),
             "marine_rank": diagnostics.get("marine_rank"),
+            "recommended_effort": diagnostics.get("marine_recommended_effort")
+            or diagnostics.get("effort_recommendation", {}).get("recommended_effort"),
             "diagnostics": {
                 "fallback_used": diagnostics.get("fallback_used"),
+                "effort_recommendation": diagnostics.get("effort_recommendation"),
                 "ranked_selected_sites": [
                     dict(row)
                     for row in diagnostics.get(
