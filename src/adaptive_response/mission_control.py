@@ -746,6 +746,7 @@ class MissionControlSession:
                 for q, weight in spatial.q_posterior().items()
             },
             "q_mean": spatial.q_mean(),
+            "live_curve": self._observable_live_curve(),
             "performance": performance,
         }
 
@@ -1042,6 +1043,37 @@ class MissionControlSession:
             "mission_sites": mission_sites,
             "curve": curve,
         }
+
+    def _observable_live_curve(self) -> list[dict[str, Any]]:
+        """Observable live-demo trajectory; contains no hidden occupancy truth."""
+
+        cumulative_effort = 0
+        cumulative_detections = 1  # confirmed initial detection
+        rows: list[dict[str, Any]] = [
+            {
+                "round": 0,
+                "effort": 0,
+                "field_detections": cumulative_detections,
+                "budget_used_fraction": 0.0,
+            }
+        ]
+        for index, row in enumerate(self._judge_history, start=1):
+            cumulative_effort += int(row["effort_spent"])
+            cumulative_detections += sum(
+                int(bool(observation.detection))
+                for observation in row["observations"].observations
+            )
+            rows.append(
+                {
+                    "round": index,
+                    "effort": cumulative_effort,
+                    "field_detections": cumulative_detections,
+                    "budget_used_fraction": (
+                        cumulative_effort / self._budget if self._budget else 0.0
+                    ),
+                }
+            )
+        return rows
 
     def _judge_performance(
         self,
