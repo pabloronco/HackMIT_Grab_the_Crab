@@ -234,3 +234,27 @@ def test_low_effort_judge_path_can_still_exhaust_budget_without_dead_end() -> No
 
     assert snap["resources"]["remaining_budget"] == 0
     assert snap["resources"]["spent_budget"] == 18
+
+
+def test_mission_updated_flag_means_evidence_changed_counterfactual_next_site() -> None:
+    session = MissionControlSession()
+    snap = session.reset(case_id="incident_003")
+    top = snap["global_recommendations"][0]["site_id"]
+    snap = session.deploy(site_id=top, effort=6)
+
+    replan = snap["replan"]
+    assert replan["semantics"] == "same_post_survey_public_state_without_new_evidence"
+
+    if replan["from"] is None or replan["to"] is None:
+        assert snap["mission_changed"] is False
+        return
+
+    from_sig = [
+        (row["site_id"], row["effort_units"])
+        for row in replan["from"]["allocations"]
+    ]
+    to_sig = [
+        (row["site_id"], row["effort_units"])
+        for row in replan["to"]["allocations"]
+    ]
+    assert snap["mission_changed"] is (from_sig != to_sig)
