@@ -1181,6 +1181,7 @@ class MissionControlSession:
             "q_mean": q_diagnostics["mean"],
             "q_diagnostics": q_diagnostics,
             "live_curve": self._observable_live_curve(),
+            "resource_summary": self._resource_summary(),
             "performance": performance,
         }
 
@@ -1463,17 +1464,20 @@ class MissionControlSession:
             (0, {incident.initial_detection})
         ]
         mission_sites: list[str] = []
+        mission_efforts: list[int] = []
+        new_field_detections = 0
 
         while loop.phase not in (LoopPhase.COMPLETE, LoopPhase.REVEALED):
             transition = loop.run_round()
-            cumulative_effort += int(
-                transition.simulator_metrics["effort_spent"]
-            )
+            spent = int(transition.simulator_metrics["effort_spent"])
+            cumulative_effort += spent
+            mission_efforts.append(spent)
             detected = set(detected_snapshots[-1][1])
             for observation in transition.observations.observations:
                 mission_sites.append(observation.site_id)
                 if observation.detection:
                     detected.add(observation.site_id)
+                    new_field_detections += 1
             detected_snapshots.append((cumulative_effort, detected))
 
         hidden = loop.reveal()
@@ -1496,12 +1500,26 @@ class MissionControlSession:
             for effort, detected in detected_snapshots
         ]
         final_detected = int(curve[-1]["detected_occupied"])
+        high_effort_equivalent = 6 * len(mission_efforts)
         return {
             "name": name,
             "occupied_total": occupied_total,
             "detected_occupied": final_detected,
             "undetected_occupied": occupied_total - final_detected,
             "mission_sites": mission_sites,
+            "mission_efforts": mission_efforts,
+            "missions_completed": len(mission_efforts),
+            "field_detections_beyond_initial": new_field_detections,
+            "effort_spent": cumulative_effort,
+            "effort_per_detected_occupied": (
+                cumulative_effort / final_detected
+                if final_detected > 0
+                else None
+            ),
+            "high_effort_equivalent_for_same_missions": high_effort_equivalent,
+            "effort_avoided_vs_always_high_for_same_missions": max(
+                0, high_effort_equivalent - cumulative_effort
+            ),
             "curve": curve,
         }
 
@@ -1514,12 +1532,15 @@ class MissionControlSession:
             {
                 "round": 0,
                 "effort": 0,
+                "mission_effort": 0,
                 "field_detections": cumulative_detections,
                 "budget_used_fraction": 0.0,
+                "budget_remaining": self._budget,
             }
         ]
         for index, row in enumerate(self._judge_history, start=1):
-            cumulative_effort += int(row["effort_spent"])
+            mission_effort = int(row["effort_spent"])
+            cumulative_effort += mission_effort
             cumulative_detections += sum(
                 int(bool(observation.detection))
                 for observation in row["observations"].observations
@@ -1528,13 +1549,42 @@ class MissionControlSession:
                 {
                     "round": index,
                     "effort": cumulative_effort,
+                    "mission_effort": mission_effort,
                     "field_detections": cumulative_detections,
                     "budget_used_fraction": (
                         cumulative_effort / self._budget if self._budget else 0.0
                     ),
+                    "budget_remaining": max(0, self._budget - cumulative_effort),
                 }
             )
         return rows
+
+    def _resource_summary(self) -> dict[str, Any]:
+        curve = self._observable_live_curve()
+        spent = int(curve[-1]["effort"]) if curve else 0
+        completed = max(0, len(curve) - 1)
+        high_equivalent = 6 * completed
+        latest_recommendation = self._global_recommendations(limit=1)
+        next_effort = (
+            int(latest_recommendation[0]["recommended_effort"])
+            if latest_recommendation
+            else None
+        )
+        return {
+            "effort_spent": spent,
+            "budget_remaining": max(0, self._budget - spent),
+            "missions_completed": completed,
+            "confirmed_detections": int(curve[-1]["field_detections"]) if curve else 1,
+            "next_recommended_effort": next_effort,
+            "high_effort_equivalent_for_completed_missions": high_equivalent,
+            "effort_avoided_vs_always_high_for_completed_missions": max(
+                0, high_equivalent - spent
+            ),
+            "semantics": (
+                "Effort avoided compares completed missions with using effort=6 "
+                "for every one of those same mission actions; it is not a dollar estimate."
+            ),
+        }
 
     def _judge_performance(
         self,
@@ -1560,13 +1610,18 @@ class MissionControlSession:
             }
         ]
         mission_sites: list[str] = []
+        mission_efforts: list[int] = []
+        new_field_detections = 0
 
         for row in self._judge_history:
-            cumulative_effort += int(row["effort_spent"])
+            spent = int(row["effort_spent"])
+            cumulative_effort += spent
+            mission_efforts.append(spent)
             for observation in row["observations"].observations:
                 mission_sites.append(observation.site_id)
                 if observation.detection:
                     detected.add(observation.site_id)
+                    new_field_detections += 1
             curve.append(
                 {
                     "effort": cumulative_effort,
@@ -1580,12 +1635,26 @@ class MissionControlSession:
             )
 
         final_detected = len(detected & occupied)
+        high_effort_equivalent = 6 * len(mission_efforts)
         return {
             "name": "you",
             "occupied_total": occupied_total,
             "detected_occupied": final_detected,
             "undetected_occupied": occupied_total - final_detected,
             "mission_sites": mission_sites,
+            "mission_efforts": mission_efforts,
+            "missions_completed": len(mission_efforts),
+            "field_detections_beyond_initial": new_field_detections,
+            "effort_spent": cumulative_effort,
+            "effort_per_detected_occupied": (
+                cumulative_effort / final_detected
+                if final_detected > 0
+                else None
+            ),
+            "high_effort_equivalent_for_same_missions": high_effort_equivalent,
+            "effort_avoided_vs_always_high_for_same_missions": max(
+                0, high_effort_equivalent - cumulative_effort
+            ),
             "curve": curve,
         }
 
