@@ -535,6 +535,10 @@ class MissionControlSession:
                 self._mission.allocations if self._mission else ()
             )
         }
+        all_recommendations = self._global_recommendations(limit=None)
+        recommendation_by_site = {
+            str(row["site_id"]): row for row in all_recommendations
+        }
 
         nodes: list[dict[str, Any]] = []
         for index, site_id in enumerate(graph.node_ids):
@@ -557,6 +561,16 @@ class MissionControlSession:
                 ),
                 "feasible": bool(graph.feasibility_mask[index]),
                 "mission_effort": mission_effort.get(site_id, 0),
+                "marine_rank": (
+                    int(recommendation_by_site[site_id]["rank"])
+                    if site_id in recommendation_by_site
+                    else None
+                ),
+                "predictive_detection": (
+                    dict(recommendation_by_site[site_id]["predictive_detection"])
+                    if site_id in recommendation_by_site
+                    else {}
+                ),
             }
             if self._revealed_world is not None:
                 node["true_occupied"] = bool(
@@ -585,9 +599,7 @@ class MissionControlSession:
             }
 
         top_worlds = self._top_worlds(spatial)
-        recommendations = self._global_recommendations(
-            limit=_TOP_RECOMMENDATIONS
-        )
+        recommendations = all_recommendations[:_TOP_RECOMMENDATIONS]
 
         performance = None
         if self._revealed_world is not None:
