@@ -258,3 +258,45 @@ def test_mission_updated_flag_means_evidence_changed_counterfactual_next_site() 
         for row in replan["to"]["allocations"]
     ]
     assert snap["mission_changed"] is (from_sig != to_sig)
+
+
+def test_dashboard_defaults_to_frozen_hero_case_and_exposes_real_map_metadata() -> None:
+    session = MissionControlSession()
+    snap = session.snapshot()
+
+    assert snap["case"]["case_id"] == "incident_097"
+    assert len(snap["static_response"]["plan_sites"]) == 3
+    assert snap["incident"]["initial_detection"] not in set(
+        snap["static_response"]["plan_sites"]
+    )
+
+    for node in snap["nodes"]:
+        assert isinstance(node["latitude"], float)
+        assert isinstance(node["longitude"], float)
+        assert -90.0 <= node["latitude"] <= 90.0
+        assert -180.0 <= node["longitude"] <= 180.0
+        assert node["zone"] == "Salish Sea"
+        assert node["habitat_label"]
+
+
+def test_live_curve_contains_only_observable_progress_and_tracks_budget() -> None:
+    session = MissionControlSession()
+    snap = session.snapshot()
+
+    assert snap["live_curve"] == [
+        {
+            "round": 0,
+            "effort": 0,
+            "field_detections": 1,
+            "budget_used_fraction": 0.0,
+        }
+    ]
+
+    top = snap["global_recommendations"][0]["site_id"]
+    snap = session.deploy(site_id=top, effort=6)
+    point = snap["live_curve"][-1]
+    assert point["round"] == 1
+    assert point["effort"] == 6
+    assert point["field_detections"] >= 1
+    assert math.isclose(point["budget_used_fraction"], 6 / 18)
+    assert "true_occupied" not in point
