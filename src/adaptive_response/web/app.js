@@ -231,8 +231,8 @@ function renderSelectedSite() {
   }
 
   $("selected-site").textContent = `SITE ${node.id}`;
-  const rank = rec?.rank ? `#${rec.rank}` : "OVERRIDE";
-  const pd = rec?.predictive_detection || {};
+  const rank = node.marine_rank ? `#${node.marine_rank}` : "OVERRIDE";
+  const pd = node.predictive_detection || rec?.predictive_detection || {};
   $("selected-metrics").innerHTML = `
     <div><span>Marine rank</span><b>${rank}</b></div>
     <div><span>Occupancy belief</span><b>${fmtPct(node.belief)}</b></div>
@@ -415,7 +415,7 @@ function showTooltip(event, node) {
       <span>Habitat</span><b>${fmtPct(node.habitat)}</b>
       <span>Observed effort</span><b>${node.effort}</b>
       <span>Detections</span><b>${node.detections}</b>
-      <span>Marine rank</span><b>${rec ? "#" + rec.rank : "—"}</b>
+      <span>Marine rank</span><b>${node.marine_rank ? "#" + node.marine_rank : "—"}</b>
     </div>
     ${state.data.revealed ? `<div class="truth-line">TRUE OCCUPANCY: <b>${node.true_occupied ? "PRESENT" : "ABSENT"}</b></div>` : ""}
   `;
