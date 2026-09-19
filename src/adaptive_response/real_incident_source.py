@@ -72,6 +72,39 @@ def _load_habitat_proxy_scores(context_json: Path) -> dict[str, float]:
     return {str(k): float(v) for k, v in context["habitat_proxy"]["scores"].items()}
 
 
+def real_site_display_metadata(
+    site_ids: list[str] | tuple[str, ...] | set[str],
+    *,
+    sites_csv: Path = REAL_SITES_CSV,
+) -> dict[str, dict[str, object]]:
+    """Return source-grounded display metadata for real monitoring sites.
+
+    This helper is intentionally UI-facing: coordinates and documented habitat
+    descriptors are exposed for map rendering and labels, but never hidden
+    occupancy or simulator-only variables.
+    """
+
+    wanted = {str(site_id) for site_id in site_ids}
+    rows = {row["site_id"]: row for row in read_real_sites(sites_csv)}
+    missing = sorted(wanted - set(rows))
+    if missing:
+        raise ValueError(f"real_sites_v0.csv is missing site ids: {missing}")
+
+    return {
+        site_id: {
+            "latitude": float(rows[site_id]["latitude"]),
+            "longitude": float(rows[site_id]["longitude"]),
+            "habitat_label": str(rows[site_id]["crabteam_habitat"]),
+            "substrate": rows[site_id].get("substrate") or None,
+            "shoreline_type": rows[site_id].get("shoreline_type") or None,
+            "exposure": rows[site_id].get("exposure") or None,
+            "eelgrass": rows[site_id].get("eelgrass") or None,
+            "salt_marsh": rows[site_id].get("salt_marsh") or None,
+        }
+        for site_id in sorted(wanted)
+    }
+
+
 def build_real_incident(
     seed_site_id: str,
     *,
