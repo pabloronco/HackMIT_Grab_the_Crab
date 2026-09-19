@@ -501,3 +501,31 @@ Hackathon feedback changed the product presentation priority from validation-led
 **Implementation priority:** interactive site+effort deployment -> deterministic cases -> top candidate ranking/why-here -> top unique extents -> propagated belief animation -> comparator receipt -> explainability drawers -> polish. World-conditioned mission ranking and temperature are not MVP blockers.
 
 **Owner:** team. Demu may work on the UI in parallel; cross-cutting interface/claim changes require team review.
+
+
+## 2026-09-19 — Judge-mode hero-case selection rubric frozen before scanning results
+
+**Status:** FROZEN for illustrative demo-case selection only. This is not a new benchmark and must not replace or modify R8/R10 claims.
+
+The first technical smoke case (`incident_001`) was intentionally not selected for storytelling and happened to be uninformative: Marine, Static Response and the follow-Marine judge path all used the same three sites and confirmed only the already-known initial occupied site. Before inspecting the remaining 99 cases, the team freezes the following hero-case selection semantics.
+
+**Positive illustrative candidate gate:**
+- Marine confirms more true occupied sites than Static Response on the same frozen incident;
+- Marine and Static Response diverge in at least one mission target;
+- following Marine produces at least one visible `MISSION UPDATED` event;
+- at least one field detection occurs beyond the already-confirmed initial site.
+
+**Positive-candidate ordering, lexicographically:**
+1. larger Marine-minus-Static confirmed/detected occupied-site count;
+2. more mission-target divergences;
+3. more visible mission-updated rounds;
+4. more field detections beyond the initial detection;
+5. larger maximum propagated absolute occupancy-belief change;
+6. more top-world turnovers;
+7. deterministic case-id tie-break.
+
+**Causal-legibility fallback gate:** if no positive candidate exists, prioritize incidents with mission divergence plus visible mission update, then larger propagated belief changes and top-world turnover. Such a case may demonstrate adaptive causality without claiming an outcome advantage.
+
+The selector must also report counts of Marine-better / equal / worse cases across the full 100-case UI library so illustrative selection cannot be mistaken for an aggregate performance result.
+
+**Claim rule:** any selected hero incident must be described as an illustrative blinded scenario chosen for causal legibility. Formal statements about whether replanning reliably improves performance remain governed by the frozen R10 paired analysis.
