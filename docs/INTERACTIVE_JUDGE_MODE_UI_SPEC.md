@@ -211,3 +211,20 @@ Then open `http://127.0.0.1:8000` and rehearse at least:
 7. run one low-effort path to confirm the interface does not dead-end.
 
 Do not merge the judging branch until the full suite and one ~90-second browser rehearsal are green.
+
+
+## Polished real-coast dashboard implementation
+
+The implemented judging surface now follows the reviewed light marine-dashboard direction:
+
+- **Left:** Marine recommendation, frozen Static Response route, operator site selector, effort selector, deploy control.
+- **Center:** dominant real-coast map using actual monitoring-site latitude/longitude and the current graph edges.
+- **Right:** probable ecological extents and detectability posterior.
+- **Below map:** explicit, source-faithful "Why this mission?" evidence plus latest return / propagated changes / model stress.
+- **Bottom:** live observable response curve before reveal and evaluator receipt after reveal.
+
+The map uses OpenStreetMap raster tiles when network access is available, with required attribution. Tiles are cartography only. Marine's graph state, posterior, recommendations, field outcomes and evidence remain local/backend-derived. If external tiles fail, the SVG graph still renders on a water fallback.
+
+Probability visualization is node-centered. Colored halos are visual emphasis around discrete survey sites; they must not be described as a continuous interpolated ecological probability field.
+
+The default dashboard incident is `incident_097`, selected under the preregistered illustrative-case rubric. The scenario selector still exposes all 100 frozen cases.
