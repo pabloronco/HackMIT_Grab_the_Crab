@@ -15,7 +15,11 @@ from .mission_loop import LoopPhase, RoundTransition
 from .model_mismatch import posterior_predictive_surprise
 from .models import GraphState, HiddenWorld, MissionAction, MissionAllocation
 from .planners import FrontierPlanner, Planner
-from .real_incident_source import (\n    build_real_incident,\n    eligible_incident_seed_sites,\n    real_site_display_metadata,\n)
+from .real_incident_source import (
+    build_real_incident,
+    eligible_incident_seed_sites,
+    real_site_display_metadata,
+)
 from .spatial_belief import QHypothesis, SpatialBeliefEngine, SpatialBeliefState
 from .spatial_mission_loop import SpatialAdaptiveMissionLoop
 from .world_models import (
