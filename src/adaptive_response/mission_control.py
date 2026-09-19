@@ -99,6 +99,38 @@ def _masked_for_product_recommendations(graph_state: GraphState) -> GraphState:
     return replace(graph_state, feasibility_mask=mask)
 
 
+def _masked_for_product_revisit_fallback(graph_state: GraphState) -> GraphState:
+    """Allow revisits only when every fresh delimitation site has been used.
+
+    The confirmed initial-detection node is identifiable by detections > 0 with
+    zero observed response effort, so it stays blocked. This fallback exists only
+    to keep low-effort interactive sessions from dead-ending before budget reaches
+    zero on small incident subgraphs.
+    """
+
+    effort_idx = NODE_FEATURE_NAMES.index("observed_effort")
+    detections_idx = NODE_FEATURE_NAMES.index("detections")
+    mask = tuple(
+        feasible
+        and not (
+            float(features[detections_idx]) > 0.0
+            and float(features[effort_idx]) <= 0.0
+        )
+        for feasible, features in zip(
+            graph_state.feasibility_mask,
+            graph_state.node_features,
+        )
+    )
+    return replace(graph_state, feasibility_mask=mask)
+
+
+def _product_recommendation_graph(graph_state: GraphState) -> GraphState:
+    fresh = _masked_for_product_recommendations(graph_state)
+    if any(fresh.feasibility_mask):
+        return fresh
+    return _masked_for_product_revisit_fallback(graph_state)
+
+
 class MissionControlFrontierPlanner:
     """UI planner: exact Frontier ordering, with observed sites masked."""
 
@@ -110,7 +142,7 @@ class MissionControlFrontierPlanner:
 
     def rank_candidates(self, graph_state: GraphState) -> tuple[dict[str, Any], ...]:
         return self._base.rank_candidates(
-            _masked_for_product_recommendations(graph_state)
+            _product_recommendation_graph(graph_state)
         )
 
     def plan(
@@ -120,7 +152,7 @@ class MissionControlFrontierPlanner:
         constraints: Mapping[str, Any],
     ) -> MissionAction:
         return self._base.plan(
-            _masked_for_product_recommendations(graph_state),
+            _product_recommendation_graph(graph_state),
             remaining_budget=remaining_budget,
             constraints=constraints,
         )
