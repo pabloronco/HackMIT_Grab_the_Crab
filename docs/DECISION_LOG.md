@@ -546,3 +546,26 @@ This makes the UI statement causal and aligned with the project thesis:
 `FIELD EVIDENCE -> BELIEF/OBSERVABLE EVIDENCE CHANGED -> NEXT MISSION CHANGED`.
 
 The frozen hero-case rubric from the preceding entry remains unchanged, but the 100-case selector must be rerun on the corrected semantics before a hero case is chosen.
+
+
+## 2026-09-19 — Judging UI visual direction and hero default implemented
+
+**Status:** CURRENT DEFAULT on `ui/interactive-judge-mode`.
+
+The judging interface has been rebuilt around the visual/product direction reviewed by the team: a bright professional marine operations dashboard with a dominant coastal map, a left mission/choice panel, a right probable-worlds panel, explicit effort controls, inspectable recommendation reasons, live observable incident telemetry, and reveal-only policy comparison.
+
+**Hero case:** `incident_097` is now the default case loaded by the dashboard. It remains an illustrative frozen blinded incident selected under the previously frozen hero-case rubric, not an aggregate performance claim. All 100 cases remain selectable.
+
+**Real-coast map:** the UI now renders the current incident subgraph at the real monitoring-site latitude/longitude coordinates from `real_sites_v0.csv`. Online, the browser requests OpenStreetMap raster tiles only as a cartographic basemap; the ecological graph, site states, beliefs, edges, mission recommendations and evidence are all produced by the local Marine backend. If tiles are unavailable, the SVG graph and coastal-water fallback remain usable. OpenStreetMap attribution is shown in the map.
+
+**Map probability semantics:** site-centered colored halos visualize node-level posterior occupancy belief / habitat context. They are not presented as an interpolated continuous ecological probability surface. The graph remains the decision state.
+
+**Left mission panel:** shows Marine's current Frontier recommendation, the frozen Static Response t0 route, operator site choice, effort `{1,3,6}`, and deploy control. Static Response is still a benchmark design, not a field-professional or agency simulation.
+
+**Why-this-mission panel:** only exposes quantities that the current system actually supports: Frontier status, current occupancy belief, and posterior-predictive detection probability at the operator-selected effort. Habitat is available as map/site context but is not falsely presented as a Frontier ranking cause.
+
+**Right panel:** shows top unique ecological extents marginalized over q plus the current q posterior. World explanations use only explicit extent size, provenance labels and posterior movement; they do not invent ecological narratives or world-conditioned planning.
+
+**Live chart:** before reveal, the chart uses observable quantities only: cumulative confirmed detections and field budget used. Hidden occupied-site coverage is not exposed. After reveal, the evaluator receipt separately compares Marine / Static Response / You on true occupied sites confirmed/detected.
+
+**Owner:** team.
