@@ -12,9 +12,11 @@ const NS = "http://www.w3.org/2000/svg";
 const $ = (id) => document.getElementById(id);
 const fmtPct = (value) => value == null ? "—" : `${Math.round(value * 100)}%`;
 const fmtPp = (value) => {
+  if (value == null) return "—";
   const pp = Math.round(value * 100);
   return `${pp >= 0 ? "+" : ""}${pp} pp`;
 };
+const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 
 async function api(path, method = "GET", body = null) {
   const options = { method, headers: {} };
@@ -37,11 +39,7 @@ function svgEl(name, attrs = {}) {
 function setBusy(value) {
   state.busy = value;
   document.body.classList.toggle("is-busy", value);
-  $("deploy-btn").disabled = value || !state.selectedSite || !canSpend(state.selectedEffort);
-  $("reset-btn").disabled = value;
-  $("next-case-btn").disabled = value;
-  $("case-select").disabled = value;
-  $("reveal-btn").disabled = value || !state.data?.can_reveal;
+  renderControls();
 }
 
 function canSpend(effort) {
@@ -68,21 +66,21 @@ function hideTransition() {
 }
 
 function worldById(worldId) {
-  return state.data?.top_worlds?.items?.find(w => w.world_id === worldId) || null;
+  return state.data?.top_worlds?.items?.find((world) => world.world_id === worldId) || null;
 }
 
 function recommendationBySite(siteId) {
-  return state.data?.global_recommendations?.find(r => r.site_id === siteId) || null;
+  return state.data?.global_recommendations?.find((row) => row.site_id === siteId) || null;
 }
 
 function nodeById(siteId) {
-  return state.data?.nodes?.find(n => n.id === siteId) || null;
+  return state.data?.nodes?.find((node) => node.id === siteId) || null;
 }
 
 function ensureSelection() {
   const recommendations = state.data?.global_recommendations || [];
-  const known = new Set(state.data?.nodes?.map(n => n.id) || []);
-  if (!state.selectedSite || !known.has(state.selectedSite)) {
+  const known = new Set(state.data?.nodes?.map((node) => node.id) || []);
+  if (!state.selectedSite || !known.has(state.selectedSite) || state.selectedSite === state.data?.incident?.initial_detection) {
     state.selectedSite = recommendations[0]?.site_id || null;
   }
   if (state.selectedWorld && !worldById(state.selectedWorld)) {
@@ -90,7 +88,7 @@ function ensureSelection() {
   }
 
   const allowed = state.data?.resources?.effort_levels || [1, 3, 6];
-  const affordable = allowed.filter(e => e <= (state.data?.resources?.remaining_budget || 0));
+  const affordable = allowed.filter((effort) => effort <= (state.data?.resources?.remaining_budget || 0));
   if (!affordable.includes(state.selectedEffort)) {
     state.selectedEffort = affordable.at(-1) || allowed[0];
   }
@@ -101,7 +99,7 @@ async function bootstrap() {
     state.cases = await api("/api/cases");
     renderCaseSelect();
     const data = await api("/api/state");
-    render(data);
+    render(data, null);
   } catch (error) {
     console.error(error);
     alert(error.message);
@@ -109,20 +107,18 @@ async function bootstrap() {
 }
 
 function renderCaseSelect() {
-  const select = $("case-select");
   const rows = state.cases?.cases || [];
-  select.innerHTML = rows.map(row =>
-    `<option value="${row.case_id}">${String(row.index).padStart(3, "0")} · ${row.label}</option>`
-  ).join("");
+  $("case-select").innerHTML = rows.map((row) => {
+    const demo = row.case_id === "incident_097" ? "★ DEMO · " : "";
+    return `<option value="${row.case_id}">${demo}${String(row.index).padStart(3, "0")} · ${row.label}</option>`;
+  }).join("");
 }
 
 function render(data, previous = state.data) {
   state.data = data;
   ensureSelection();
 
-  if (data.case?.case_id) {
-    $("case-select").value = data.case.case_id;
-  }
+  if (data.case?.case_id) $("case-select").value = data.case.case_id;
   $("initial-detection").textContent = data.incident.initial_detection;
   $("case-number").textContent = data.case.index
     ? `${String(data.case.index).padStart(3, "0")} / ${data.case.count}`
@@ -135,50 +131,107 @@ function render(data, previous = state.data) {
   const budgetRatio = data.resources.initial_budget
     ? data.resources.remaining_budget / data.resources.initial_budget
     : 0;
-  $("budget-fill").style.width = `${Math.max(0, Math.round(budgetRatio * 100))}%`;
+  $("budget-fill").style.width = `${Math.round(clamp01(budgetRatio) * 100)}%`;
 
+  renderMissionPanel();
   renderWorlds();
-  renderRecommendations();
-  renderSelectedSite();
-  renderEffortControls();
+  renderQ();
+  renderWhyMission();
   renderMap(previous);
   renderEvidence();
   renderPropagation();
   renderStress();
-  renderQ();
   renderReplan();
+  renderLiveChart();
   renderPerformance();
   renderTimeline();
   renderControls();
 }
 
+function renderMissionPanel() {
+  const recommendations = state.data.global_recommendations || [];
+  const top = recommendations[0] || null;
+
+  $("marine-site").textContent = top ? `Site ${top.site_id}` : "Field work complete";
+  $("marine-belief").textContent = top ? fmtPct(top.belief) : "—";
+  $("marine-priority").textContent = top
+    ? (top.frontier ? "Frontier priority" : "Fallback priority")
+    : "Complete";
+  $("marine-priority").classList.toggle("pill-green", Boolean(top?.frontier));
+  $("marine-copy").textContent = top
+    ? "Frontier-first ranking: frontier status, then occupancy belief, uncertainty, and deterministic site ID."
+    : "No further Marine recommendation is required before reveal.";
+
+  const staticSites = state.data.static_response?.plan_sites || [];
+  $("static-site").textContent = staticSites.length ? `Site ${staticSites[0]}` : "—";
+  $("static-route").innerHTML = staticSites.map((siteId, index) => {
+    const arrow = index < staticSites.length - 1 ? '<i>→</i>' : "";
+    return `<span class="route-chip"><b>${siteId}</b>${arrow}</span>`;
+  }).join("");
+
+  const selectable = (state.data.nodes || [])
+    .filter((node) => node.id !== state.data.incident.initial_detection)
+    .slice()
+    .sort((a, b) => {
+      const ar = a.marine_rank ?? 9999;
+      const br = b.marine_rank ?? 9999;
+      return ar - br || String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
+    });
+
+  $("site-select").innerHTML = selectable.map((node) => {
+    const rank = node.marine_rank ? ` · Marine #${node.marine_rank}` : "";
+    const effort = node.effort > 0 ? " · surveyed" : "";
+    return `<option value="${node.id}" ${node.id === state.selectedSite ? "selected" : ""}>Site ${node.id}${rank}${effort}</option>`;
+  }).join("");
+
+  const selected = nodeById(state.selectedSite);
+  const predictive = selected?.predictive_detection?.[String(state.selectedEffort)];
+  $("effort-caption").textContent = selected
+    ? `At Site ${selected.id}, posterior-predictive detection at effort ${state.selectedEffort}: ${fmtPct(predictive)}.`
+    : "Higher effort increases the chance of detecting an occupied site.";
+
+  $("follow-marine-btn").disabled = !top || top.site_id === state.selectedSite;
+}
+
 function renderWorlds() {
   const bundle = state.data.top_worlds;
-  $("world-count").textContent = `${bundle.unique_world_count} EXTENTS`;
-  $("world-list").innerHTML = bundle.items.map(world => {
-    const selected = state.selectedWorld === world.world_id ? "selected" : "";
-    const family = world.families.length ? world.families.join(" · ") : "mixed prior";
+  $("world-count").textContent = `${bundle.unique_world_count} extents`;
+
+  const expandedId = state.selectedWorld || bundle.items?.[0]?.world_id || null;
+  $("world-list").innerHTML = bundle.items.map((world) => {
+    const selected = expandedId === world.world_id;
+    const family = world.families.length ? world.families.join(" · ") : "mixed provenance";
     const delta = Math.abs(world.delta) < 0.0005 ? "stable" : fmtPp(world.delta);
+    const changeText = Math.abs(world.delta) < 0.0005
+      ? "Posterior mass is stable after the latest field return."
+      : `Posterior mass moved ${fmtPp(world.delta)} after the latest field return.`;
     return `
-      <button class="world-card ${selected}" data-world="${world.world_id}">
-        <div class="world-rank">#${world.rank}</div>
-        <div class="world-main">
+      <button class="world-card ${selected ? "selected" : ""}" data-world="${world.world_id}">
+        <span class="world-rank">${world.rank}</span>
+        <span class="world-main">
           <strong>Possible extent ${world.rank}</strong>
           <span>${world.occupied_count} occupied sites · ${family}</span>
-        </div>
-        <div class="world-mass">
-          <b>${fmtPct(world.posterior)}</b>
-          <small>${delta}</small>
-        </div>
+        </span>
+        <span class="world-mass"><b>${fmtPct(world.posterior)}</b><small>${delta}</small></span>
+        ${selected ? `
+          <div class="world-expanded">
+            <b>Why it remains plausible</b>
+            <ul>
+              <li>${world.occupied_count} sites are occupied in this hypothesis.</li>
+              <li>Ecological provenance: ${family}.</li>
+              <li>${changeText}</li>
+            </ul>
+          </div>` : ""}
       </button>`;
   }).join("") + `
     <div class="other-worlds">
-      <span>All other extents</span><b>${fmtPct(bundle.remaining_mass)}</b>
+      <span>All other unique extents</span><b>${fmtPct(bundle.remaining_mass)}</b>
     </div>`;
 
-  document.querySelectorAll("[data-world]").forEach(button => {
+  document.querySelectorAll("[data-world]").forEach((button) => {
     button.addEventListener("click", () => {
-      state.selectedWorld = button.dataset.world;
+      const worldId = button.dataset.world;
+      state.selectedWorld = state.selectedWorld === worldId ? null : worldId;
       render(state.data);
     });
   });
@@ -188,79 +241,46 @@ function renderWorlds() {
   if (state.selectedWorld) {
     const world = worldById(state.selectedWorld);
     $("scenario-banner").textContent =
-      `WHAT-IF VIEW · POSSIBLE EXTENT #${world.rank} · POSTERIOR ${fmtPct(world.posterior)} · NOT HIDDEN TRUTH`;
+      `WHAT-IF EXTENT #${world.rank} · posterior ${fmtPct(world.posterior)} · this is not hidden truth`;
   }
 }
 
-function renderRecommendations() {
-  const rows = state.data.global_recommendations || [];
-  const container = $("recommendation-list");
-  if (!rows.length) {
-    container.innerHTML = '<div class="empty-copy">No new recommendation. Field work is complete.</div>';
-    return;
-  }
-
-  container.innerHTML = rows.map(row => {
-    const selected = row.site_id === state.selectedSite ? "selected" : "";
+function renderQ() {
+  const posterior = state.data.q_posterior || {};
+  const rows = Object.entries(posterior).sort(([a], [b]) => Number(a) - Number(b));
+  const maxWeight = Math.max(0.0001, ...rows.map(([, weight]) => Number(weight)));
+  $("q-panel").innerHTML = rows.map(([q, weight]) => {
+    const height = Math.max(3, Math.round((Number(weight) / maxWeight) * 100));
     return `
-      <button class="recommendation-row ${selected}" data-site="${row.site_id}">
-        <span class="rec-rank">#${row.rank}</span>
-        <span class="rec-main">
-          <b>Site ${row.site_id}</b>
-          <small>${row.frontier ? "frontier" : "fallback"} · belief ${fmtPct(row.belief)}</small>
-        </span>
-        <span class="rec-score">${fmtPct(row.predictive_detection["6"])}</span>
-      </button>`;
-  }).join("");
-
-  container.querySelectorAll("[data-site]").forEach(button => {
-    button.addEventListener("click", () => {
-      state.selectedSite = button.dataset.site;
-      render(state.data);
-    });
-  });
+      <div class="q-column">
+        <b>${fmtPct(weight)}</b>
+        <div class="q-bar-shell"><i class="q-bar" style="height:${height}%"></i></div>
+        <span>q = ${Number(q).toFixed(2)}</span>
+      </div>`;
+  }).join("") + `<div class="q-mean">posterior mean q = <b>${Number(state.data.q_mean).toFixed(3)}</b></div>`;
 }
 
-function renderSelectedSite() {
+function renderWhyMission() {
   const node = nodeById(state.selectedSite);
-  const rec = recommendationBySite(state.selectedSite);
   if (!node) {
-    $("selected-site").textContent = "—";
-    $("selected-metrics").innerHTML = '<span class="muted">Choose a site on the map.</span>';
+    $("why-subtitle").textContent = "Choose a survey site to inspect the current evidence.";
+    $("why-frontier-value").textContent = "—";
+    $("why-belief-value").textContent = "—";
+    $("why-detection-value").textContent = "—";
     return;
   }
 
-  $("selected-site").textContent = `SITE ${node.id}`;
-  const rank = node.marine_rank ? `#${node.marine_rank}` : "OVERRIDE";
-  const pd = node.predictive_detection || rec?.predictive_detection || {};
-  $("selected-metrics").innerHTML = `
-    <div><span>Marine rank</span><b>${rank}</b></div>
-    <div><span>Occupancy belief</span><b>${fmtPct(node.belief)}</b></div>
-    <div><span>Uncertainty</span><b>${fmtPct(node.uncertainty)}</b></div>
-    <div><span>Frontier</span><b>${node.frontier ? "YES" : "NO"}</b></div>
-    <div class="wide"><span>Predicted detection</span>
-      <b>e1 ${fmtPct(pd["1"])} · e3 ${fmtPct(pd["3"])} · e6 ${fmtPct(pd["6"])}</b>
-    </div>
-  `;
-  $("follow-marine-btn").disabled = state.data.global_recommendations?.[0]?.site_id === state.selectedSite;
-}
-
-function renderEffortControls() {
-  document.querySelectorAll(".effort-btn").forEach(button => {
-    const effort = Number(button.dataset.effort);
-    button.classList.toggle("active", effort === state.selectedEffort);
-    button.disabled = !canSpend(effort) || state.data.revealed || state.data.can_reveal;
-  });
-}
-
-function renderControls() {
-  const deploy = $("deploy-btn");
-  const done = state.data.can_reveal || state.data.revealed;
-  deploy.disabled = state.busy || !state.selectedSite || !canSpend(state.selectedEffort) || done;
-  deploy.textContent = done
-    ? "FIELD WORK COMPLETE"
-    : `DEPLOY SITE ${state.selectedSite || "—"} · EFFORT ${state.selectedEffort}`;
-  $("reveal-btn").disabled = state.busy || !state.data.can_reveal;
+  const rankText = node.marine_rank ? `Marine rank #${node.marine_rank}` : "Operator override";
+  $("why-subtitle").textContent = `Site ${node.id} · ${rankText} · current observable state`;
+  $("why-frontier-value").textContent = node.frontier ? "YES" : "NO";
+  $("why-frontier-copy").textContent = node.frontier
+    ? "This site sits on the current response frontier beside public detection evidence."
+    : "This site is not currently a frontier node; select it only as an operator override or fallback.";
+  $("why-belief-value").textContent = fmtPct(node.belief);
+  const predictive = node.predictive_detection?.[String(state.selectedEffort)];
+  $("why-detection-value").textContent = fmtPct(predictive);
+  $("why-detection-copy").textContent =
+    `Posterior-predictive probability at effort ${state.selectedEffort}; it marginalizes detectability uncertainty.`;
 }
 
 function activeWorldOccupancy() {
@@ -269,127 +289,230 @@ function activeWorldOccupancy() {
 }
 
 function nodeLayerValue(node) {
-  if (state.selectedWorld) {
-    return activeWorldOccupancy().has(node.id) ? 1 : 0;
-  }
-  if (state.layer === "habitat") return Math.max(0, Math.min(1, node.habitat || 0));
+  if (state.selectedWorld) return activeWorldOccupancy().has(node.id) ? 1 : 0;
+  if (state.layer === "habitat") return clamp01(node.habitat);
   if (state.layer === "history") return Math.min(1, (node.effort || 0) / 12);
-  return Math.max(0, Math.min(1, node.belief || 0));
+  return clamp01(node.belief);
+}
+
+function mercatorWorld(lon, lat, zoom) {
+  const scale = 256 * (2 ** zoom);
+  const x = ((Number(lon) + 180) / 360) * scale;
+  const sin = Math.sin(Number(lat) * Math.PI / 180);
+  const y = (0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * scale;
+  return { x, y };
+}
+
+function chooseMapProjection(nodes, width, height) {
+  const geo = nodes.filter((node) => Number.isFinite(Number(node.latitude)) && Number.isFinite(Number(node.longitude)));
+  if (geo.length < 2) {
+    const xs = nodes.map((node) => Number(node.x));
+    const ys = nodes.map((node) => Number(node.y));
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    return {
+      geo: false,
+      project: (node) => ({
+        x: 70 + ((Number(node.x) - minX) / Math.max(1e-9, maxX - minX)) * (width - 140),
+        y: height - 65 - ((Number(node.y) - minY) / Math.max(1e-9, maxY - minY)) * (height - 130),
+      }),
+    };
+  }
+
+  let chosen = null;
+  for (let zoom = 13; zoom >= 5; zoom -= 1) {
+    const pixels = geo.map((node) => mercatorWorld(node.longitude, node.latitude, zoom));
+    const xs = pixels.map((p) => p.x), ys = pixels.map((p) => p.y);
+    const spanX = Math.max(...xs) - Math.min(...xs);
+    const spanY = Math.max(...ys) - Math.min(...ys);
+    if (spanX <= width - 170 && spanY <= height - 140) {
+      chosen = { zoom, pixels, minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+      break;
+    }
+  }
+  if (!chosen) {
+    const zoom = 5;
+    const pixels = geo.map((node) => mercatorWorld(node.longitude, node.latitude, zoom));
+    const xs = pixels.map((p) => p.x), ys = pixels.map((p) => p.y);
+    chosen = { zoom, pixels, minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+  }
+
+  const centerX = (chosen.minX + chosen.maxX) / 2;
+  const centerY = (chosen.minY + chosen.maxY) / 2;
+  const originX = centerX - width / 2;
+  const originY = centerY - height / 2;
+
+  return {
+    geo: true,
+    zoom: chosen.zoom,
+    originX,
+    originY,
+    project: (node) => {
+      const p = mercatorWorld(node.longitude, node.latitude, chosen.zoom);
+      return { x: p.x - originX, y: p.y - originY };
+    },
+  };
+}
+
+function appendMapTiles(svg, projection, width, height) {
+  svg.appendChild(svgEl("rect", { x:0, y:0, width, height, class:"map-fallback-water" }));
+  if (!projection.geo) return;
+
+  const z = projection.zoom;
+  const tileSize = 256;
+  const minTileX = Math.floor(projection.originX / tileSize) - 1;
+  const maxTileX = Math.floor((projection.originX + width) / tileSize) + 1;
+  const minTileY = Math.floor(projection.originY / tileSize) - 1;
+  const maxTileY = Math.floor((projection.originY + height) / tileSize) + 1;
+  const maxIndex = (2 ** z) - 1;
+
+  for (let tx = minTileX; tx <= maxTileX; tx += 1) {
+    for (let ty = minTileY; ty <= maxTileY; ty += 1) {
+      if (ty < 0 || ty > maxIndex) continue;
+      const wrappedX = ((tx % (maxIndex + 1)) + (maxIndex + 1)) % (maxIndex + 1);
+      const image = svgEl("image", {
+        href: `https://tile.openstreetmap.org/${z}/${wrappedX}/${ty}.png`,
+        x: tx * tileSize - projection.originX,
+        y: ty * tileSize - projection.originY,
+        width: tileSize,
+        height: tileSize,
+        class: "map-tile",
+        preserveAspectRatio: "none",
+      });
+      image.addEventListener("error", () => image.remove());
+      svg.appendChild(image);
+    }
+  }
+  svg.appendChild(svgEl("rect", { x:0, y:0, width, height, class:"map-tile-fade" }));
+}
+
+function beliefColor(value) {
+  const v = clamp01(value);
+  if (v < 0.25) return "#2877d6";
+  if (v < 0.5) return "#32b7d5";
+  if (v < 0.72) return "#f4d94c";
+  return "#ef4048";
 }
 
 function renderMap(previous) {
   const svg = $("graph");
   svg.innerHTML = "";
-  const width = 1100, height = 650;
-  const nodes = state.data.nodes;
-  const xs = nodes.map(n => n.x), ys = nodes.map(n => n.y);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
-  const sx = x => 60 + ((x - minX) / Math.max(1e-9, maxX - minX)) * 980;
-  const sy = y => 60 + ((y - minY) / Math.max(1e-9, maxY - minY)) * 520;
-  const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
-  const prevById = Object.fromEntries((previous?.nodes || []).map(n => [n.id, n]));
+  const width = 1100, height = 620;
+  const nodes = state.data.nodes || [];
+  if (!nodes.length) return;
+
+  const projection = chooseMapProjection(nodes, width, height);
+  const pointById = Object.fromEntries(nodes.map((node) => [node.id, projection.project(node)]));
+  const nodeBy = Object.fromEntries(nodes.map((node) => [node.id, node]));
+  const prevBy = Object.fromEntries((previous?.nodes || []).map((node) => [node.id, node]));
 
   const defs = svgEl("defs");
   defs.innerHTML = `
-    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
-      <feGaussianBlur stdDeviation="5" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <filter id="heatBlur" x="-120%" y="-120%" width="340%" height="340%">
+      <feGaussianBlur stdDeviation="18"/>
     </filter>
-    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8df7d4"></path>
+    <marker id="replanArrow" viewBox="0 0 10 10" refX="8.2" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#0a7ed1"></path>
     </marker>`;
   svg.appendChild(defs);
 
-  svg.appendChild(svgEl("rect", { x: 0, y: 0, width, height, class: "map-water" }));
+  appendMapTiles(svg, projection, width, height);
 
-  state.data.edges.forEach(edge => {
-    const a = byId[edge.src], b = byId[edge.dst];
+  if (state.layer !== "history" || state.selectedWorld) {
+    nodes.forEach((node) => {
+      const p = pointById[node.id];
+      const value = nodeLayerValue(node);
+      if (value <= 0.015) return;
+      const radius = state.selectedWorld ? 48 : 34 + 58 * value;
+      const halo = svgEl("circle", {
+        cx:p.x, cy:p.y, r:radius,
+        fill:beliefColor(value),
+        opacity: state.selectedWorld ? .28 : (.10 + .24 * value),
+        class:"heat-halo",
+        filter:"url(#heatBlur)",
+      });
+      svg.appendChild(halo);
+    });
+  }
+
+  (state.data.edges || []).forEach((edge) => {
+    const a = pointById[edge.src], b = pointById[edge.dst];
     if (!a || !b) return;
-    svg.appendChild(svgEl("line", {
-      x1: sx(a.x), y1: sy(a.y), x2: sx(b.x), y2: sy(b.y),
-      class: "graph-edge",
-    }));
+    svg.appendChild(svgEl("line", { x1:a.x, y1:a.y, x2:b.x, y2:b.y, class:"graph-edge" }));
   });
 
   if (state.data.mission_changed && state.data.replan?.from && state.data.replan?.to) {
     const from = state.data.replan.from.allocations?.[0]?.site_id;
     const to = state.data.replan.to.allocations?.[0]?.site_id;
-    if (byId[from] && byId[to]) {
-      const a = byId[from], b = byId[to];
+    const a = pointById[from], b = pointById[to];
+    if (a && b) {
       svg.appendChild(svgEl("line", {
-        x1: sx(a.x), y1: sy(a.y), x2: sx(b.x), y2: sy(b.y),
-        class: "replan-vector",
-        "marker-end": "url(#arrow)",
+        x1:a.x, y1:a.y, x2:b.x, y2:b.y,
+        class:"replan-vector", "marker-end":"url(#replanArrow)",
       }));
     }
   }
 
-  nodes.forEach(node => {
-    const cx = sx(node.x), cy = sy(node.y);
-    const group = svgEl("g", { class: "node-group", "data-site": node.id });
+  const staticNext = state.data.static_response?.plan_sites?.[Math.min(state.data.resources.round, 2)] || null;
+  const topSite = state.data.global_recommendations?.[0]?.site_id || null;
+
+  nodes.forEach((node) => {
+    const p = pointById[node.id];
     const value = nodeLayerValue(node);
-    group.style.setProperty("--node-intensity", value.toFixed(3));
+    const group = svgEl("g", { class:"node-group", "data-site":node.id });
 
     if (node.frontier && !state.selectedWorld) {
-      group.appendChild(svgEl("circle", { cx, cy, r: 26, class: "frontier-ring" }));
+      group.appendChild(svgEl("circle", { cx:p.x, cy:p.y, r:22, class:"frontier-ring" }));
     }
     if (state.selectedSite === node.id) {
-      group.appendChild(svgEl("circle", { cx, cy, r: 31, class: "selected-ring" }));
+      group.appendChild(svgEl("circle", { cx:p.x, cy:p.y, r:27, class:"selected-ring" }));
     }
-    if (state.data.global_recommendations?.[0]?.site_id === node.id && !state.data.can_reveal) {
-      group.appendChild(svgEl("circle", { cx, cy, r: 35, class: "marine-ring" }));
+    if (topSite === node.id && !state.data.can_reveal && !state.data.revealed) {
+      group.appendChild(svgEl("circle", { cx:p.x, cy:p.y, r:32, class:"marine-ring" }));
     }
 
     const coreClass = [
       "node-core",
       node.status === "confirmed_detection" ? "confirmed" : "",
-      node.detections > 1 || node.status === "detected" ? "detected" : "",
+      node.status === "detected" || node.detections > 1 ? "detected" : "",
       node.effort > 0 ? "surveyed" : "",
       state.data.revealed && node.true_occupied ? "true-occupied" : "",
       state.data.revealed && node.true_occupied && node.detections === 0 ? "true-missed" : "",
     ].filter(Boolean).join(" ");
+    group.appendChild(svgEl("circle", { cx:p.x, cy:p.y, r:12, class:coreClass }));
 
-    const outer = svgEl("circle", { cx, cy, r: 20, class: "node-outer" });
-    outer.style.opacity = String(0.22 + 0.78 * value);
-    group.appendChild(outer);
-
-    const core = svgEl("circle", { cx, cy, r: 12, class: coreClass });
-    core.style.opacity = String(0.35 + 0.65 * Math.max(value, 0.12));
-    group.appendChild(core);
-
-    const prevBelief = prevById[node.id]?.belief ?? node.belief;
-    if (!state.selectedWorld && state.layer === "probability" && Math.abs(prevBelief - node.belief) > 0.005) {
-      const delta = svgEl("text", {
-        x: cx, y: cy - 31, "text-anchor": "middle", class: "belief-delta",
-      });
+    const prevBelief = prevBy[node.id]?.belief ?? node.belief;
+    if (!state.selectedWorld && state.layer === "probability" && Math.abs(prevBelief - node.belief) > 0.015) {
+      const delta = svgEl("text", { x:p.x, y:p.y - 25, "text-anchor":"middle", class:"belief-delta" });
       delta.textContent = `${fmtPct(prevBelief)}→${fmtPct(node.belief)}`;
       group.appendChild(delta);
     }
 
-    const label = svgEl("text", {
-      x: cx, y: cy + 34, "text-anchor": "middle", class: "node-label",
-    });
-    label.textContent = node.id;
-    group.appendChild(label);
+    const important = (
+      node.id === state.data.incident.initial_detection ||
+      node.id === topSite ||
+      node.id === state.selectedSite ||
+      node.id === staticNext ||
+      node.detections > 0
+    );
+    if (important) {
+      const labelText = `Site ${node.id}`;
+      const labelWidth = 48 + String(node.id).length * 5;
+      const lx = p.x + 17, ly = p.y - 12;
+      group.appendChild(svgEl("rect", {
+        x:lx - 5, y:ly - 12, width:labelWidth, height:22, rx:5, class:"node-label-bg"
+      }));
+      const label = svgEl("text", { x:lx, y:ly + 3, class:"node-label" });
+      label.textContent = labelText;
+      group.appendChild(label);
+    }
 
-    const valueLabel = svgEl("text", {
-      x: cx, y: cy + 4, "text-anchor": "middle", class: "node-value",
-    });
-    valueLabel.textContent = state.selectedWorld
-      ? (activeWorldOccupancy().has(node.id) ? "●" : "○")
-      : state.layer === "history"
-        ? String(node.effort || 0)
-        : String(Math.round(value * 100));
-    group.appendChild(valueLabel);
-
-    group.style.cursor = "pointer";
     group.addEventListener("click", () => {
       if (node.id === state.data.incident.initial_detection) return;
       state.selectedSite = node.id;
       render(state.data);
     });
-    group.addEventListener("mouseenter", event => showTooltip(event, node));
+    group.addEventListener("mouseenter", (event) => showTooltip(event, node));
     group.addEventListener("mousemove", moveTooltip);
     group.addEventListener("mouseleave", hideTooltip);
     svg.appendChild(group);
@@ -398,24 +521,27 @@ function renderMap(previous) {
   const title = state.selectedWorld
     ? `Possible extent #${worldById(state.selectedWorld)?.rank || "?"}`
     : state.layer === "probability"
-      ? "Posterior occupancy probability"
+      ? "Posterior occupancy belief"
       : state.layer === "habitat"
-        ? "Habitat suitability context"
-        : "Observed survey effort";
+        ? "Real-data habitat context"
+        : "Observed field effort";
   $("map-title").textContent = title;
 }
 
 function showTooltip(event, node) {
-  const rec = recommendationBySite(node.id);
   const tip = $("node-tooltip");
+  const predictive = node.predictive_detection?.[String(state.selectedEffort)];
   tip.innerHTML = `
-    <strong>SITE ${node.id}</strong>
+    <strong>Site ${node.id}</strong>
     <div class="tip-grid">
       <span>Occupancy belief</span><b>${fmtPct(node.belief)}</b>
-      <span>Habitat</span><b>${fmtPct(node.habitat)}</b>
+      <span>Habitat proxy</span><b>${fmtPct(node.habitat)}</b>
+      <span>Habitat label</span><b>${node.habitat_label || "—"}</b>
       <span>Observed effort</span><b>${node.effort}</b>
       <span>Detections</span><b>${node.detections}</b>
       <span>Marine rank</span><b>${node.marine_rank ? "#" + node.marine_rank : "—"}</b>
+      <span>P(detect) @ e${state.selectedEffort}</span><b>${fmtPct(predictive)}</b>
+      <span>Coordinates</span><b>${Number(node.latitude).toFixed(3)}, ${Number(node.longitude).toFixed(3)}</b>
     </div>
     ${state.data.revealed ? `<div class="truth-line">TRUE OCCUPANCY: <b>${node.true_occupied ? "PRESENT" : "ABSENT"}</b></div>` : ""}
   `;
@@ -427,8 +553,8 @@ function moveTooltip(event) {
   const stage = document.querySelector(".map-stage");
   const rect = stage.getBoundingClientRect();
   const tip = $("node-tooltip");
-  tip.style.left = `${Math.min(rect.width - 240, event.clientX - rect.left + 14)}px`;
-  tip.style.top = `${Math.min(rect.height - 175, event.clientY - rect.top + 14)}px`;
+  tip.style.left = `${Math.max(6, Math.min(rect.width - 240, event.clientX - rect.left + 14))}px`;
+  tip.style.top = `${Math.max(6, Math.min(rect.height - 205, event.clientY - rect.top + 14))}px`;
 }
 
 function hideTooltip() {
@@ -439,31 +565,29 @@ function renderEvidence() {
   const panel = $("evidence-panel");
   const last = state.data.last_round;
   if (!last) {
-    panel.className = "insight-body muted";
+    panel.className = "evidence-content muted";
     panel.textContent = "Awaiting field evidence.";
     return;
   }
-  panel.className = "insight-body";
-  panel.innerHTML = last.observations.map(obs => {
-    const outcome = obs.detection ? "DETECTION" : "NO DETECTION";
-    return `
-      <div class="evidence-line ${obs.detection ? "positive" : ""}">
-        <div><b>SITE ${obs.site_id}</b><span>${outcome} · effort ${obs.effort}</span></div>
-        <strong>${fmtPct(obs.belief_before)} → ${fmtPct(obs.belief_after)}</strong>
-      </div>`;
-  }).join("");
+  panel.className = "evidence-content";
+  panel.innerHTML = last.observations.map((obs) => `
+    <div class="evidence-line ${obs.detection ? "positive" : ""}">
+      <div><b>Site ${obs.site_id}</b><span>${obs.detection ? "DETECTION" : "NO DETECTION"} · effort ${obs.effort}</span></div>
+      <strong>${fmtPct(obs.belief_before)} → ${fmtPct(obs.belief_after)}</strong>
+    </div>`
+  ).join("");
 }
 
 function renderPropagation() {
   const panel = $("propagation-panel");
   const rows = state.data.last_round?.propagated_belief_changes || [];
   if (!rows.length) {
-    panel.className = "insight-body muted";
+    panel.className = "evidence-content muted";
     panel.textContent = "No propagated update yet.";
     return;
   }
-  panel.className = "insight-body";
-  panel.innerHTML = rows.slice(0, 4).map(row => `
+  panel.className = "evidence-content";
+  panel.innerHTML = rows.slice(0, 3).map((row) => `
     <div class="prop-row">
       <b>Site ${row.site_id}</b>
       <span>${fmtPct(row.belief_before)} → ${fmtPct(row.belief_after)}</span>
@@ -476,34 +600,20 @@ function renderStress() {
   const panel = $("stress-panel");
   const stress = state.data.model_stress;
   if (!stress) {
-    panel.className = "insight-body muted";
+    panel.className = "evidence-content muted";
     panel.textContent = "No field result yet.";
     return;
   }
-  panel.className = "insight-body";
+  panel.className = "evidence-content";
   const impossible = stress.impossible_under_current_ensemble;
   panel.innerHTML = `
     <div class="stress-value ${impossible ? "warning" : ""}">
       <span>Observed-result probability</span>
       <strong>${impossible ? "0%" : fmtPct(stress.observation_probability)}</strong>
     </div>
-    <p>${impossible
-      ? "The current scenario ensemble did not support this result."
-      : "Lower probability means the field return was less expected under the current scenario ensemble."}</p>
+    <p>${impossible ? "Outside current ensemble support." : "Posterior-predictive fit of the result."}</p>
     <small>${stress.surprise_bits == null ? "Infinite surprise" : stress.surprise_bits.toFixed(2) + " bits surprise"}</small>
   `;
-}
-
-function renderQ() {
-  const posterior = state.data.q_posterior || {};
-  const rows = Object.entries(posterior);
-  $("q-panel").innerHTML = rows.map(([q, weight]) => `
-    <div class="q-row">
-      <span>q = ${Number(q).toFixed(2)}</span>
-      <div class="q-track"><i style="width:${Math.round(weight * 100)}%"></i></div>
-      <b>${fmtPct(weight)}</b>
-    </div>`
-  ).join("") + `<div class="q-mean">posterior mean q = <b>${Number(state.data.q_mean).toFixed(3)}</b></div>`;
 }
 
 function renderReplan() {
@@ -514,8 +624,64 @@ function renderReplan() {
   }
   const from = state.data.replan.from.allocations?.[0]?.site_id || "—";
   const to = state.data.replan.to.allocations?.[0]?.site_id || "—";
-  $("replan-route").textContent = `SITE ${from} → SITE ${to}`;
+  $("replan-route").textContent = `Without result: Site ${from}  →  With evidence: Site ${to}`;
   callout.classList.remove("hidden");
+}
+
+function renderLiveChart() {
+  const svg = $("live-chart");
+  svg.innerHTML = "";
+  const rows = state.data.live_curve || [];
+  const width = 980, height = 250;
+  const margin = { left:50, right:52, top:24, bottom:38 };
+  const xMax = Math.max(18, state.data.resources.initial_budget || 18);
+  const maxDetections = Math.max(3, ...rows.map((row) => Number(row.field_detections || 0))) + 1;
+  const sx = (x) => margin.left + (Number(x) / xMax) * (width - margin.left - margin.right);
+  const syLeft = (y) => height - margin.bottom - (Number(y) / maxDetections) * (height - margin.top - margin.bottom);
+  const syRight = (fraction) => height - margin.bottom - clamp01(fraction) * (height - margin.top - margin.bottom);
+
+  for (let i = 0; i <= 4; i += 1) {
+    const fraction = i / 4;
+    const y = height - margin.bottom - fraction * (height - margin.top - margin.bottom);
+    svg.appendChild(svgEl("line", { x1:margin.left, x2:width-margin.right, y1:y, y2:y, class:"chart-grid" }));
+    const leftLabel = svgEl("text", { x:margin.left-9, y:y+3, "text-anchor":"end", class:"chart-label" });
+    leftLabel.textContent = String(Math.round(maxDetections * fraction));
+    svg.appendChild(leftLabel);
+    const rightLabel = svgEl("text", { x:width-margin.right+9, y:y+3, class:"chart-label" });
+    rightLabel.textContent = `${Math.round(fraction * 100)}%`;
+    svg.appendChild(rightLabel);
+  }
+
+  [0, 6, 12, 18].forEach((effort) => {
+    const x = sx(effort);
+    const label = svgEl("text", { x, y:height-13, "text-anchor":"middle", class:"chart-label" });
+    label.textContent = String(effort);
+    svg.appendChild(label);
+  });
+
+  const effortLabel = svgEl("text", { x:width/2, y:height-1, "text-anchor":"middle", class:"chart-title-label" });
+  effortLabel.textContent = "Cumulative field effort";
+  svg.appendChild(effortLabel);
+
+  const leftTitle = svgEl("text", { x:margin.left, y:12, class:"chart-title-label" });
+  leftTitle.textContent = "Confirmed detections";
+  svg.appendChild(leftTitle);
+  const rightTitle = svgEl("text", { x:width-margin.right, y:12, "text-anchor":"end", class:"chart-title-label" });
+  rightTitle.textContent = "Budget used";
+  svg.appendChild(rightTitle);
+
+  const detectionPoints = rows.map((row) => [sx(row.effort), syLeft(row.field_detections)]);
+  const budgetPoints = rows.map((row) => [sx(row.effort), syRight(row.budget_used_fraction)]);
+  const path = (points) => points.map((point, index) => `${index === 0 ? "M" : "L"} ${point[0]} ${point[1]}`).join(" ");
+
+  if (detectionPoints.length) {
+    svg.appendChild(svgEl("path", { d:path(detectionPoints), class:"live-detection-line" }));
+    detectionPoints.forEach(([x,y]) => svg.appendChild(svgEl("circle", { cx:x, cy:y, r:4, class:"live-dot-detection" })));
+  }
+  if (budgetPoints.length) {
+    svg.appendChild(svgEl("path", { d:path(budgetPoints), class:"live-budget-line" }));
+    budgetPoints.forEach(([x,y]) => svg.appendChild(svgEl("circle", { cx:x, cy:y, r:4, class:"live-dot-budget" })));
+  }
 }
 
 function renderPerformance() {
@@ -524,28 +690,26 @@ function renderPerformance() {
   if (!state.data.performance) {
     content.classList.add("hidden");
     locked.classList.remove("hidden");
-    locked.textContent = state.data.can_reveal
-      ? "Field work complete. Reveal the hidden extent to score all three tracks."
-      : "Outcome comparison stays locked until the field budget is exhausted.";
+    const copy = locked.querySelector("small");
+    if (copy) {
+      copy.textContent = state.data.can_reveal
+        ? "Field campaign complete. Reveal the hidden extent to score all three tracks."
+        : "Complete the available field budget to open the evaluator receipt.";
+    }
     return;
   }
 
   locked.classList.add("hidden");
   content.classList.remove("hidden");
   const p = state.data.performance;
-  const entries = [
-    ["MARINE", p.marine],
-    ["STATIC RESPONSE", p.static],
-    ["YOU", p.you],
-  ];
+  const entries = [["MARINE", p.marine], ["STATIC RESPONSE", p.static], ["YOU", p.you]];
   $("scorecards").innerHTML = entries.map(([label, row]) => `
     <div class="scorecard">
       <span>${label}</span>
       <strong>${row.detected_occupied} / ${row.occupied_total}</strong>
-      <small>occupied sites confirmed / detected</small>
+      <small>true occupied sites confirmed / detected</small>
     </div>`
   ).join("");
-
   drawPerformanceChart(entries);
 }
 
@@ -553,51 +717,34 @@ function drawPerformanceChart(entries) {
   const svg = $("performance-chart");
   svg.innerHTML = "";
   const width = 900, height = 250;
-  const margin = { left: 58, right: 24, top: 24, bottom: 42 };
-  const maxEffort = Math.max(18, ...entries.flatMap(([, row]) => row.curve.map(p => p.effort)));
-  const sx = x => margin.left + (x / maxEffort) * (width - margin.left - margin.right);
-  const sy = y => height - margin.bottom - y * (height - margin.top - margin.bottom);
+  const margin = { left:58, right:30, top:24, bottom:40 };
+  const maxEffort = Math.max(18, ...entries.flatMap(([, row]) => row.curve.map((point) => point.effort)));
+  const sx = (x) => margin.left + (x / maxEffort) * (width - margin.left - margin.right);
+  const sy = (y) => height - margin.bottom - y * (height - margin.top - margin.bottom);
 
-  for (let i = 0; i <= 4; i++) {
-    const y = i / 4;
-    svg.appendChild(svgEl("line", {
-      x1: margin.left, x2: width - margin.right,
-      y1: sy(y), y2: sy(y), class: "chart-grid",
-    }));
-    const label = svgEl("text", {
-      x: margin.left - 10, y: sy(y) + 4,
-      "text-anchor": "end", class: "chart-label",
-    });
-    label.textContent = `${Math.round(y * 100)}%`;
+  for (let i = 0; i <= 4; i += 1) {
+    const yValue = i / 4;
+    const y = sy(yValue);
+    svg.appendChild(svgEl("line", { x1:margin.left, x2:width-margin.right, y1:y, y2:y, class:"chart-grid" }));
+    const label = svgEl("text", { x:margin.left-10, y:y+3, "text-anchor":"end", class:"chart-label" });
+    label.textContent = `${Math.round(yValue*100)}%`;
     svg.appendChild(label);
   }
 
-  [0, 6, 12, 18].forEach(x => {
-    const label = svgEl("text", {
-      x: sx(x), y: height - 14, "text-anchor": "middle", class: "chart-label",
-    });
-    label.textContent = String(x);
+  [0,6,12,18].forEach((effort) => {
+    const label = svgEl("text", { x:sx(effort), y:height-13, "text-anchor":"middle", class:"chart-label" });
+    label.textContent = String(effort);
     svg.appendChild(label);
   });
 
   entries.forEach(([label, row], index) => {
-    const points = row.curve.map(p => [sx(p.effort), sy(p.detected_fraction)]);
-    const d = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p[0]} ${p[1]}`).join(" ");
-    svg.appendChild(svgEl("path", {
-      d,
-      class: `chart-line series-${index}`,
-    }));
-    points.forEach(([x, y]) => {
-      svg.appendChild(svgEl("circle", {
-        cx: x, cy: y, r: 4, class: `chart-dot series-${index}`,
-      }));
-    });
+    const points = row.curve.map((point) => [sx(point.effort), sy(point.detected_fraction)]);
+    const d = points.map((point, i) => `${i === 0 ? "M" : "L"} ${point[0]} ${point[1]}`).join(" ");
+    svg.appendChild(svgEl("path", { d, class:`chart-line series-${index}` }));
+    points.forEach(([x,y]) => svg.appendChild(svgEl("circle", { cx:x, cy:y, r:4, class:`chart-dot series-${index}` })));
     const last = points.at(-1);
     if (last) {
-      const text = svgEl("text", {
-        x: last[0] - 4, y: last[1] - 10, "text-anchor": "end",
-        class: `chart-series-label series-${index}`,
-      });
+      const text = svgEl("text", { x:last[0]-5, y:last[1]-9, "text-anchor":"end", class:`chart-series-label series-${index}` });
       text.textContent = label;
       svg.appendChild(text);
     }
@@ -606,7 +753,7 @@ function drawPerformanceChart(entries) {
 
 function renderTimeline() {
   const recent = (state.data.events || []).slice(-9);
-  $("timeline").innerHTML = recent.map(event => `
+  $("timeline").innerHTML = recent.map((event) => `
     <div class="tape-event kind-${event.kind}">
       <span>R${event.round}</span>
       <div><b>${event.title}</b><small>${event.detail}</small></div>
@@ -615,13 +762,39 @@ function renderTimeline() {
   $("timeline").scrollLeft = $("timeline").scrollWidth;
 }
 
+function renderEffortControls() {
+  document.querySelectorAll(".effort-btn").forEach((button) => {
+    const effort = Number(button.dataset.effort);
+    button.classList.toggle("active", effort === state.selectedEffort);
+    button.disabled = !canSpend(effort) || state.data.revealed || state.data.can_reveal;
+  });
+}
+
+function renderControls() {
+  if (!state.data) return;
+  renderEffortControls();
+  const done = state.data.can_reveal || state.data.revealed;
+  const deploy = $("deploy-btn");
+  deploy.disabled = state.busy || !state.selectedSite || !canSpend(state.selectedEffort) || done;
+  const label = deploy.querySelector("b");
+  const sub = deploy.querySelector("small");
+  if (label) label.textContent = done ? "Field Work Complete" : `Deploy Site ${state.selectedSite || "—"}`;
+  if (sub) sub.textContent = done ? "Evaluator reveal is now available" : `Effort ${state.selectedEffort} · send field team and update beliefs`;
+
+  $("reset-btn").disabled = state.busy;
+  $("next-case-btn").disabled = state.busy;
+  $("case-select").disabled = state.busy;
+  $("site-select").disabled = state.busy || done;
+  $("reveal-btn").disabled = state.busy || !state.data.can_reveal;
+}
+
 async function resetCase(caseId = null) {
   try {
     setBusy(true);
     state.selectedSite = null;
     state.selectedWorld = null;
-    showTransition("NEW INCIDENT", "Initializing response scenario", "Loading the real monitoring graph and a blinded hidden extent.");
-    const data = await api("/api/reset", "POST", { case_id: caseId || $("case-select").value });
+    showTransition("NEW INCIDENT", "Initializing coastal response", "Loading the real monitoring network and a blinded hidden ecological extent.");
+    const data = await api("/api/reset", "POST", { case_id:caseId || $("case-select").value });
     render(data, null);
     setTimeout(hideTransition, 260);
   } catch (error) {
@@ -639,26 +812,28 @@ async function deploy() {
     setBusy(true);
     showTransition(
       "FIELD TEAM ACTIVE",
-      `Surveying site ${state.selectedSite}`,
+      `Surveying Site ${state.selectedSite}`,
       `Allocating ${state.selectedEffort} effort units. Hidden truth remains locked.`
     );
     const data = await api("/api/deploy", "POST", {
-      site_id: state.selectedSite,
-      effort: state.selectedEffort,
+      site_id:state.selectedSite,
+      effort:state.selectedEffort,
     });
+
     const obs = data.last_round?.observations?.[0];
     if (obs) {
       $("transition-kicker").textContent = "FIELD RETURN";
       $("transition-title").textContent = obs.detection
-        ? `Detection at site ${obs.site_id}`
-        : `No detection at site ${obs.site_id}`;
+        ? `Detection at Site ${obs.site_id}`
+        : `No detection at Site ${obs.site_id}`;
       $("transition-detail").textContent =
-        `Effort ${obs.effort} · belief ${fmtPct(obs.belief_before)} → ${fmtPct(obs.belief_after)}`;
+        `Effort ${obs.effort} · local belief ${fmtPct(obs.belief_before)} → ${fmtPct(obs.belief_after)} · posterior recomputed across the graph.`;
     }
-    await new Promise(resolve => setTimeout(resolve, 420));
+
+    await new Promise((resolve) => setTimeout(resolve, 440));
     state.selectedSite = data.global_recommendations?.[0]?.site_id || state.selectedSite;
     render(data, before);
-    setTimeout(hideTransition, 500);
+    setTimeout(hideTransition, 560);
   } catch (error) {
     hideTransition();
     alert(error.message);
@@ -671,15 +846,19 @@ async function reveal() {
   if (!state.data?.can_reveal || state.busy) return;
   try {
     setBusy(true);
-    showTransition("EVALUATE", "Revealing the hidden extent", "Scoring Marine, the static response and your own decisions on the same incident.");
+    showTransition(
+      "EVALUATE",
+      "Revealing the hidden extent",
+      "Marine, the precommitted Static Response, and your choices are scored on the same blinded incident."
+    );
     const before = state.data;
     const data = await api("/api/reveal", "POST");
-    await new Promise(resolve => setTimeout(resolve, 350));
+    await new Promise((resolve) => setTimeout(resolve, 380));
     render(data, before);
     $("transition-kicker").textContent = "TRUE EXTENT REVEALED";
     $("transition-title").textContent = "Same incident. Same budget. Different decisions.";
-    $("transition-detail").textContent = "The comparison now uses the simulator-only hidden occupancy that was locked during planning.";
-    setTimeout(hideTransition, 900);
+    $("transition-detail").textContent = "The evaluator now exposes simulator-only occupancy that remained unavailable to every planner and operator action.";
+    setTimeout(hideTransition, 1000);
   } catch (error) {
     hideTransition();
     alert(error.message);
@@ -694,14 +873,18 @@ $("clear-world-btn").addEventListener("click", () => {
 });
 
 $("follow-marine-btn").addEventListener("click", () => {
-  const first = state.data.global_recommendations?.[0];
-  if (first) {
-    state.selectedSite = first.site_id;
-    render(state.data);
-  }
+  const top = state.data.global_recommendations?.[0];
+  if (!top) return;
+  state.selectedSite = top.site_id;
+  render(state.data);
 });
 
-document.querySelectorAll(".effort-btn").forEach(button => {
+$("site-select").addEventListener("change", () => {
+  state.selectedSite = $("site-select").value;
+  render(state.data);
+});
+
+document.querySelectorAll(".effort-btn").forEach((button) => {
   button.addEventListener("click", () => {
     const effort = Number(button.dataset.effort);
     if (!canSpend(effort)) return;
@@ -710,11 +893,11 @@ document.querySelectorAll(".effort-btn").forEach(button => {
   });
 });
 
-document.querySelectorAll(".layer-btn").forEach(button => {
+document.querySelectorAll(".layer-btn").forEach((button) => {
   button.addEventListener("click", () => {
     state.layer = button.dataset.layer;
     state.selectedWorld = null;
-    document.querySelectorAll(".layer-btn").forEach(b => b.classList.toggle("active", b === button));
+    document.querySelectorAll(".layer-btn").forEach((candidate) => candidate.classList.toggle("active", candidate === button));
     render(state.data);
   });
 });
@@ -723,11 +906,10 @@ $("deploy-btn").addEventListener("click", deploy);
 $("reveal-btn").addEventListener("click", reveal);
 $("reset-btn").addEventListener("click", () => resetCase(state.data?.case?.case_id));
 $("case-select").addEventListener("change", () => resetCase($("case-select").value));
-
 $("next-case-btn").addEventListener("click", () => {
   const rows = state.cases?.cases || [];
   if (!rows.length) return;
-  const current = rows.findIndex(row => row.case_id === state.data?.case?.case_id);
+  const current = rows.findIndex((row) => row.case_id === state.data?.case?.case_id);
   const next = rows[(current + 1 + rows.length) % rows.length];
   resetCase(next.case_id);
 });
