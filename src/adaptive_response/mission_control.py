@@ -13,7 +13,7 @@ from .environment import Environment
 from .graph_state import GraphStateExporter, NODE_FEATURE_NAMES
 from .mission_loop import LoopPhase, RoundTransition
 from .model_mismatch import posterior_predictive_surprise
-from .models import GraphState, HiddenWorld, MissionAction, MissionAllocation
+from .models import (\n    GraphState,\n    HiddenWorld,\n    MissionAction,\n    MissionAllocation,\n    Observation,\n    ObservationBatch,\n)
 from .planners import FrontierPlanner, Planner
 from .real_incident_source import (
     build_real_incident,
@@ -36,6 +36,7 @@ _INCIDENT_PREFERRED_MIN_SITES = 12
 _DRAWS_PER_MODEL = 60
 _Q_BELIEF_VALUES = (0.05, 0.10, 0.20)
 _EFFORT_LEVELS = (1, 3, 6)
+_EFFORT_VALUE_RETENTION = 0.60
 _TOP_PROPAGATED_CHANGES = 5
 _TOP_RECOMMENDATIONS = 5
 _TOP_WORLDS = 5
@@ -138,18 +139,172 @@ def _product_recommendation_graph(graph_state: GraphState) -> GraphState:
 
 
 class MissionControlFrontierPlanner:
-    """UI planner: exact Frontier ordering, with observed sites masked."""
+    """Product planner: Frontier site ranking + Bayesian resource-aware effort.
+
+    Site selection deliberately preserves the benchmark-supported Frontier ordering.
+    The new product layer optimizes *how much* effort to spend at the selected site
+    using only the observable joint spatial/q posterior. For each allowed effort it
+    computes exact expected reduction in marginal occupancy entropy plus conditional
+    detection power under the q posterior, then chooses the smallest effort retaining
+    at least 60% of the maximum-effort value on both dimensions.
+
+    This is a transparent DESIGN CHOICE for the RAMP "Save Time. Save Money." demo.
+    It is not an ecological constant and it does not use hidden truth.
+    """
 
     def __init__(self) -> None:
-        self._base = FrontierPlanner(
-            max_sites=1,
-            effort_levels=_EFFORT_LEVELS,
-        )
+        self._base = FrontierPlanner(max_sites=1)
 
     def rank_candidates(self, graph_state: GraphState) -> tuple[dict[str, Any], ...]:
         return self._base.rank_candidates(
             _product_recommendation_graph(graph_state)
         )
+
+    @staticmethod
+    def _expected_information_gain_bits(
+        spatial: SpatialBeliefState,
+        *,
+        site_id: str,
+        effort: int,
+    ) -> float:
+        current_entropy = sum(spatial.uncertainty_by_site().values())
+        p_detection = SpatialBeliefEngine.predictive_detection_probability(
+            spatial,
+            site_id=site_id,
+            effort=effort,
+        )
+        expected_after = 0.0
+        outcomes = (
+            (True, p_detection),
+            (False, 1.0 - p_detection),
+        )
+        for detection, probability in outcomes:
+            if probability <= 0.0:
+                continue
+            posterior = SpatialBeliefEngine.update(
+                spatial,
+                ObservationBatch(
+                    observations=(
+                        Observation(
+                            site_id=site_id,
+                            effort=effort,
+                            detection=detection,
+                            round=0,
+                        ),
+                    ),
+                    round=0,
+                    total_effort=effort,
+                ),
+            )
+            expected_after += probability * sum(
+                posterior.uncertainty_by_site().values()
+            )
+        return max(0.0, current_entropy - expected_after)
+
+    @staticmethod
+    def _conditional_detection_if_occupied(
+        spatial: SpatialBeliefState,
+        *,
+        effort: int,
+    ) -> float:
+        return sum(
+            weight * (1.0 - (1.0 - float(q)) ** effort)
+            for q, weight in spatial.q_posterior().items()
+        )
+
+    def effort_options(
+        self,
+        *,
+        spatial: SpatialBeliefState,
+        site_id: str,
+        remaining_budget: int,
+    ) -> tuple[dict[str, Any], ...]:
+        feasible = [
+            effort
+            for effort in _EFFORT_LEVELS
+            if effort <= remaining_budget
+        ]
+        if not feasible:
+            return ()
+
+        rows: list[dict[str, Any]] = []
+        for effort in feasible:
+            information_gain = self._expected_information_gain_bits(
+                spatial,
+                site_id=site_id,
+                effort=effort,
+            )
+            predictive_detection = SpatialBeliefEngine.predictive_detection_probability(
+                spatial,
+                site_id=site_id,
+                effort=effort,
+            )
+            conditional_detection = self._conditional_detection_if_occupied(
+                spatial,
+                effort=effort,
+            )
+            rows.append(
+                {
+                    "effort": effort,
+                    "expected_information_gain_bits": information_gain,
+                    "information_gain_per_effort": information_gain / effort,
+                    "predictive_detection_probability": predictive_detection,
+                    "conditional_detection_if_occupied": conditional_detection,
+                }
+            )
+
+        max_row = rows[-1]
+        max_ig = float(max_row["expected_information_gain_bits"])
+        max_conditional = float(max_row["conditional_detection_if_occupied"])
+        for row in rows:
+            row["information_retention"] = (
+                1.0
+                if max_ig <= 1e-12
+                else float(row["expected_information_gain_bits"]) / max_ig
+            )
+            row["detection_power_retention"] = (
+                1.0
+                if max_conditional <= 1e-12
+                else float(row["conditional_detection_if_occupied"]) / max_conditional
+            )
+            row["resource_fraction_vs_max"] = float(row["effort"]) / float(max_row["effort"])
+        return tuple(rows)
+
+    def recommend_effort(
+        self,
+        *,
+        spatial: SpatialBeliefState,
+        site_id: str,
+        remaining_budget: int,
+    ) -> dict[str, Any]:
+        options = self.effort_options(
+            spatial=spatial,
+            site_id=site_id,
+            remaining_budget=remaining_budget,
+        )
+        if not options:
+            raise ValueError("No allowed effort level fits remaining budget.")
+
+        chosen = options[-1]
+        for row in options:
+            if (
+                float(row["information_retention"]) >= _EFFORT_VALUE_RETENTION
+                and float(row["detection_power_retention"]) >= _EFFORT_VALUE_RETENTION
+            ):
+                chosen = row
+                break
+
+        max_effort = int(options[-1]["effort"])
+        chosen_effort = int(chosen["effort"])
+        return {
+            **chosen,
+            "recommended_effort": chosen_effort,
+            "effort_saved_vs_max": max_effort - chosen_effort,
+            "max_feasible_effort": max_effort,
+            "retention_threshold": _EFFORT_VALUE_RETENTION,
+            "options": [dict(row) for row in options],
+            "rule": "smallest_effort_retaining_information_and_detection_power",
+        }
 
     def plan(
         self,
@@ -157,10 +312,64 @@ class MissionControlFrontierPlanner:
         remaining_budget: int,
         constraints: Mapping[str, Any],
     ) -> MissionAction:
-        return self._base.plan(
-            _product_recommendation_graph(graph_state),
-            remaining_budget=remaining_budget,
-            constraints=constraints,
+        if remaining_budget <= 0:
+            return MissionAction(
+                allocations=(),
+                total_cost=0,
+                diagnostics={
+                    "planner": "resource_aware_frontier",
+                    "reason": "no_remaining_budget",
+                },
+            )
+
+        ranked = list(self.rank_candidates(graph_state))
+        if not ranked:
+            raise RuntimeError("No feasible product recommendation sites remain.")
+
+        selected = ranked[0]
+        spatial = constraints.get("spatial_belief_state")
+        if isinstance(spatial, SpatialBeliefState):
+            effort_diag = self.recommend_effort(
+                spatial=spatial,
+                site_id=str(selected["site_id"]),
+                remaining_budget=remaining_budget,
+            )
+            effort = int(effort_diag["recommended_effort"])
+        else:
+            feasible = [e for e in _EFFORT_LEVELS if e <= remaining_budget]
+            if not feasible:
+                raise RuntimeError("No allowed effort level fits remaining budget.")
+            effort = feasible[-1]
+            effort_diag = {
+                "recommended_effort": effort,
+                "effort_saved_vs_max": 0,
+                "max_feasible_effort": effort,
+                "rule": "fallback_max_effort_without_spatial_posterior",
+                "options": [],
+            }
+
+        selected_diag = {
+            **selected,
+            "effort_units": effort,
+            "effort_recommendation": effort_diag,
+        }
+        return MissionAction(
+            allocations=(
+                MissionAllocation(
+                    site_id=str(selected["site_id"]),
+                    effort_units=effort,
+                ),
+            ),
+            total_cost=effort,
+            diagnostics={
+                "planner": "resource_aware_frontier",
+                "site_objective": "frontier_then_belief_then_uncertainty",
+                "effort_objective": "retain_value_with_minimum_field_effort",
+                "effort_recommendation": effort_diag,
+                "ranked_selected_sites": (selected_diag,),
+                "ranked_candidates": tuple(ranked),
+                "hidden_truth_used": False,
+            },
         )
 
 
@@ -502,7 +711,8 @@ class MissionControlSession:
         transition = loop.execute_pending()
         self._last_transition = transition
         self._last_counterfactual_next = self._counterfactual_next_without_evidence(
-            transition
+            transition,
+            spatial_before=spatial_before,
         )
 
         surprise_rows = []
@@ -800,6 +1010,8 @@ class MissionControlSession:
     def _counterfactual_next_without_evidence(
         self,
         transition: RoundTransition,
+        *,
+        spatial_before: SpatialBeliefState,
     ) -> MissionAction | None:
         """Compute the next Frontier mission with the survey recorded but evidence ignored.
 
@@ -838,7 +1050,11 @@ class MissionControlSession:
         mission = planner.plan(
             counterfactual_graph,
             remaining_budget=transition.public_state_after.remaining_budget,
-            constraints={},
+            constraints={
+                "spatial_belief_state": spatial_before,
+                "q_posterior": spatial_before.q_posterior(),
+                "q_semantics": "belief_posterior_not_simulator_truth",
+            },
         )
         return mission
 
