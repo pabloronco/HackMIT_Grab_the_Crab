@@ -1,0 +1,181 @@
+const state = {
+  data: null,
+  cases: null,
+  selectedSite: null,
+  selectedWorld: null,
+  selectedEffort: 6,
+  layer: "belief",
+  busy: false,
+  mapZoom: 0,
+};
+
+const NS = "http://www.w3.org/2000/svg";
+const $ = (id) => document.getElementById(id);
+const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+const fmtPct = (value, digits = 0) => value == null ? "—" : `${(Number(value) * 100).toFixed(digits)}%`;
+const fmtPp = (value) => {
+  if (value == null) return "—";
+  const pp = Math.round(Number(value) * 100);
+  return `${pp >= 0 ? "+" : ""}${pp} pp`;
+};
+const fmtNum = (value, digits = 1) => value == null ? "—" : Number(value).toFixed(digits);
+
+async function api(path, method = "GET", body = null) {
+  const options = { method, headers: {} };
+  if (body !== null) {
+    options.headers["Content-Type"] = "application/json";
+    options.body = JSON.stringify(body);
+  }
+  const response = await fetch(path, options);
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.detail || "Request failed");
+  return payload;
+}
+
+function svgEl(name, attrs = {}) {
+  const el = document.createElementNS(NS, name);
+  Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+  return el;
+}
+
+function nodeById(siteId) {
+  return state.data?.nodes?.find((node) => node.id === siteId) || null;
+}
+function recommendationBySite(siteId) {
+  return state.data?.global_recommendations?.find((row) => row.site_id === siteId) || null;
+}
+function worldById(worldId) {
+  return state.data?.top_worlds?.items?.find((world) => world.world_id === worldId) || null;
+}
+function canSpend(effort) {
+  return Boolean(state.data && state.data.resources.remaining_budget >= effort && effort > 0);
+}
+function suggestedEffortForSite(siteId) {
+  return recommendationBySite(siteId)?.recommended_effort ?? nodeById(siteId)?.recommended_effort ?? null;
+}
+function applyRecommendedEffort(siteId) {
+  const recommended = suggestedEffortForSite(siteId);
+  if (recommended && canSpend(recommended)) state.selectedEffort = Number(recommended);
+}
+
+function showTransition(kicker, title, detail) {
+  $("transition-kicker").textContent = kicker;
+  $("transition-title").textContent = title;
+  $("transition-detail").textContent = detail;
+  const layer = $("transition-layer");
+  layer.classList.remove("hidden");
+  requestAnimationFrame(() => layer.classList.add("show"));
+}
+function hideTransition() {
+  const layer = $("transition-layer");
+  layer.classList.remove("show");
+  setTimeout(() => layer.classList.add("hidden"), 180);
+}
+function setBusy(value) {
+  state.busy = value;
+  document.body.classList.toggle("is-busy", value);
+  renderControls();
+}
+
+function ensureSelection() {
+  const recommendations = state.data?.global_recommendations || [];
+  const valid = new Set((state.data?.nodes || []).map((node) => node.id));
+  const initial = state.data?.incident?.initial_detection;
+  if (!state.selectedSite || !valid.has(state.selectedSite) || state.selectedSite === initial) {
+    state.selectedSite = recommendations[0]?.site_id || null;
+    if (state.selectedSite) applyRecommendedEffort(state.selectedSite);
+  }
+  if (state.selectedWorld && !worldById(state.selectedWorld)) state.selectedWorld = null;
+
+  const allowed = state.data?.resources?.effort_levels || [1, 3, 6];
+  const affordable = allowed.filter((effort) => canSpend(effort));
+  if (!affordable.includes(state.selectedEffort)) {
+    state.selectedEffort = affordable.at(-1) || allowed[0] || 1;
+  }
+}
+
+async function bootstrap() {
+  try {
+    state.cases = await api("/api/cases");
+    renderCaseSelect();
+    const data = await api("/api/state");
+    render(data, null);
+  } catch (error) {
+    console.error(error);
+    alert(error.message);
+  }
+}
+
+function renderCaseSelect() {
+  $("case-select").innerHTML = (state.cases?.cases || []).map((row) => {
+    const demo = row.case_id === "incident_097" ? "★ DEMO · " : "";
+    return `<option value="${row.case_id}">${demo}${String(row.index).padStart(3, "0")} · ${row.label}</option>`;
+  }).join("");
+}
+
+function render(data, previous = state.data) {
+  state.data = data;
+  ensureSelection();
+
+  if (data.case?.case_id) $("case-select").value = data.case.case_id;
+  $("initial-detection").textContent = data.incident.initial_detection;
+  $("case-number").textContent = data.case.index ? `${String(data.case.index).padStart(3, "0")} / ${data.case.count}` : data.case.case_id;
+  $("budget-left").textContent = `${data.resources.remaining_budget} / ${data.resources.initial_budget}`;
+  $("round").textContent = data.resources.round;
+  $("truth-state").textContent = data.revealed ? "REVEALED" : "LOCKED";
+  $("truth-state").classList.toggle("revealed", data.revealed);
+  $("budget-fill").style.width = `${Math.round(clamp01(data.resources.remaining_budget / data.resources.initial_budget) * 100)}%`;
+
+  renderMissionPanel();
+  renderWorlds();
+  renderQ();
+  renderWhyMission();
+  renderEvidence();
+  renderDecisionReceipt();
+  renderPropagation();
+  renderStress();
+  renderResourceCard();
+  renderMap(previous);
+  renderReplan();
+  renderLiveChart();
+  renderPerformance();
+  renderTimeline();
+  renderControls();
+}
+
+function renderMissionPanel() {
+  const top = state.data.global_recommendations?.[0] || null;
+  $("marine-site").textContent = top ? `Site ${top.site_id}` : "Complete";
+  $("marine-effort").textContent = top?.recommended_effort ?? "—";
+  $("marine-belief").textContent = top ? fmtPct(top.belief) : "—";
+  $("marine-pdetect").textContent = top ? fmtPct(top.predictive_detection?.[String(top.recommended_effort)]) : "—";
+  $("marine-saved").textContent = top ? `${top.effort_recommendation?.effort_saved_vs_max ?? 0} units` : "—";
+  $("marine-copy").textContent = top
+    ? "Frontier-first site ranking with Bayesian effort allocation."
+    : "Campaign complete. Hidden truth may now be revealed.";
+
+  const staticSites = state.data.static_response?.plan_sites || [];
+  $("static-site").textContent = staticSites.length ? `Site ${staticSites[0]}` : "—";
+  $("static-route").innerHTML = staticSites.map((siteId, index) => `<span class="route-chip"><b>${siteId}</b>${index < staticSites.length - 1 ? "<i>→</i>" : ""}</span>`).join("");
+
+  const selectable = (state.data.nodes || [])
+    .filter((node) => node.id !== state.data.incident.initial_detection)
+    .slice()
+    .sort((a, b) => (a.marine_rank ?? 9999) - (b.marine_rank ?? 9999) || String(a.id).localeCompare(String(b.id), undefined, { numeric:true }));
+  $("site-select").innerHTML = selectable.map((node) => {
+    const rank = node.marine_rank ? ` · Marine #${node.marine_rank}` : "";
+    const surveyed = node.effort > 0 ? " · surveyed" : "";
+    return `<option value="${node.id}" ${node.id === state.selectedSite ? "selected" : ""}>Site ${node.id}${rank}${surveyed}</option>`;
+  }).join("");
+
+  const selected = nodeById(state.selectedSite);
+  const rec = recommendationBySite(state.selectedSite);
+  const recommendedEffort = rec?.recommended_effort ?? selected?.recommended_effort;
+  $("effort-rec-badge").textContent = recommendedEffort ? `Marine: ${recommendedEffort}` : "Marine: —";
+  document.querySelectorAll(".effort-btn").forEach((button) => {
+    const effort = Number(button.dataset.effort);
+    button.classList.toggle("active", effort === state.selectedEffort);
+    button.classList.toggle("recommended", effort === recommendedEffort);
+  });
+
+  const options = rec?.effort_recommendation?.options || selected?.effort_recommendation
