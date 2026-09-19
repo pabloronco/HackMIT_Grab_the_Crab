@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Marine — Interactive Mission Control</title>
+  <meta name="theme-color" content="#f4f8fb" />
+  <title>MARINE — Adaptive First Response</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
@@ -15,172 +16,271 @@
     </div>
   </div>
 
-  <div class="shell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="eyebrow">MARINE / ECOLOGICAL INCIDENT COMMAND</div>
-        <div class="brand-line">
-          <h1>Mission Control</h1>
-          <span>adaptive first response</span>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 68 48">
+            <path d="M4 20c13-11 24-10 34-2 9 7 17 8 26 1-5 10-13 15-23 13-9-2-16-10-25-9-5 0-9 1-12 3 2-2 2-4 0-6Z"></path>
+            <path d="M8 31c10-7 19-6 27 0 8 5 16 6 25 1-6 8-14 11-23 9-8-2-15-7-22-7-3 0-5 0-7 1Z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-row">
+            <h1>MARINE</h1>
+            <span>Map · Analyse · Recommend · Investigate</span>
+          </div>
+          <p>Adaptive first-response mission control for marine invasive species</p>
         </div>
       </div>
-      <div class="case-controls">
-        <label>
-          <span>SCENARIO</span>
+
+      <div class="header-controls">
+        <label class="header-field">
+          <span>Scenario</span>
           <select id="case-select"></select>
         </label>
-        <button id="next-case-btn" class="btn btn-ghost">NEXT INCIDENT</button>
-        <button id="reset-btn" class="btn btn-ghost">RESET</button>
+        <button id="next-case-btn" class="icon-button" title="Next incident">→</button>
+        <button id="reset-btn" class="icon-button" title="Reset incident">↻</button>
       </div>
     </header>
 
-    <section class="telemetry">
-      <div class="telemetry-hero">
-        <span class="beacon"></span>
-        <div>
-          <span class="telemetry-label">CONFIRMED FIRST DETECTION</span>
-          <strong id="initial-detection">—</strong>
-        </div>
+    <section class="status-ribbon">
+      <div class="status-item detection-status">
+        <span class="status-dot"></span>
+        <div><small>Confirmed first detection</small><strong>Site <span id="initial-detection">—</span></strong></div>
       </div>
-      <div class="telemetry-cell">
-        <span class="telemetry-label">INCIDENT</span>
-        <strong id="case-number">—</strong>
-      </div>
-      <div class="telemetry-cell">
-        <span class="telemetry-label">FIELD BUDGET</span>
+      <div class="status-item"><small>Incident</small><strong id="case-number">—</strong></div>
+      <div class="status-item budget-status">
+        <small>Field budget</small>
         <strong id="budget-left">—</strong>
         <div class="budget-track"><span id="budget-fill"></span></div>
       </div>
-      <div class="telemetry-cell">
-        <span class="telemetry-label">ROUND</span>
-        <strong id="round">—</strong>
-      </div>
-      <div class="telemetry-cell truth-cell">
-        <span class="telemetry-label">TRUE EXTENT</span>
-        <strong id="truth-state">LOCKED</strong>
-      </div>
+      <div class="status-item"><small>Decision round</small><strong id="round">—</strong></div>
+      <div class="status-item truth-status"><small>Hidden extent</small><strong id="truth-state">LOCKED</strong></div>
     </section>
 
-    <main class="workspace">
-      <aside class="panel worlds-panel">
-        <div class="panel-head">
+    <main class="dashboard-grid">
+      <aside class="card mission-panel">
+        <div class="card-title-row">
+          <div class="title-icon">⌖</div>
           <div>
-            <div class="section-kicker">INFER</div>
-            <h2>Possible extents</h2>
+            <h2>Mission Panel</h2>
+            <p>Plan, compare and deploy the next survey.</p>
           </div>
-          <span id="world-count" class="mini-chip">—</span>
         </div>
-        <p class="panel-copy">Marine keeps several plausible invasion extents alive. Click one to inspect it.</p>
-        <div id="world-list" class="world-list"></div>
-        <button id="clear-world-btn" class="btn btn-subtle hidden">RETURN TO POSTERIOR</button>
 
-        <details class="advanced-card">
-          <summary>Detectability belief</summary>
-          <div id="q-panel" class="q-panel"></div>
-        </details>
+        <section class="mission-card marine-card">
+          <div class="mission-card-head">
+            <span class="mini-icon">✦</span>
+            <strong>Marine Recommendation</strong>
+          </div>
+          <small>Recommended site</small>
+          <div class="site-line">
+            <b id="marine-site">Site —</b>
+            <span id="marine-priority" class="pill pill-green">Frontier priority</span>
+          </div>
+          <p id="marine-copy">Current recommendation from the observable graph state.</p>
+          <div class="mini-metrics">
+            <span>Belief <b id="marine-belief">—</b></span>
+            <span>Rank <b>#1</b></span>
+          </div>
+        </section>
+
+        <section class="mission-card static-card">
+          <div class="mission-card-head">
+            <span class="mini-icon">≡</span>
+            <strong>Static Response Plan</strong>
+          </div>
+          <small>Precommitted at t0</small>
+          <div class="site-line">
+            <b id="static-site">Site —</b>
+            <span class="pill">Fixed plan</span>
+          </div>
+          <p>Same Frontier logic, but remaining targets do not change after new field evidence.</p>
+          <div id="static-route" class="route-chips"></div>
+        </section>
+
+        <section class="mission-card choice-card">
+          <div class="mission-card-head">
+            <span class="mini-icon">●</span>
+            <strong>Your Choice</strong>
+          </div>
+          <label class="field-label" for="site-select">Select a site to survey</label>
+          <select id="site-select" class="large-select"></select>
+          <button id="follow-marine-btn" class="text-button">Follow Marine #1</button>
+        </section>
+
+        <section class="mission-card effort-card">
+          <div class="mission-card-head">
+            <span class="mini-icon">⚙</span>
+            <strong>Effort</strong>
+          </div>
+          <label class="field-label">Survey effort units</label>
+          <div id="effort-controls" class="effort-controls">
+            <button class="effort-btn" data-effort="1"><b>1</b><span>LIGHT</span></button>
+            <button class="effort-btn" data-effort="3"><b>3</b><span>MEDIUM</span></button>
+            <button class="effort-btn active" data-effort="6"><b>6</b><span>HIGH</span></button>
+          </div>
+          <p id="effort-caption" class="effort-caption">Higher effort increases the chance of detecting an occupied site.</p>
+        </section>
+
+        <button id="deploy-btn" class="deploy-button">
+          <span class="play-mark">▶</span>
+          <span><b>Deploy Mission</b><small>Send the field team and update beliefs</small></span>
+        </button>
       </aside>
 
-      <section class="panel map-panel">
-        <div class="map-head">
+      <section class="card map-card">
+        <div class="map-toolbar">
           <div>
-            <div class="section-kicker">OBSERVABLE RESPONSE THEATER</div>
-            <h2 id="map-title">Posterior occupancy probability</h2>
+            <span class="eyebrow">REAL MONITORING COAST</span>
+            <h2 id="map-title">Posterior occupancy belief</h2>
           </div>
-          <div class="layer-controls" role="group" aria-label="Map layers">
-            <button class="layer-btn active" data-layer="probability">PROBABILITY</button>
-            <button class="layer-btn" data-layer="habitat">HABITAT</button>
-            <button class="layer-btn" data-layer="history">FIELD HISTORY</button>
+          <div class="layer-tabs" role="group" aria-label="Map layers">
+            <button class="layer-btn active" data-layer="probability">Map</button>
+            <button class="layer-btn" data-layer="habitat">Habitat</button>
+            <button class="layer-btn" data-layer="history">Field History</button>
           </div>
         </div>
+
         <div id="scenario-banner" class="scenario-banner hidden"></div>
+
         <div class="map-stage">
-          <svg id="graph" viewBox="0 0 1100 650" role="img" aria-label="Marine response graph"></svg>
+          <svg id="graph" viewBox="0 0 1100 620" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Real coastal monitoring network"></svg>
+
+          <div class="probability-legend">
+            <span>Site belief</span>
+            <i></i>
+            <div><small>Low</small><small>High</small></div>
+          </div>
+
+          <div class="map-legend">
+            <div><span class="legend-node"></span> Survey site</div>
+            <div><span class="legend-line"></span> Graph connection</div>
+            <div><span class="legend-marine"></span> Marine #1</div>
+            <div><span class="legend-detection"></span> Detection</div>
+          </div>
+
+          <div class="map-attribution">Real site coordinates · OpenStreetMap basemap when online</div>
           <div id="node-tooltip" class="tooltip hidden"></div>
-          <div class="map-note">belief ≠ truth · non-detection ≠ absence</div>
+
           <div id="replan-callout" class="replan-callout hidden">
-            <span>MISSION UPDATED</span>
-            <strong id="replan-route"></strong>
-            <small>New field evidence changed the recommended next site.</small>
+            <div class="replan-kicker">MISSION UPDATED BY EVIDENCE</div>
+            <strong id="replan-route">—</strong>
+            <p>The field return changed Marine's next recommendation.</p>
           </div>
         </div>
       </section>
 
-      <aside class="panel decision-panel">
-        <div class="panel-head">
-          <div>
-            <div class="section-kicker">DECIDE</div>
-            <h2>Marine recommends</h2>
-          </div>
-          <span class="mini-chip">HUMAN IN CONTROL</span>
-        </div>
-        <div id="recommendation-list" class="recommendation-list"></div>
-
-        <div class="selected-card">
-          <div class="selected-head">
+      <aside class="right-stack">
+        <section class="card worlds-card">
+          <div class="card-title-row compact">
+            <div class="title-icon">◎</div>
             <div>
-              <span class="telemetry-label">SELECTED FIELD SITE</span>
-              <strong id="selected-site">—</strong>
+              <h2>Probable Worlds</h2>
+              <p>Top unique ecological extents, marginalized over detectability.</p>
             </div>
-            <button id="follow-marine-btn" class="btn btn-subtle">FOLLOW #1</button>
+            <span id="world-count" class="count-badge">—</span>
           </div>
-          <div id="selected-metrics" class="selected-metrics"></div>
+          <div id="world-list" class="world-list"></div>
+          <button id="clear-world-btn" class="text-button hidden">Return to posterior map</button>
+        </section>
 
-          <div class="effort-section">
-            <span class="telemetry-label">ALLOCATE FIELD EFFORT</span>
-            <div id="effort-controls" class="effort-controls">
-              <button class="effort-btn" data-effort="1"><b>1</b><span>LIGHT</span></button>
-              <button class="effort-btn" data-effort="3"><b>3</b><span>MEDIUM</span></button>
-              <button class="effort-btn active" data-effort="6"><b>6</b><span>HIGH</span></button>
+        <section class="card detectability-card">
+          <div class="card-title-row compact">
+            <div class="title-icon">▥</div>
+            <div>
+              <h2>Detectability Belief</h2>
+              <p>Current posterior over effective detection probability q.</p>
             </div>
           </div>
-
-          <button id="deploy-btn" class="btn btn-primary">DEPLOY FIELD TEAM</button>
-        </div>
+          <div id="q-panel" class="q-panel"></div>
+        </section>
       </aside>
-    </main>
 
-    <section class="insight-grid">
-      <article class="panel insight-card">
-        <div class="section-kicker">OBSERVE</div>
-        <h3>Latest field return</h3>
-        <div id="evidence-panel" class="insight-body muted">Awaiting field evidence.</div>
-      </article>
-      <article class="panel insight-card">
-        <div class="section-kicker">INFER</div>
-        <h3>Largest propagated changes</h3>
-        <div id="propagation-panel" class="insight-body muted">No propagated update yet.</div>
-      </article>
-      <article class="panel insight-card">
-        <div class="section-kicker">MODEL STRESS</div>
-        <h3>Was the result expected?</h3>
-        <div id="stress-panel" class="insight-body muted">No field result yet.</div>
-      </article>
-    </section>
-
-    <section class="panel performance-panel">
-      <div class="performance-head">
-        <div>
-          <div class="section-kicker">EVALUATE</div>
-          <h2>Same incident. Same budget. Different decisions.</h2>
+      <section class="card why-card">
+        <div class="why-head">
+          <div class="title-icon">✦</div>
+          <div>
+            <h2>Why this mission?</h2>
+            <p id="why-subtitle">Marine's ranking is explicit and inspectable.</p>
+          </div>
         </div>
-        <button id="reveal-btn" class="btn btn-reveal" disabled>REVEAL TRUE EXTENT</button>
-      </div>
-      <div id="performance-locked" class="performance-locked">
-        Outcome comparison stays locked until the field budget is exhausted.
-      </div>
-      <div id="performance-content" class="performance-content hidden">
-        <div id="scorecards" class="scorecards"></div>
-        <svg id="performance-chart" viewBox="0 0 900 250" role="img" aria-label="Detected occupied sites by cumulative effort"></svg>
-      </div>
-    </section>
+        <div class="why-grid">
+          <div class="why-item">
+            <span class="why-icon">⌖</span>
+            <div><strong>Frontier priority</strong><b id="why-frontier-value">—</b><p id="why-frontier-copy">Whether this site lies on the current response frontier.</p></div>
+          </div>
+          <div class="why-item">
+            <span class="why-icon">◔</span>
+            <div><strong>Occupancy belief</strong><b id="why-belief-value">—</b><p>Posterior probability after all field evidence seen so far.</p></div>
+          </div>
+          <div class="why-item">
+            <span class="why-icon">◉</span>
+            <div><strong>Predicted detection</strong><b id="why-detection-value">—</b><p id="why-detection-copy">At the effort currently selected by the operator.</p></div>
+          </div>
+        </div>
 
-    <section class="mission-tape panel">
-      <div class="tape-label">
-        <span>INCIDENT TAPE</span>
-        <b>OBSERVE → INFER → DECIDE → SURVEY → LEARN → REPLAN</b>
-      </div>
-      <div id="timeline" class="timeline"></div>
-    </section>
+        <div class="evidence-strip">
+          <div class="evidence-cell">
+            <small>Latest field return</small>
+            <div id="evidence-panel" class="evidence-content muted">Awaiting field evidence.</div>
+          </div>
+          <div class="evidence-cell">
+            <small>Largest propagated changes</small>
+            <div id="propagation-panel" class="evidence-content muted">No propagated update yet.</div>
+          </div>
+          <div class="evidence-cell">
+            <small>Model stress</small>
+            <div id="stress-panel" class="evidence-content muted">No field result yet.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card live-card">
+        <div class="live-head">
+          <div>
+            <span class="eyebrow">LIVE RESPONSE</span>
+            <h2>Incident Curve</h2>
+            <p>Observable field detections and budget use as the response campaign unfolds.</p>
+          </div>
+          <div class="live-legend">
+            <span><i class="dot blue"></i> Confirmed detections</span>
+            <span><i class="dot green"></i> Budget used</span>
+          </div>
+        </div>
+        <svg id="live-chart" viewBox="0 0 980 250" role="img" aria-label="Live field response curve"></svg>
+      </section>
+
+      <section class="card evaluation-card">
+        <div class="evaluation-head">
+          <div>
+            <span class="eyebrow">EVALUATE</span>
+            <h2>Same incident. Same budget. Different decisions.</h2>
+            <p>Truth stays locked until the field campaign is complete.</p>
+          </div>
+          <button id="reveal-btn" class="reveal-button" disabled>Reveal true extent</button>
+        </div>
+
+        <div id="performance-locked" class="performance-locked">
+          <span>⌁</span>
+          <div><b>Outcome comparison locked</b><small>Complete the available field budget to open the evaluator receipt.</small></div>
+        </div>
+
+        <div id="performance-content" class="performance-content hidden">
+          <div id="scorecards" class="scorecards"></div>
+          <svg id="performance-chart" viewBox="0 0 900 250" role="img" aria-label="True occupied sites detected by cumulative effort"></svg>
+        </div>
+      </section>
+
+      <section class="card tape-card">
+        <div class="tape-label">
+          <span>DECISION LOOP</span>
+          <b>OBSERVE → INFER → DECIDE → SURVEY → LEARN → REPLAN</b>
+        </div>
+        <div id="timeline" class="timeline"></div>
+      </section>
+    </main>
   </div>
 
   <script src="/static/app.js"></script>
