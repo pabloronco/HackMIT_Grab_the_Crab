@@ -15,7 +15,7 @@ from .mission_loop import LoopPhase, RoundTransition
 from .model_mismatch import posterior_predictive_surprise
 from .models import GraphState, HiddenWorld, MissionAction, MissionAllocation
 from .planners import FrontierPlanner, Planner
-from .real_incident_source import build_real_incident, eligible_incident_seed_sites
+from .real_incident_source import (\n    build_real_incident,\n    eligible_incident_seed_sites,\n    real_site_display_metadata,\n)
 from .spatial_belief import QHypothesis, SpatialBeliefEngine, SpatialBeliefState
 from .spatial_mission_loop import SpatialAdaptiveMissionLoop
 from .world_models import (
@@ -38,6 +38,7 @@ _TOP_WORLDS = 5
 _SEED_MODULUS = 1_000_000
 _BELIEF_SEED_NAMESPACE_OFFSET = 10_000_000_000
 _CASE_OUTCOME_VERSION = "ui-v1"
+_DEFAULT_DEMO_CASE_ID = "incident_097"
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _CASE_MANIFEST = _REPO_ROOT / "configs" / "ui_case_manifest_v1.json"
@@ -248,9 +249,18 @@ class MissionControlSession:
         self._case_id = ""
         self._case_index = 0
         self._budget = _BUDGET
+        self._site_display_metadata: dict[str, dict[str, object]] = {}
+        self._static_plan_sites: tuple[str, ...] = ()
 
-        first_case = self._cases[0]
-        self.reset(case_id=str(first_case["case_id"]))
+        default_case = next(
+            (
+                row
+                for row in self._cases
+                if str(row["case_id"]) == _DEFAULT_DEMO_CASE_ID
+            ),
+            self._cases[0],
+        )
+        self.reset(case_id=str(default_case["case_id"]))
 
     def case_library(self) -> dict[str, Any]:
         return {
@@ -340,6 +350,15 @@ class MissionControlSession:
             q_hypotheses,
         )
         self._loop.reset(seed=resolved_seed)
+        self._site_display_metadata = real_site_display_metadata(
+            [site.id for site in real_incident.incident.sites]
+        )
+        initial_ranked = MissionControlFrontierPlanner().rank_candidates(
+            self._loop.current_graph_state
+        )
+        self._static_plan_sites = tuple(
+            str(row["site_id"]) for row in initial_ranked[:3]
+        )
 
         self._mission = None
         self._last_transition = None
@@ -591,12 +610,21 @@ class MissionControlSession:
         for index, site_id in enumerate(graph.node_ids):
             site = site_by_id[site_id]
             row = graph.node_features[index]
+            display_meta = self._site_display_metadata.get(site_id, {})
             node = {
                 "id": site_id,
                 "label": f"Monitoring site {site_id}",
-                "zone": "coast",
+                "zone": "Salish Sea",
                 "x": site.x,
                 "y": site.y,
+                "latitude": display_meta.get("latitude"),
+                "longitude": display_meta.get("longitude"),
+                "habitat_label": display_meta.get("habitat_label"),
+                "substrate": display_meta.get("substrate"),
+                "shoreline_type": display_meta.get("shoreline_type"),
+                "exposure": display_meta.get("exposure"),
+                "eelgrass": display_meta.get("eelgrass"),
+                "salt_marsh": display_meta.get("salt_marsh"),
                 "belief": belief.p_by_site[site_id],
                 "uncertainty": belief.uncertainty_by_site[site_id],
                 "habitat": float(site.habitat_score),
@@ -695,6 +723,11 @@ class MissionControlSession:
                 "effort_levels": list(_EFFORT_LEVELS),
             },
             "mission": self._serialize_mission(self._mission),
+            "static_response": {
+                "label": "Static response",
+                "semantics": "same_frontier_ranking_precommitted_at_t0",
+                "plan_sites": list(self._static_plan_sites),
+            },
             "global_recommendations": recommendations,
             "top_worlds": top_worlds,
             "mission_changed": mission_changed,
