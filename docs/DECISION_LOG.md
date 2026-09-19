@@ -470,3 +470,34 @@ starved) but not sufficient to recommend it as the project's planner on
 this evidence.
 
 **Owner:** Demu.
+
+
+## 2026-09-19 — Hackathon judging pivot: interactive human-in-the-loop mission control
+
+**Status:** FROZEN for the judging/demo branch `ui/interactive-judge-mode`. This does not change the ecological kernel, benchmark claims, R8/R10 interpretation, hidden-truth boundary, or evidence semantics.
+
+Hackathon feedback changed the product presentation priority from validation-led to transformation-led. Marine is still introduced as ecological rapid response, but the judge now acts as the response coordinator instead of passively watching the planner.
+
+**Judging loop now frozen:**
+
+`inspect current belief -> inspect Marine recommendation -> choose any site -> choose effort {1,3,6} -> deploy -> receive field result -> explicit Bayes update -> inspect propagated belief changes -> inspect reordered plausible extents -> see next Marine recommendation -> repeat -> reveal hidden extent -> compare outcomes`.
+
+**Human-in-the-loop boundary:** Marine is advisory. The judge may follow Marine's top recommendation or override it. The browser contains no ecological inference or hidden truth. User selections are converted into a normal `MissionAction`; `Environment -> SpatialBeliefEngine -> GraphState -> planner` remains the evidence/decision path.
+
+**Possible-world UI:** show top unique ecological occupancy extents after marginalizing q. A world card is an explainability view only; clicking one does not assert hidden truth and does not invoke a new world-conditioned planner. Family provenance may be multi-family because identical occupancy maps are deduplicated.
+
+**Map semantics:** discrete monitoring sites only. No interpolated continuous probability heatmap is claimed. Primary layer is posterior occupancy belief; habitat and observed survey effort are contextual layers. Temperature remains stretch/out of the MVP unless coverage/provenance are made explicit.
+
+**Effort semantics:** the operator may allocate 1, 3, or 6 effort units. Marine does not claim an optimized LOW/MEDIUM/HIGH effort recommendation under Frontier. The UI may show posterior-predictive detection probability at each allowed effort because that quantity is explicitly computed by `SpatialBeliefEngine`.
+
+**Model-stress semantics:** the R9 posterior-predictive surprise diagnostic may be displayed after a field return. It diagnoses how expected the result was under the current ensemble. It does not automatically expand or repair the scenario ensemble.
+
+**Comparator semantics:** the hero comparison is `Marine adaptive Frontier vs Static Response vs You`. Static Response precommits the same Frontier ranking at t0 and does not use subsequent evidence to change its remaining targets. It is not labelled "expert", "professional", "WDFW", or "standard of care". Historical field trajectories remain a separate evidence/replay feature when data support them.
+
+**Outcome receipt:** after reveal, compare the number/fraction of true occupied sites that were actually confirmed/detected, including the known initial detection. Do not use "occupied sites surveyed" as a success metric because imperfect detection means survey is not confirmation. X-axis may be cumulative field effort; hidden truth stays locked until completion.
+
+**Reproducibility:** a committed 100-case demo manifest freezes public demo seeds. Cases are playable synthetic hidden incidents on the real monitoring graph; they are not represented as 100 historical outbreaks. Field outcomes use deterministic simulator-only potential outcomes so the same case is reproducible.
+
+**Implementation priority:** interactive site+effort deployment -> deterministic cases -> top candidate ranking/why-here -> top unique extents -> propagated belief animation -> comparator receipt -> explainability drawers -> polish. World-conditioned mission ranking and temperature are not MVP blockers.
+
+**Owner:** team. Demu may work on the UI in parallel; cross-cutting interface/claim changes require team review.
