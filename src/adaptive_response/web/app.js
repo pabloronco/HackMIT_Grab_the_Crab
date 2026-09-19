@@ -206,7 +206,7 @@ function renderWorlds() {
       ? "Posterior mass is stable after the latest field return."
       : `Posterior mass moved ${fmtPp(world.delta)} after the latest field return.`;
     return `
-      <button class="world-card ${selected ? "selected" : ""}" data-world="${world.world_id}">
+      <div class="world-card ${selected ? "selected" : ""}" data-world="${world.world_id}" role="button" tabindex="0">
         <span class="world-rank">${world.rank}</span>
         <span class="world-main">
           <strong>Possible extent ${world.rank}</strong>
@@ -222,17 +222,24 @@ function renderWorlds() {
               <li>${changeText}</li>
             </ul>
           </div>` : ""}
-      </button>`;
+      </div>`;
   }).join("") + `
     <div class="other-worlds">
       <span>All other unique extents</span><b>${fmtPct(bundle.remaining_mass)}</b>
     </div>`;
 
   document.querySelectorAll("[data-world]").forEach((button) => {
-    button.addEventListener("click", () => {
+    const toggle = () => {
       const worldId = button.dataset.world;
       state.selectedWorld = state.selectedWorld === worldId ? null : worldId;
       render(state.data);
+    };
+    button.addEventListener("click", toggle);
+    button.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggle();
+      }
     });
   });
 
