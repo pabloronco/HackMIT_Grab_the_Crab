@@ -688,10 +688,10 @@ function heatColor(value) {
   if (value == null) return "#aebbc6";
   const x = clamp01(value);
   const stops = [
-    [0.00, [185, 80, 80]],
-    [0.33, [201, 119, 66]],
-    [0.66, [200, 173, 79]],
-    [1.00, [95, 147, 106]],
+    [0.00, [95, 147, 106]],
+    [0.34, [200, 173, 79]],
+    [0.67, [201, 119, 66]],
+    [1.00, [185, 80, 80]],
   ];
   let left = stops[0];
   let right = stops[1];
