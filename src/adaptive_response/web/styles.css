@@ -214,9 +214,9 @@ body{
 .app-header{box-shadow:0 10px 28px rgba(0,0,0,.20)}
 .map-card{border-color:rgba(190,205,216,.88);box-shadow:0 18px 48px rgba(0,0,0,.38)}
 
-/* Final heat scale: red -> orange -> yellow -> green, intentionally muted rather than neon */
+/* Final heat scale: green -> yellow -> orange -> red, so high probability is red */
 .layer-legend i{
-  background:linear-gradient(90deg,#b95050 0%,#c97742 32%,#c8ad4f 65%,#5f936a 100%);
+  background:linear-gradient(90deg,#5f936a 0%,#c8ad4f 35%,#c97742 68%,#b95050 100%);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.48);
 }
 .heat-ring{mix-blend-mode:normal;filter:url(#heat-soften)}
@@ -283,18 +283,23 @@ body{
 }
 
 .species-extension-preview{margin-top:9px;padding-top:9px;border-top:1px solid #e5ebef}
+.species-extension-preview>summary{list-style:none}
+.species-extension-preview>summary::-webkit-details-marker{display:none}
 .species-more-button{
   width:100%;height:43px;display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:0 11px;border:1px solid #d9e2e9;border-radius:10px;background:#f8fafb;color:#20394f;
-  text-align:left;cursor:default;box-shadow:none
+  text-align:left;cursor:pointer;box-shadow:none;user-select:none;transition:border-color .15s ease,background .15s ease
 }
+.species-more-button:hover{background:#f3f6f8;border-color:#cbd7df}
 .species-more-button span:first-child{display:grid;gap:1px}
 .species-more-button b{font-size:8px}
 .species-more-button small{color:#8293a1;font-size:6px;font-weight:700}
-.species-more-chevron{font-size:16px;color:#788c9d;line-height:1}
+.species-more-chevron{font-size:16px;color:#788c9d;line-height:1;transition:transform .18s ease}
+.species-extension-preview[open] .species-more-chevron{transform:rotate(180deg)}
+.species-extension-panel{padding-top:6px}
 .species-extension-list{
-  display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px;padding:7px;
-  border:1px solid #e1e7eb;border-radius:10px;background:#fbfcfd
+  display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:7px;max-height:170px;overflow-y:auto;
+  border:1px solid #e1e7eb;border-radius:10px;background:#fbfcfd;scrollbar-width:thin
 }
 .species-extension-list>div{
   min-width:0;padding:6px 7px;border-radius:7px;background:#fff;border:1px solid #e8edf0
