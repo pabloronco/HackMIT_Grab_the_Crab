@@ -305,3 +305,12 @@ Open `http://127.0.0.1:8000` and verify the acceptance gate before merging.
 - Fixed-screen-space site halos; visual graph-edge diffusion only for belief/uncertainty/habitat layers.
 - Transient SVG-root transforms during wheel/pan; expensive tile/node reprojection only after gesture commit.
 - The heat layer is explicitly explanatory visualization, not a continuous ecological field estimate.
+
+
+## Final right-rail / heatmap styling default
+
+- Right rail order: Probable Worlds → Detectability Belief → Species / Problem card.
+- Species card uses a real, attributed European Green Crab photograph; it does not overlap the map.
+- Page canvas is black/deep navy; primary analytical cards remain white for contrast.
+- Heat palette is muted blue-grey → violet → coral, with low-opacity radial site halos and very weak graph-edge diffusion.
+- Site markers use a double-outline treatment with separate state rings for frontier, selected and recommended sites.
