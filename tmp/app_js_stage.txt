@@ -700,4 +700,123 @@ function renderReplan() {
   }
   const from = state.data.replan.from.allocations?.[0];
   const to = state.data.replan.to.allocations?.[0];
-  $("replan-route").textContent = `Without new evidence: Site ${from?.site_id} · e${fr
+  $("replan-route").textContent = `Without new evidence: Site ${from?.site_id} · e${from?.effort_units} → With evidence: Site ${to?.site_id} · e${to?.effort_units}`;
+  box.classList.remove("hidden");
+}
+
+function renderLiveChart() {
+  const svg = $("live-chart");
+  svg.innerHTML = "";
+  const rows = state.data.resource_curve || [];
+  const width = 980;
+  const height = 260;
+  const margin = { left: 48, right: 38, top: 26, bottom: 44 };
+  const rounds = Math.max(3, ...rows.map((row) => Number(row.round || 0)));
+  const maxDetections = Math.max(3, ...rows.map((row) => Number(row.field_detections || 0))) + 1;
+  const sx = (round) => margin.left + (Number(round) / Math.max(1, rounds)) * (width - margin.left - margin.right);
+  const syDetections = (count) => height - margin.bottom - (Number(count) / maxDetections) * (height - margin.top - margin.bottom);
+  const barHeight = (effort) => (Number(effort) / 6) * (height - margin.top - margin.bottom) * 0.58;
+
+  for (let i = 0; i <= 4; i += 1) {
+    const y = margin.top + i * (height - margin.top - margin.bottom) / 4;
+    svg.appendChild(svgEl("line", { x1: margin.left, x2: width - margin.right, y1: y, y2: y, class: "chart-grid" }));
+  }
+
+  rows.filter((row) => row.round > 0).forEach((row) => {
+    const x = sx(row.round);
+    const h = barHeight(row.mission_effort);
+    svg.appendChild(svgEl("rect", { x: x - 18, y: height - margin.bottom - h, width: 36, height: h, rx: 5, class: "effort-bar" }));
+    const text = svgEl("text", { x, y: height - margin.bottom - h - 6, "text-anchor": "middle", class: "chart-label" });
+    text.textContent = `e${row.mission_effort}`;
+    svg.appendChild(text);
+  });
+
+  const points = rows.map((row) => [sx(row.round), syDetections(row.field_detections)]);
+  if (points.length) {
+    const d = points.map((point, index) => `${index ? "L" : "M"} ${point[0]} ${point[1]}`).join(" ");
+    svg.appendChild(svgEl("path", { d, class: "live-detection-line" }));
+    points.forEach(([x, y]) => svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 4, class: "live-dot-detection" })));
+  }
+
+  for (let round = 0; round <= rounds; round += 1) {
+    const text = svgEl("text", { x: sx(round), y: height - 15, "text-anchor": "middle", class: "chart-label" });
+    text.textContent = `R${round}`;
+    svg.appendChild(text);
+  }
+
+  const title = svgEl("text", { x: margin.left, y: 13, class: "chart-title-label" });
+  title.textContent = "Cumulative confirmed detections";
+  svg.appendChild(title);
+
+  const summary = state.data.resource_summary;
+  $("live-kpis").innerHTML = `<div><small>Confirmed detections</small><b>${summary.confirmed_detections}</b></div>
+    <div><small>Effort spent</small><b>${summary.effort_spent}</b></div>
+    <div><small>Budget remaining</small><b>${summary.budget_remaining}</b></div>
+    <div><small>Next Marine effort</small><b>${summary.next_recommended_effort ?? "—"}</b></div>`;
+}
+
+function renderPerformance() {
+  const content = $("performance-content");
+  const locked = $("performance-locked");
+  if (!state.data.performance) {
+    content.classList.add("hidden");
+    locked.classList.remove("hidden");
+    const small = locked.querySelector("small");
+    if (small) small.textContent = state.data.can_reveal
+      ? "Campaign complete. Reveal to compare policies."
+      : "Complete the campaign to reveal hidden occupancy.";
+    return;
+  }
+
+  locked.classList.add("hidden");
+  content.classList.remove("hidden");
+  const performance = state.data.performance;
+  const entries = [
+    ["MARINE", performance.marine, "primary"],
+    ["STATIC RESPONSE", performance.static, "primary"],
+    ["YOUR PATH", performance.you, "secondary"],
+  ];
+
+  $("scorecards").innerHTML = entries.map(([label, row, kind]) => `<div class="scorecard ${kind}">
+    <span>${label}</span><strong>${row.detected_occupied} / ${row.occupied_total}</strong><small>true occupied sites confirmed</small>
+    <div class="score-meta"><span>${row.missions_completed} missions</span><span>${row.effort_spent} effort</span><span>${fmtNum(row.effort_per_detected_occupied, 1)} effort / confirmed</span></div>
+  </div>`).join("");
+  $("performance-note").textContent = performance.interpretation;
+  drawPerformanceChart([["Marine", performance.marine], ["Static", performance.static], ["You", performance.you]]);
+}
+
+function drawPerformanceChart(entries) {
+  const svg = $("performance-chart");
+  svg.innerHTML = "";
+  const width = 900;
+  const height = 250;
+  const margin = { left: 55, right: 28, top: 24, bottom: 40 };
+  const maxEffort = Math.max(18, ...entries.flatMap(([, row]) => row.curve.map((point) => point.effort)));
+  const sx = (x) => margin.left + (x / maxEffort) * (width - margin.left - margin.right);
+  const sy = (y) => height - margin.bottom - y * (height - margin.top - margin.bottom);
+
+  for (let i = 0; i <= 4; i += 1) {
+    const value = i / 4;
+    const y = sy(value);
+    svg.appendChild(svgEl("line", { x1: margin.left, x2: width - margin.right, y1: y, y2: y, class: "chart-grid" }));
+    const label = svgEl("text", { x: margin.left - 8, y: y + 3, "text-anchor": "end", class: "chart-label" });
+    label.textContent = `${Math.round(value * 100)}%`;
+    svg.appendChild(label);
+  }
+
+  entries.forEach(([label, row], index) => {
+    const points = row.curve.map((point) => [sx(point.effort), sy(point.detected_fraction)]);
+    const d = points.map((point, i) => `${i ? "L" : "M"} ${point[0]} ${point[1]}`).join(" ");
+    svg.appendChild(svgEl("path", { d, class: `chart-line series-${index}` }));
+    points.forEach(([x, y]) => svg.appendChild(svgEl("circle", { cx: x, cy: y, r: 4, class: `chart-dot series-${index}` })));
+    const last = points.at(-1);
+    if (last) {
+      const text = svgEl("text", { x: last[0] - 4, y: last[1] - 9, "text-anchor": "end", class: `chart-series-label series-${index}` });
+      text.textContent = label;
+      svg.appendChild(text);
+    }
+  });
+
+  [0, 6, 12, 18].filter((value) => value <= maxEffort).forEach((effort) => {
+    const text = svgEl("text", { x: sx(effort), y: height - 14, "text-anchor": "middle", class: "chart-label" });
+    tex
