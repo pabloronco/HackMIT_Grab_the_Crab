@@ -652,3 +652,16 @@ The audit must still report all 100 cases, including Marine-better, equal, and w
 - Survey-site markers now use a double-outline disc (dark outer disc + white contour + smaller data-colored core) with separate frontier/selected/recommended rings for clearer visual hierarchy over satellite imagery.
 
 **Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
+
+
+## 2026-09-20 — Final right-rail alignment and ecological impact copy
+
+**Status:** CURRENT DEFAULT / team-directed UI refinement.
+
+- Desktop right rail is now one explicit stacked container spanning the same two dashboard rows as the dominant map + **Why this mission?** region. The fixed order is **Species / Problem → Probable Worlds → Detectability Belief (q)**.
+- The right-stack grid occupies the same vertical span as the first two center-column rows, so its bottom aligns with the bottom of **Why this mission?** and the next full-width section begins without a vertical discontinuity.
+- Probable Worlds is the flexible middle card and scrolls internally when needed; the species and q cards remain bounded so they do not extend the page independently.
+- Species copy no longer explains the product. It explains the ecological reason for control: where European green crabs become abundant, they can damage eelgrass/seagrass beds, prey on shellfish, and threaten estuary habitat used by salmon and other native species. Early detection and rapid removal while populations are still small is presented as the control rationale.
+- Ecological impact wording is grounded in Washington Sea Grant / WDFW public green-crab materials; it is not a claim of measured damage at the specific synthetic demo incident.
+
+**Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
