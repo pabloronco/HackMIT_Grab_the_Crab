@@ -216,8 +216,9 @@ No arbitrary alert threshold is presented as ecological fact.
 
 Desktop hierarchy:
 
-- first row: Mission / dominant Map / Detectability;
-- second row: resource-efficiency receipt / Why This Mission / Probable Worlds;
+- first row: Mission / dominant Map / Probable Worlds;
+- second row: resource-efficiency receipt / Why This Mission / Detectability;
+- species/problem poster: floating inside the dominant map, top-right, so it never displaces Probable Worlds or q;
 - third row: two simple resource/evidence charts;
 - fourth row: reveal/evaluation;
 - final full-width row: Decision Log.
@@ -296,3 +297,11 @@ python -m adaptive_response.web_app
 ```
 
 Open `http://127.0.0.1:8000` and verify the acceptance gate before merging.
+
+
+## Current map interaction default
+
+- Satellite-style basemap for visual realism, with OSM fallback.
+- Fixed-screen-space site halos; visual graph-edge diffusion only for belief/uncertainty/habitat layers.
+- Transient SVG-root transforms during wheel/pan; expensive tile/node reprojection only after gesture commit.
+- The heat layer is explicitly explanatory visualization, not a continuous ecological field estimate.
