@@ -8,19 +8,24 @@ from adaptive_response.mission_control import MissionControlSession
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Deterministic backend smoke test for interactive Marine judge mode."
+        description=(
+            "Deterministic backend smoke test for the RAMP-aware Marine judge mode. "
+            "By default the script follows both Marine's site and effort recommendation."
+        )
     )
     parser.add_argument(
         "--case-id",
-        default="incident_001",
-        help="Frozen demo case id, e.g. incident_001.",
+        default="incident_097",
+        help="Frozen demo case id, e.g. incident_097.",
     )
     parser.add_argument(
         "--effort",
-        type=int,
-        default=6,
-        choices=(1, 3, 6),
-        help="Effort used when following Marine's current top recommendation.",
+        default="marine",
+        choices=("marine", "1", "3", "6"),
+        help=(
+            "Effort policy for the interactive path. 'marine' follows Marine's "
+            "current recommended effort; 1/3/6 force that effort when affordable."
+        ),
     )
     args = parser.parse_args()
 
@@ -28,23 +33,40 @@ def main() -> None:
     snap = session.reset(case_id=args.case_id)
 
     while not snap["can_reveal"]:
-        remaining = snap["resources"]["remaining_budget"]
-        allowed = [e for e in (1, 3, 6) if e <= remaining]
-        effort = args.effort if args.effort in allowed else max(allowed)
         recommendation = snap["global_recommendations"][0]
+        if args.effort == "marine":
+            effort = int(recommendation["recommended_effort"])
+        else:
+            requested = int(args.effort)
+            allowed = [
+                effort
+                for effort in (1, 3, 6)
+                if effort <= snap["resources"]["remaining_budget"]
+            ]
+            if not allowed:
+                raise RuntimeError("No allowed effort fits the remaining budget.")
+            effort = requested if requested in allowed else max(allowed)
+
         snap = session.deploy(
             site_id=recommendation["site_id"],
             effort=effort,
         )
 
     revealed = session.reveal()
+    performance = revealed["performance"]
     receipt = {
         "case": revealed["case"],
         "initial_detection": revealed["incident"]["initial_detection"],
-        "spent_budget": revealed["resources"]["spent_budget"],
-        "marine": revealed["performance"]["marine"],
-        "static": revealed["performance"]["static"],
-        "you": revealed["performance"]["you"],
+        "response_window": {
+            "deployments": revealed["resources"]["round"],
+            "mission_horizon": revealed["resources"]["mission_horizon"],
+            "effort_spent": revealed["resources"]["spent_budget"],
+            "capacity_preserved": revealed["resources"]["capacity_preserved"],
+        },
+        "marine": performance["marine"],
+        "static": performance["static"],
+        "you": performance["you"],
+        "resource_receipt": performance["resource_receipt"],
     }
     print(json.dumps(receipt, indent=2, sort_keys=True))
 
