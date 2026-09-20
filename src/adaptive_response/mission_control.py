@@ -1852,12 +1852,27 @@ class MissionControlSession:
         ]
         mission_sites: list[str] = []
         mission_efforts: list[int] = []
+        mission_receipts: list[dict[str, Any]] = []
         new_field_detections = 0
 
         for row in self._judge_history:
             spent = int(row["effort_spent"])
             cumulative_effort += spent
             mission_efforts.append(spent)
+            decision_receipt = row.get("decision_receipt")
+            if isinstance(decision_receipt, dict):
+                receipt = dict(decision_receipt)
+                site_id = str(receipt.get("site_id"))
+                true_occupied = site_id in occupied
+                receipt["true_occupied"] = true_occupied
+                if true_occupied and bool(receipt.get("detection")):
+                    receipt["realization"] = "occupied_and_detected"
+                elif true_occupied:
+                    receipt["realization"] = "occupied_but_missed"
+                else:
+                    receipt["realization"] = "surveyed_not_occupied"
+                mission_receipts.append(receipt)
+
             for observation in row["observations"].observations:
                 mission_sites.append(observation.site_id)
                 if observation.detection:
@@ -1877,6 +1892,11 @@ class MissionControlSession:
 
         final_detected = len(detected & occupied)
         high_effort_equivalent = 6 * len(mission_efforts)
+        expected_detection_sum = sum(
+            float(row["predictive_detection_probability"])
+            for row in mission_receipts
+            if row.get("predictive_detection_probability") is not None
+        )
         return {
             "name": "you",
             "occupied_total": occupied_total,
@@ -1884,9 +1904,13 @@ class MissionControlSession:
             "undetected_occupied": occupied_total - final_detected,
             "mission_sites": mission_sites,
             "mission_efforts": mission_efforts,
+            "mission_receipts": mission_receipts,
             "missions_completed": len(mission_efforts),
+            "mission_horizon": _DEMO_MISSION_HORIZON,
             "field_detections_beyond_initial": new_field_detections,
             "effort_spent": cumulative_effort,
+            "capacity_preserved": max(0, self._budget - cumulative_effort),
+            "expected_detection_sum": expected_detection_sum,
             "effort_per_detected_occupied": (
                 cumulative_effort / final_detected
                 if final_detected > 0
