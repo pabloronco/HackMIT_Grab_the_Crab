@@ -688,9 +688,9 @@ function heatColor(value) {
   if (value == null) return "#aebbc6";
   const x = clamp01(value);
   const stops = [
-    [0.00, [39, 111, 226]],
-    [0.48, [62, 187, 211]],
-    [1.00, [245, 82, 91]],
+    [0.00, [76, 108, 150]],
+    [0.50, [126, 116, 146]],
+    [1.00, [188, 96, 105]],
   ];
   const [left, right] = x <= stops[1][0] ? [stops[0], stops[1]] : [stops[1], stops[2]];
   const t = (x - left[0]) / Math.max(0.0001, right[0] - left[0]);
@@ -771,12 +771,12 @@ function renderMap(previous) {
       gradient.appendChild(svgEl("stop", {
         offset: "0%",
         "stop-color": heatColor(av),
-        "stop-opacity": 0.30,
+        "stop-opacity": 0.13,
       }));
       gradient.appendChild(svgEl("stop", {
         offset: "100%",
         "stop-color": heatColor(bv),
-        "stop-opacity": 0.30,
+        "stop-opacity": 0.13,
       }));
       defs.appendChild(gradient);
 
@@ -788,7 +788,7 @@ function renderMap(previous) {
         y2: b.y,
         stroke: `url(#${gradientId})`,
         "stroke-width": 22 + 18 * influence,
-        opacity: 0.22 + 0.18 * influence,
+        opacity: 0.07 + 0.08 * influence,
         class: "heat-influence",
       }));
     });
@@ -802,16 +802,16 @@ function renderMap(previous) {
     const intensity = 0.48 + 0.52 * clamp01(value);
     const gradientId = `heat-gradient-${index}`;
     const gradient = svgEl("radialGradient", { id: gradientId, cx: "50%", cy: "50%", r: "50%" });
-    gradient.appendChild(svgEl("stop", { offset: "0%", "stop-color": color, "stop-opacity": 0.66 * intensity }));
-    gradient.appendChild(svgEl("stop", { offset: "26%", "stop-color": color, "stop-opacity": 0.43 * intensity }));
-    gradient.appendChild(svgEl("stop", { offset: "60%", "stop-color": color, "stop-opacity": 0.18 * intensity }));
+    gradient.appendChild(svgEl("stop", { offset: "0%", "stop-color": color, "stop-opacity": 0.34 * intensity }));
+    gradient.appendChild(svgEl("stop", { offset: "28%", "stop-color": color, "stop-opacity": 0.22 * intensity }));
+    gradient.appendChild(svgEl("stop", { offset: "62%", "stop-color": color, "stop-opacity": 0.09 * intensity }));
     gradient.appendChild(svgEl("stop", { offset: "100%", "stop-color": color, "stop-opacity": 0 }));
     defs.appendChild(gradient);
 
     mapRoot.appendChild(svgEl("circle", {
       cx: point.x,
       cy: point.y,
-      r: 88,
+      r: 96,
       fill: `url(#${gradientId})`,
       class: "heat-ring",
     }));
@@ -820,7 +820,7 @@ function renderMap(previous) {
       cy: point.y,
       r: 34,
       fill: color,
-      opacity: 0.10 + 0.11 * intensity,
+      opacity: 0.045 + 0.055 * intensity,
       class: "heat-core-glow",
     }));
   });
@@ -862,14 +862,15 @@ function renderMap(previous) {
     const layerValue = descriptor.value(node);
     const layerColor = heatColor(layerValue);
 
+    group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 14, class: "node-outline" }));
     if (node.frontier && !state.selectedWorld) {
-      group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 21, class: "frontier-ring" }));
+      group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 19, class: "frontier-ring" }));
     }
     if (state.selectedSite === node.id) {
-      group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 27, class: "selected-ring" }));
+      group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 24, class: "selected-ring" }));
     }
     if (topSite === node.id && !state.data.revealed) {
-      group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 33, class: "marine-ring" }));
+      group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 29, class: "marine-ring" }));
     }
 
     const classes = [
@@ -882,7 +883,7 @@ function renderMap(previous) {
       state.data.revealed && node.true_occupied && node.detections === 0 ? "true-missed" : "",
     ].filter(Boolean).join(" ");
 
-    const core = svgEl("circle", { cx: point.x, cy: point.y, r: 11, class: classes });
+    const core = svgEl("circle", { cx: point.x, cy: point.y, r: 8.5, class: classes });
     if (
       layerValue != null &&
       node.status !== "confirmed_detection" &&
