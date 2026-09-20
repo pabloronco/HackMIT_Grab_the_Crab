@@ -688,11 +688,20 @@ function heatColor(value) {
   if (value == null) return "#aebbc6";
   const x = clamp01(value);
   const stops = [
-    [0.00, [76, 108, 150]],
-    [0.50, [126, 116, 146]],
-    [1.00, [188, 96, 105]],
+    [0.00, [185, 80, 80]],
+    [0.33, [201, 119, 66]],
+    [0.66, [200, 173, 79]],
+    [1.00, [95, 147, 106]],
   ];
-  const [left, right] = x <= stops[1][0] ? [stops[0], stops[1]] : [stops[1], stops[2]];
+  let left = stops[0];
+  let right = stops[1];
+  for (let i = 0; i < stops.length - 1; i += 1) {
+    if (x >= stops[i][0] && x <= stops[i + 1][0]) {
+      left = stops[i];
+      right = stops[i + 1];
+      break;
+    }
+  }
   const t = (x - left[0]) / Math.max(0.0001, right[0] - left[0]);
   const rgb = interpolateRgb(left[1], right[1], Math.max(0, Math.min(1, t)));
   return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
