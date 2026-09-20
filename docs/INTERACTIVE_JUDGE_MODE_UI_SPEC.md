@@ -33,7 +33,7 @@ The three-deployment window is a **demo/product horizon**. Formal R8/R10 protoco
 - judge site/effort controls;
 - field return;
 - `MISSION UPDATED BY EVIDENCE` when causal replan occurs;
-- RAMP capacity-preservation card.
+- resource-efficiency capacity-preservation card.
 
 ### Explainability layer
 - top unique ecological extents marginalized over q;
@@ -105,7 +105,7 @@ For a selected candidate site and each feasible `e ∈ {1,3,6}`, Marine calculat
 
 Marine then chooses the smallest effort retaining enough of the maximum-effort information value and conditional detection power. Detection-power retention is stricter at higher occupancy belief.
 
-This is a transparent RAMP product rule. Its thresholds are **DESIGN CHOICES**, not ecological constants and not agency preferences.
+This is a transparent resource-efficiency product rule. Its thresholds are **DESIGN CHOICES**, not ecological constants and not agency preferences.
 
 The judge may override effort.
 
@@ -154,13 +154,13 @@ It combines:
 
 This distinction must remain visible in the UI.
 
-## RAMP resource semantics
+## resource-efficiency resource semantics
 
 Maximum available response capacity is 18 effort units.
 
 The judging response window contains up to three field deployments. Marine may leave capacity unspent.
 
-Primary RAMP quantities:
+Primary resource-efficiency quantities:
 - effort spent;
 - capacity preserved;
 - effort avoided relative to effort 6 on the same number of deployments;
@@ -217,7 +217,8 @@ No arbitrary alert threshold is presented as ecological fact.
 Desktop hierarchy:
 
 - first row: Mission / dominant Map / Probable Worlds;
-- second row: RAMP resource receipt / Why This Mission / Detectability;
+- second row: resource-efficiency receipt / Why This Mission / Detectability;
+- species/problem poster: floating inside the dominant map, top-right, so it never displaces Probable Worlds or q;
 - third row: two simple resource/evidence charts;
 - fourth row: reveal/evaluation;
 - final full-width row: Decision Log.
@@ -248,7 +249,7 @@ Legacy rehearsal endpoints may remain but are not the primary UI path.
 
 Safe:
 - “Non-detection is not absence; effort and detectability matter.”
-- “Marine recommends both where to survey and how much effort to spend.”
+- “Grab the Crab recommends both where to survey and how much effort to spend.”
 - “Unused effort is preserved field capacity in this three-deployment response window.”
 - “New evidence can change the next mission.”
 - “This selected case is an illustrative blinded synthetic incident on a real monitoring graph.”
@@ -269,7 +270,7 @@ Not safe without separate validation:
 - hidden truth absent before reveal;
 - exactly three judging deployments complete the response window;
 - unspent effort remains preserved;
-- Marine site+effort recommendation visible;
+- Grab the Crab site+effort recommendation visible;
 - map zoom/pan works in Safari;
 - environmental layers do not fabricate missing values;
 - probable-world panel does not overflow;
@@ -283,8 +284,8 @@ Not safe without separate validation:
 
 ```bash
 git fetch origin
-git switch ui/ramp-final-pass
-git pull origin ui/ramp-final-pass
+git switch ui/catch-the-crab-polish
+git pull origin ui/catch-the-crab-polish
 uv pip install -e ".[dev,ui]"
 
 pytest tests/test_frontier_planner.py tests/test_mission_control.py tests/test_spatial_mission_loop.py tests/test_real_incident_source.py -q
@@ -296,3 +297,42 @@ python -m adaptive_response.web_app
 ```
 
 Open `http://127.0.0.1:8000` and verify the acceptance gate before merging.
+
+
+## Current map interaction default
+
+- Satellite-style basemap for visual realism, with OSM fallback.
+- Fixed-screen-space site halos; visual graph-edge diffusion only for belief/uncertainty/habitat layers.
+- Transient SVG-root transforms during wheel/pan; expensive tile/node reprojection only after gesture commit.
+- The heat layer is explicitly explanatory visualization, not a continuous ecological field estimate.
+
+
+## Final right-rail / heatmap styling default
+
+- Right rail order: Probable Worlds → Detectability Belief → Species / Problem card.
+- Species card uses a real, attributed European Green Crab photograph; it does not overlap the map.
+- Page canvas is black/deep navy; primary analytical cards remain white for contrast.
+- Heat palette is muted blue-grey → violet → coral, with low-opacity radial site halos and very weak graph-edge diffusion.
+- Site markers use a double-outline treatment with separate state rings for frontier, selected and recommended sites.
+
+
+## Final desktop right-rail contract
+
+- Right rail is a single stacked container with order: **Species / Problem → Probable Worlds → Detectability Belief**.
+- It spans exactly the same desktop grid rows as the map and Why This Mission region; its bottom must align with the bottom of Why This Mission before full-width sections begin.
+- Probable Worlds owns flexible vertical space and internal scrolling; species and q remain bounded.
+- Species copy describes ecological damage / control rationale, not the software workflow. Safe wording is source-grounded to Washington Sea Grant / WDFW: potential damage to eelgrass/seagrass, shellfish and estuary habitat; early detection/removal improves the chance of control while populations are small.
+
+
+## UI freeze candidate — extensibility cue
+
+- Heat legend and map values use a muted red → orange → yellow → green scale.
+- Species card contains a static, non-interactive “Other invasive species” preview only to communicate extensibility.
+- Preview list is illustrative and not exhaustive; it must not imply that the current ecological model is calibrated or validated for those additional species.
+
+
+## Final UI freeze correction
+
+- Heat encoding direction: **low = green, high = red**, passing through yellow/orange.
+- “Other invasive species” is a native collapsed disclosure control, closed by default and expandable on click.
+- Opening the drawer is presentation-only and must not alter ecological or planner state.

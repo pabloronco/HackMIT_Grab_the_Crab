@@ -571,11 +571,11 @@ The judging interface has been rebuilt around the visual/product direction revie
 **Owner:** team.
 
 
-## 2026-09-20 — RAMP resource-efficiency product layer and final judging UI
+## 2026-09-20 — resource-efficiency resource-efficiency product layer and final judging UI
 
 **Status:** FROZEN for the HackMIT judging/demo product surface only. Formal R8/R10 benchmark protocols, results and claim scope are unchanged.
 
-**Why this was added:** The RAMP sponsor challenge is “Save Time. Save Money.” The existing Marine kernel already represented finite field effort, but the earlier UI mostly treated the 18-unit budget as something to exhaust. That hid the operational value of *not spending unnecessary effort*. The judging product now makes site choice and effort choice explicit while keeping the ecological evidence model unchanged.
+**Why this was added:** The resource-efficiency sponsor challenge is “Save Time. Save Money.” The existing Marine kernel already represented finite field effort, but the earlier UI mostly treated the 18-unit budget as something to exhaust. That hid the operational value of *not spending unnecessary effort*. The judging product now makes site choice and effort choice explicit while keeping the ecological evidence model unchanged.
 
 **Judging response window:** the live demo uses up to **three field deployments**. The maximum available field capacity remains 18 effort units. Marine may recommend effort blocks from `{1,3,6}`; any capacity not spent after the third deployment is explicitly reported as **preserved field capacity**. This three-deployment horizon is a product/demo framing, not a rewrite of the formal R8/R10 experiments.
 
@@ -587,7 +587,7 @@ The judging interface has been rebuilt around the visual/product direction revie
 - expected reduction in marginal occupancy entropy.
 Marine then chooses the smallest effort meeting a minimum information-retention threshold plus an occupancy-dependent detection-power retention threshold. Higher-belief sites require stronger detection-power retention; exploratory low-belief frontier sites may use less effort to preserve response capacity. Thresholds are **DESIGN CHOICES for the hackathon product**, not ecological constants and not agency preferences.
 
-**RAMP receipt semantics:** primary resource quantities are effort spent, effort preserved, deployments completed and effort avoided relative to using effort 6 on the same number of completed deployments. No dollar or time claim is hard-coded. The UI may optionally translate saved effort into minutes or dollars only when the operator explicitly supplies a local conversion rate; those inputs never enter ecological inference or planning.
+**resource-efficiency receipt semantics:** primary resource quantities are effort spent, effort preserved, deployments completed and effort avoided relative to using effort 6 on the same number of completed deployments. No dollar or time claim is hard-coded. The UI may optionally translate saved effort into minutes or dollars only when the operator explicitly supplies a local conversion rate; those inputs never enter ecological inference or planning.
 
 **Stochastic outcome discipline:** a good ex-ante mission can return a non-detection because detection is imperfect. The judging adapter now stores a pre-outcome decision receipt. After reveal, each Marine mission is classified as `occupied_and_detected`, `occupied_but_missed`, or `surveyed_not_occupied`. An `occupied_but_missed` receipt displays the conditional miss probability under the chosen effort/q posterior so the demo can distinguish a poor decision from an unlucky field realization.
 
@@ -606,8 +606,86 @@ Marine then chooses the smallest effort meeting a minimum information-retention 
 
 **Status:** FROZEN before running the updated 100-case UI audit. This rubric is for demo-case legibility only; formal R8/R10 evaluation is unchanged.
 
-**Primary RAMP candidate gate:** Marine must use fewer effort units than Static Response over the same three-deployment window, confirm at least as many true occupied sites in that case, diverge from Static in at least one target, show at least one evidence-caused mission update, and produce at least one field detection beyond the initial confirmed detection.
+**Primary resource-efficiency candidate gate:** Marine must use fewer effort units than Static Response over the same three-deployment window, confirm at least as many true occupied sites in that case, diverge from Static in at least one target, show at least one evidence-caused mission update, and produce at least one field detection beyond the initial confirmed detection.
 
 Candidates are ordered by: Marine-minus-Static detected-occupied difference, then effort saved, path divergence, evidence-caused replans, additional field detections, propagated belief change, possible-world turnover, and deterministic case ID.
 
 The audit must still report all 100 cases, including Marine-better, equal, and worse realized outcomes plus effort-saving counts. A selected hero case is an illustrative blinded scenario, not an aggregate performance claim.
+
+
+## 2026-09-20 — Grab the Crab product/UI polish
+
+**Status:** CURRENT DEFAULT / team-directed UI change.
+
+- Product-facing name is now **Grab the Crab**. The ecological first-response scope, Bayesian evidence semantics, graph state, planner interfaces and validation claims are unchanged.
+- The header uses a minimal crab mark; old MARINE branding is removed from the visible product surface.
+- Sponsor/challenge naming is removed from the product UI and runtime explanatory copy. Resource-efficiency remains expressed generically as preserved field capacity, effort spent and effort avoided versus the static e6 reference.
+- Detectability belief is promoted to the upper-right of the desktop layout so q semantics are visible earlier without preceding the core mission/map loop.
+- Heat visualization remains a **visual belief layer, not a claimed continuous ecological field**. Site halos retain fixed screen-space radii while zooming, and a low-opacity blurred influence bridge along graph connections makes spatial propagation legible without implying unsampled ground truth.
+- Map wheel zoom is anchored to the pointer and map rerenders are requestAnimationFrame-throttled during pan/zoom to reduce jitter and repeated DOM work.
+
+**Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
+
+
+## 2026-09-20 — Grab the Crab map rebuild and right-rail restoration
+
+**Status:** CURRENT DEFAULT / team-directed UI change.
+
+- Desktop right rail is restored to **Probable Worlds first, Detectability Belief directly below**. The species problem card lives inside the map surface so it does not displace those evidence panels.
+- The demo species card identifies the **European Green Crab (Carcinus maenas)** and states only the operational problem supported by the project framing: confirmed detection, hidden extent, imperfect detection and limited field capacity.
+- The default basemap requests satellite-style World Imagery tiles with OpenStreetMap as a visual fallback. Real monitoring coordinates remain unchanged; basemap choice is presentation only.
+- Heat zones use fixed-radius radial gradients centered on actual survey sites plus low-opacity blurred graph-edge influence. This is a visualization of graph-structured posterior state, **not an interpolated ecological ground-truth surface**.
+- Zoom/pan no longer rerender the full SVG on every pointer movement. During interaction the existing map root is transformed directly; one committed reprojection occurs after the gesture. Wheel zoom previews continuously around the pointer and commits after a short idle window. This specifically reduces Safari/trackpad jank.
+
+**Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
+
+
+## 2026-09-20 — Dark-canvas right rail and muted belief heatmap
+
+**Status:** CURRENT DEFAULT / team-directed UI refinement.
+
+- The species/problem poster is removed from the map surface and placed **below Probable Worlds and Detectability Belief** in the right rail.
+- The species card now uses a real photograph of **European Green Crab (Carcinus maenas)** from Wikimedia Commons (Tim Binns, CC BY-SA 2.0) with explicit on-card attribution.
+- The problem pitch is intentionally narrow: a first detection is confirmed, the true extent is unknown, non-detections can miss occupancy, and field capacity is limited. No additional ecological-impact claim is introduced by the UI.
+- The global canvas is deep black/navy while mission/evidence cards remain white. This is a visual design choice only and does not change information hierarchy or semantics.
+- Belief heat colors are deliberately muted toward blue-grey → dusty violet → coral, with lower opacity and weaker edge diffusion. Heat remains a visual encoding of graph-structured posterior state, not an interpolated ecological surface.
+- Survey-site markers now use a double-outline disc (dark outer disc + white contour + smaller data-colored core) with separate frontier/selected/recommended rings for clearer visual hierarchy over satellite imagery.
+
+**Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
+
+
+## 2026-09-20 — Final right-rail alignment and ecological impact copy
+
+**Status:** CURRENT DEFAULT / team-directed UI refinement.
+
+- Desktop right rail is now one explicit stacked container spanning the same two dashboard rows as the dominant map + **Why this mission?** region. The fixed order is **Species / Problem → Probable Worlds → Detectability Belief (q)**.
+- The right-stack grid occupies the same vertical span as the first two center-column rows, so its bottom aligns with the bottom of **Why this mission?** and the next full-width section begins without a vertical discontinuity.
+- Probable Worlds is the flexible middle card and scrolls internally when needed; the species and q cards remain bounded so they do not extend the page independently.
+- Species copy no longer explains the product. It explains the ecological reason for control: where European green crabs become abundant, they can damage eelgrass/seagrass beds, prey on shellfish, and threaten estuary habitat used by salmon and other native species. Early detection and rapid removal while populations are still small is presented as the control rationale.
+- Ecological impact wording is grounded in Washington Sea Grant / WDFW public green-crab materials; it is not a claim of measured damage at the specific synthetic demo incident.
+
+**Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
+
+
+## 2026-09-20 — Final UI pause: heat palette and extensibility preview
+
+**Status:** CURRENT DEFAULT / UI freeze candidate.
+
+- Heat visualization now uses a muted **red → orange → yellow → green** scale. The same scale is used by the map legend and site-layer core colors. Opacity remains deliberately subdued so satellite imagery, graph topology and mission markers stay readable.
+- The species card includes a **non-interactive “Other invasive species” roadmap preview**. It has no click handler and does not alter runtime state; it exists only to signal that the same mission-control architecture could be extended beyond the current European Green Crab demo.
+- The preview is explicitly labelled **illustrative, not exhaustive**. Current examples are Lionfish, Asian shore crab, Chinese mitten crab, Veined rapa whelk, Didemnum vexillum, Undaria pinnatifida, Zebra mussel and Quagga mussel.
+- Species examples are grounded to NOAA/USGS invasive-species materials. Including them in the roadmap preview does not imply that the current simulator, priors, detectability model or planner has been validated for those taxa.
+
+**Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
+
+
+## 2026-09-20 — Final heat direction and species drawer behavior
+
+**Status:** CURRENT DEFAULT / UI freeze candidate.
+
+- Heat scale direction is now **green → yellow → orange → red**, with **red representing the highest displayed value / probability** and green the lowest. Map halos, site cores and legend use the same direction.
+- The **Other invasive species** extensibility preview is now a native collapsed disclosure control, closed by default. Clicking the summary expands the illustrative species list; clicking again closes it.
+- Expansion changes presentation only. It does not change incident state, planner behavior, inference, simulator configuration or selected species.
+- The expanded list is height-bounded and internally scrollable so the aligned right rail remains stable.
+
+**Owner:** team. Implementation branch `ui/catch-the-crab-polish`.

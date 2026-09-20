@@ -10,6 +10,11 @@ const state = {
   mapPanX: 0,
   mapPanY: 0,
   drag: null,
+  mapFrame: null,
+  zoomPreviewScale: 1,
+  zoomPreviewAnchorX: 550,
+  zoomPreviewAnchorY: 320,
+  zoomCommitTimer: null,
 };
 
 const NS = "http://www.w3.org/2000/svg";
@@ -207,7 +212,7 @@ function renderMissionPanel() {
     });
 
   $("site-select").innerHTML = selectable.map((node) => {
-    const rank = node.marine_rank ? ` · Marine #${node.marine_rank}` : "";
+    const rank = node.marine_rank ? ` · Recommended #${node.marine_rank}` : "";
     const surveyed = node.effort > 0 ? " · surveyed" : "";
     return `<option value="${node.id}" ${node.id === state.selectedSite ? "selected" : ""}>Site ${node.id}${rank}${surveyed}</option>`;
   }).join("");
@@ -215,7 +220,7 @@ function renderMissionPanel() {
   const selected = nodeById(state.selectedSite);
   const rec = recommendationBySite(state.selectedSite);
   const recommendedEffort = rec?.recommended_effort ?? selected?.recommended_effort;
-  $("effort-rec-badge").textContent = recommendedEffort ? `Marine: e${recommendedEffort}` : "Marine: —";
+  $("effort-rec-badge").textContent = recommendedEffort ? `Suggested: e${recommendedEffort}` : "Suggested: —";
 
   document.querySelectorAll(".effort-btn").forEach((button) => {
     const effort = Number(button.dataset.effort);
@@ -328,7 +333,7 @@ function renderWhyMission() {
   const option = effortOptionFor(node.id, state.selectedEffort);
   const predictive = node.predictive_detection?.[String(state.selectedEffort)];
   const power = option?.conditional_detection_if_occupied;
-  const rankText = node.marine_rank ? `Marine rank #${node.marine_rank}` : "operator override";
+  const rankText = node.marine_rank ? `recommendation rank #${node.marine_rank}` : "operator override";
   const distance = node.distance_from_detection_km == null ? "distance unavailable" : `${fmtNum(node.distance_from_detection_km, 1)} km from first detection`;
 
   $("why-subtitle").textContent = `Site ${node.id} · ${rankText} · ${distance}`;
@@ -349,7 +354,7 @@ function renderWhyMission() {
   $("why-effort-value").textContent = recommendedEffort ? `e${recommendedEffort}` : "—";
   const effortDiag = rec?.effort_recommendation ?? node.effort_recommendation;
   if (effortDiag) {
-    $("why-effort-copy").textContent = `Occupancy band: ${effortDiag.occupancy_band}. Marine chooses the smallest effort retaining at least ${fmtPct(effortDiag.information_retention_required)} of max-effort information value and ${fmtPct(effortDiag.detection_power_retention_required)} of max-effort detection power for this occupancy band. This is a transparent product rule, not an ecological constant.`;
+    $("why-effort-copy").textContent = `Occupancy band: ${effortDiag.occupancy_band}. The planner chooses the smallest effort retaining at least ${fmtPct(effortDiag.information_retention_required)} of max-effort information value and ${fmtPct(effortDiag.detection_power_retention_required)} of max-effort detection power for this occupancy band. This is a transparent product rule, not an ecological constant.`;
   } else {
     $("why-effort-copy").textContent = "No effort recommendation after campaign completion.";
   }
@@ -381,7 +386,7 @@ function renderDecisionReceipt() {
   }
 
   panel.className = "evidence-content";
-  const status = receipt.marine_aligned ? "Marine-aligned before outcome" : "Operator override";
+  const status = receipt.marine_aligned ? "Recommendation-aligned before outcome" : "Operator override";
   const miss = !receipt.detection && receipt.conditional_miss_if_occupied != null
     ? ` If occupied, the selected effort still had a ${fmtPct(receipt.conditional_miss_if_occupied)} miss probability.`
     : "";
@@ -628,8 +633,8 @@ function chooseMapProjection(nodes, width, height) {
   };
 }
 
-function appendMapTiles(svg, projection, width, height) {
-  svg.appendChild(svgEl("rect", { x: 0, y: 0, width, height, class: "map-fallback-water" }));
+function appendMapTiles(root, projection, width, height) {
+  root.appendChild(svgEl("rect", { x: 0, y: 0, width, height, class: "map-fallback-water" }));
   if (!projection) return;
 
   const size = 256;
@@ -644,8 +649,10 @@ function appendMapTiles(svg, projection, width, height) {
     for (let ty = minY; ty <= maxY; ty += 1) {
       if (ty < 0 || ty > max) continue;
       const wrappedX = ((tx % (max + 1)) + (max + 1)) % (max + 1);
+      const esri = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${wrappedX}`;
+      const osm = `https://tile.openstreetmap.org/${z}/${wrappedX}/${ty}.png`;
       const image = svgEl("image", {
-        href: `https://tile.openstreetmap.org/${z}/${wrappedX}/${ty}.png`,
+        href: esri,
         x: tx * size - projection.originX,
         y: ty * size - projection.originY,
         width: size,
@@ -653,21 +660,51 @@ function appendMapTiles(svg, projection, width, height) {
         class: "map-tile",
         preserveAspectRatio: "none",
       });
-      image.addEventListener("error", () => image.remove());
-      svg.appendChild(image);
+      image.setAttribute("data-fallback", "0");
+      image.addEventListener("error", () => {
+        if (image.getAttribute("data-fallback") === "0") {
+          image.setAttribute("data-fallback", "1");
+          image.setAttribute("href", osm);
+        } else {
+          image.remove();
+        }
+      });
+      root.appendChild(image);
     }
   }
 
-  svg.appendChild(svgEl("rect", { x: 0, y: 0, width, height, class: "map-tile-fade" }));
+  root.appendChild(svgEl("rect", { x: 0, y: 0, width, height, class: "map-tile-fade" }));
+}
+
+function interpolateRgb(a, b, t) {
+  return [
+    Math.round(a[0] + (b[0] - a[0]) * t),
+    Math.round(a[1] + (b[1] - a[1]) * t),
+    Math.round(a[2] + (b[2] - a[2]) * t),
+  ];
 }
 
 function heatColor(value) {
   if (value == null) return "#aebbc6";
   const x = clamp01(value);
-  if (x < 0.25) return "#2b70d6";
-  if (x < 0.50) return "#33bdd3";
-  if (x < 0.75) return "#f0d84b";
-  return "#eb4c52";
+  const stops = [
+    [0.00, [95, 147, 106]],
+    [0.34, [200, 173, 79]],
+    [0.67, [201, 119, 66]],
+    [1.00, [185, 80, 80]],
+  ];
+  let left = stops[0];
+  let right = stops[1];
+  for (let i = 0; i < stops.length - 1; i += 1) {
+    if (x >= stops[i][0] && x <= stops[i + 1][0]) {
+      left = stops[i];
+      right = stops[i + 1];
+      break;
+    }
+  }
+  const t = (x - left[0]) / Math.max(0.0001, right[0] - left[0]);
+  const rgb = interpolateRgb(left[1], right[1], Math.max(0, Math.min(1, t)));
+  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
 }
 
 function renderMap(previous) {
@@ -689,37 +726,119 @@ function renderMap(previous) {
   $("legend-high").textContent = descriptor.high;
   $("layer-provenance").textContent = descriptor.provenance;
   $("map-title").textContent = descriptor.title;
-  $("zoom-readout").textContent = state.mapZoom === 0 ? "Fit" : `Zoom +${state.mapZoom}`;
+  $("zoom-readout").textContent = state.mapZoom === 0
+    ? "Fit"
+    : `Zoom ${state.mapZoom > 0 ? "+" : ""}${state.mapZoom}`;
 
-  appendMapTiles(svg, projection, width, height);
+  const defs = svgEl("defs");
+  const influenceBlur = svgEl("filter", {
+    id: "influence-blur",
+    x: "-35%",
+    y: "-35%",
+    width: "170%",
+    height: "170%",
+  });
+  influenceBlur.appendChild(svgEl("feGaussianBlur", { stdDeviation: "13" }));
+  defs.appendChild(influenceBlur);
 
-  nodes.forEach((node) => {
+  const heatSoften = svgEl("filter", {
+    id: "heat-soften",
+    x: "-40%",
+    y: "-40%",
+    width: "180%",
+    height: "180%",
+  });
+  heatSoften.appendChild(svgEl("feGaussianBlur", { stdDeviation: "3.8" }));
+  defs.appendChild(heatSoften);
+  svg.appendChild(defs);
+
+  const mapRoot = svgEl("g", { id: "map-root" });
+  svg.appendChild(mapRoot);
+  appendMapTiles(mapRoot, projection, width, height);
+
+  const continuousInfluenceLayer = ["belief", "uncertainty", "habitat"].includes(state.layer);
+  if (continuousInfluenceLayer && !state.selectedWorld) {
+    (state.data.edges || []).forEach((edge, index) => {
+      const aNode = nodeById(edge.src);
+      const bNode = nodeById(edge.dst);
+      const a = points[edge.src];
+      const b = points[edge.dst];
+      if (!aNode || !bNode || !a || !b) return;
+      const av = descriptor.value(aNode);
+      const bv = descriptor.value(bNode);
+      if (av == null || bv == null) return;
+
+      const gradientId = `influence-${index}`;
+      const gradient = svgEl("linearGradient", {
+        id: gradientId,
+        gradientUnits: "userSpaceOnUse",
+        x1: a.x,
+        y1: a.y,
+        x2: b.x,
+        y2: b.y,
+      });
+      gradient.appendChild(svgEl("stop", {
+        offset: "0%",
+        "stop-color": heatColor(av),
+        "stop-opacity": 0.13,
+      }));
+      gradient.appendChild(svgEl("stop", {
+        offset: "100%",
+        "stop-color": heatColor(bv),
+        "stop-opacity": 0.13,
+      }));
+      defs.appendChild(gradient);
+
+      const influence = clamp01((Number(av) + Number(bv)) / 2);
+      mapRoot.appendChild(svgEl("line", {
+        x1: a.x,
+        y1: a.y,
+        x2: b.x,
+        y2: b.y,
+        stroke: `url(#${gradientId})`,
+        "stroke-width": 22 + 18 * influence,
+        opacity: 0.07 + 0.08 * influence,
+        class: "heat-influence",
+      }));
+    });
+  }
+
+  nodes.forEach((node, index) => {
     const value = descriptor.value(node);
     if (value == null) return;
     const point = points[node.id];
     const color = heatColor(value);
-    const intensity = 0.55 + 0.45 * clamp01(value);
-    [
-      [84, 0.10],
-      [57, 0.16],
-      [35, 0.25],
-    ].forEach(([radius, opacity]) => {
-      svg.appendChild(svgEl("circle", {
-        cx: point.x,
-        cy: point.y,
-        r: radius,
-        fill: color,
-        opacity: opacity * intensity,
-        class: "heat-ring",
-      }));
-    });
+    const intensity = 0.48 + 0.52 * clamp01(value);
+    const gradientId = `heat-gradient-${index}`;
+    const gradient = svgEl("radialGradient", { id: gradientId, cx: "50%", cy: "50%", r: "50%" });
+    gradient.appendChild(svgEl("stop", { offset: "0%", "stop-color": color, "stop-opacity": 0.34 * intensity }));
+    gradient.appendChild(svgEl("stop", { offset: "28%", "stop-color": color, "stop-opacity": 0.22 * intensity }));
+    gradient.appendChild(svgEl("stop", { offset: "62%", "stop-color": color, "stop-opacity": 0.09 * intensity }));
+    gradient.appendChild(svgEl("stop", { offset: "100%", "stop-color": color, "stop-opacity": 0 }));
+    defs.appendChild(gradient);
+
+    mapRoot.appendChild(svgEl("circle", {
+      cx: point.x,
+      cy: point.y,
+      r: 96,
+      fill: `url(#${gradientId})`,
+      class: "heat-ring",
+    }));
+    mapRoot.appendChild(svgEl("circle", {
+      cx: point.x,
+      cy: point.y,
+      r: 34,
+      fill: color,
+      opacity: 0.045 + 0.055 * intensity,
+      class: "heat-core-glow",
+    }));
   });
 
   (state.data.edges || []).forEach((edge) => {
     const a = points[edge.src];
     const b = points[edge.dst];
     if (!a || !b) return;
-    svg.appendChild(svgEl("line", {
+    mapRoot.appendChild(svgEl("line", {
       x1: a.x,
       y1: a.y,
       x2: b.x,
@@ -736,7 +855,7 @@ function renderMap(previous) {
     const a = points[fromId];
     const b = points[toId];
     if (a && b) {
-      svg.appendChild(svgEl("line", {
+      mapRoot.appendChild(svgEl("line", {
         x1: a.x,
         y1: a.y,
         x2: b.x,
@@ -752,14 +871,15 @@ function renderMap(previous) {
     const layerValue = descriptor.value(node);
     const layerColor = heatColor(layerValue);
 
+    group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 14, class: "node-outline" }));
     if (node.frontier && !state.selectedWorld) {
-      group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 21, class: "frontier-ring" }));
+      group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 19, class: "frontier-ring" }));
     }
     if (state.selectedSite === node.id) {
-      group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 27, class: "selected-ring" }));
+      group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 24, class: "selected-ring" }));
     }
     if (topSite === node.id && !state.data.revealed) {
-      group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 33, class: "marine-ring" }));
+      group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 29, class: "marine-ring" }));
     }
 
     const classes = [
@@ -772,7 +892,7 @@ function renderMap(previous) {
       state.data.revealed && node.true_occupied && node.detections === 0 ? "true-missed" : "",
     ].filter(Boolean).join(" ");
 
-    const core = svgEl("circle", { cx: point.x, cy: point.y, r: 11, class: classes });
+    const core = svgEl("circle", { cx: point.x, cy: point.y, r: 8.5, class: classes });
     if (
       layerValue != null &&
       node.status !== "confirmed_detection" &&
@@ -844,7 +964,7 @@ function renderMap(previous) {
     group.addEventListener("mouseenter", (event) => showTooltip(event, node));
     group.addEventListener("mousemove", moveTooltip);
     group.addEventListener("mouseleave", hideTooltip);
-    svg.appendChild(group);
+    mapRoot.appendChild(group);
   });
 
   renderMapInspector();
@@ -869,11 +989,11 @@ function renderMapInspector() {
       <span>Occupancy belief</span><b>${fmtPct(node.belief)}</b>
       <span>Distance from first detection</span><b>${fmtNum(distance, 1)} km</b>
       <span>Frontier</span><b>${node.frontier ? "yes" : "no"}</b>
-      <span>Marine rank</span><b>${node.marine_rank ? "#" + node.marine_rank : "—"}</b>
+      <span>Recommendation rank</span><b>${node.marine_rank ? "#" + node.marine_rank : "—"}</b>
       <span>Recommended effort</span><b>${recEffort ? "e" + recEffort : "—"}</b>
       <span>P(detect) at selected effort</span><b>${fmtPct(predictive)}</b>
     </div>
-    ${nearbyLow ? `<div class="nearby-note"><b>Why can a nearby site be only ${fmtPct(node.belief)}?</b><br>Marine does not use distance as probability. Belief comes from the posterior over whole ecological extents plus all field evidence. A low-belief nearby frontier can still be worth checking because it helps distinguish plausible spread patterns.</div>` : ""}
+    ${nearbyLow ? `<div class="nearby-note"><b>Why can a nearby site be only ${fmtPct(node.belief)}?</b><br>The planner does not use distance as probability. Belief comes from the posterior over whole ecological extents plus all field evidence. A low-belief nearby frontier can still be worth checking because it helps distinguish plausible spread patterns.</div>` : ""}
   `;
 }
 
@@ -892,8 +1012,8 @@ function showTooltip(event, node) {
       <span>Eelgrass</span><b>${node.eelgrass || "—"}</b>
       <span>Salt marsh</span><b>${node.salt_marsh || "—"}</b>
       <span>Temperature</span><b>${node.temperature_median_c == null ? "No direct logger data" : fmtNum(node.temperature_median_c, 1) + "°C"}</b>
-      <span>Marine rank</span><b>${node.marine_rank ? "#" + node.marine_rank : "—"}</b>
-      <span>Marine effort</span><b>${node.recommended_effort ? "e" + node.recommended_effort : "—"}</b>
+      <span>Recommendation rank</span><b>${node.marine_rank ? "#" + node.marine_rank : "—"}</b>
+      <span>Suggested effort</span><b>${node.recommended_effort ? "e" + node.recommended_effort : "—"}</b>
       <span>P(detect)</span><b>${fmtPct(predictive)}</b>
       <span>Detection power if occupied</span><b>${fmtPct(option?.conditional_detection_if_occupied)}</b>
     </div>
@@ -1059,15 +1179,15 @@ function renderPerformance() {
   const detectionDelta = Number(receipt.detected_delta_marine_minus_static || 0);
 
   if (saved > 0 && detectionDelta >= 0) {
-    $("resource-receipt").innerHTML = `<strong>Marine preserved ${saved} effort units vs Static</strong> while confirming ${detectionDelta === 0 ? "the same number of" : detectionDelta + " more"} occupied site${detectionDelta === 1 ? "" : "s"} in this blinded incident. <span>Illustrative case, not a universal claim.</span>`;
+    $("resource-receipt").innerHTML = `<strong>Adaptive response preserved ${saved} effort units vs Static</strong> while confirming ${detectionDelta === 0 ? "the same number of" : detectionDelta + " more"} occupied site${detectionDelta === 1 ? "" : "s"} in this blinded incident. <span>Illustrative case, not a universal claim.</span>`;
   } else if (saved > 0) {
-    $("resource-receipt").innerHTML = `<strong>Marine preserved ${saved} effort units vs Static</strong>, but this stochastic realization confirmed ${Math.abs(detectionDelta)} fewer occupied site${Math.abs(detectionDelta) === 1 ? "" : "s"}. This is an explicit resource/performance trade-off, not hidden by the UI.`;
+    $("resource-receipt").innerHTML = `<strong>Adaptive response preserved ${saved} effort units vs Static</strong>, but this stochastic realization confirmed ${Math.abs(detectionDelta)} fewer occupied site${Math.abs(detectionDelta) === 1 ? "" : "s"}. This is an explicit resource/performance trade-off, not hidden by the UI.`;
   } else {
     $("resource-receipt").innerHTML = `<strong>No field-effort saving versus Static in this incident.</strong> The outcome receipt below shows the realized detection result without forcing a win.`;
   }
 
   const entries = [
-    ["MARINE", performance.marine, "primary"],
+    ["ADAPTIVE", performance.marine, "primary"],
     ["STATIC RESPONSE", performance.static, "primary"],
     ["YOUR PATH", performance.you, "secondary"],
   ];
@@ -1092,7 +1212,7 @@ function renderPerformance() {
   $("performance-note").textContent = note;
 
   drawPerformanceChart([
-    ["Marine", performance.marine],
+    ["Adaptive", performance.marine],
     ["Static", performance.static],
     ["You", performance.you],
   ]);
@@ -1153,7 +1273,7 @@ function renderLuckReceipts(marine) {
   $("luck-receipts").innerHTML = receipts.map((receipt, index) => {
     if (receipt.realization === "occupied_but_missed") {
       return `<div class="luck-card miss"><strong>Mission ${index + 1} · Site ${receipt.site_id}: occupied but missed</strong>
-        Marine did survey a truly occupied site. The field outcome was a stochastic non-detection; given occupancy, the miss probability at e${receipt.effort} was ${fmtPct(receipt.conditional_miss_if_occupied)}.</div>`;
+        The adaptive response did survey a truly occupied site. The field outcome was a stochastic non-detection; given occupancy, the miss probability at e${receipt.effort} was ${fmtPct(receipt.conditional_miss_if_occupied)}.</div>`;
     }
     if (receipt.realization === "occupied_and_detected") {
       return `<div class="luck-card detected"><strong>Mission ${index + 1} · Site ${receipt.site_id}: occupied and detected</strong>
@@ -1218,6 +1338,11 @@ async function resetCase(caseId = null) {
     state.mapZoom = 0;
     state.mapPanX = 0;
     state.mapPanY = 0;
+    state.zoomPreviewScale = 1;
+    if (state.zoomCommitTimer !== null) {
+      clearTimeout(state.zoomCommitTimer);
+      state.zoomCommitTimer = null;
+    }
     showTransition(
       "NEW INCIDENT",
       "Initializing first response",
@@ -1283,7 +1408,7 @@ async function reveal() {
     showTransition(
       "EVALUATE",
       "Revealing the hidden extent",
-      "Scoring Marine, Static Response, and Your Path on the same blinded incident while keeping resource use visible."
+      "Scoring Adaptive Response, Static Response, and Your Path on the same blinded incident while keeping resource use visible."
     );
 
     const before = state.data;
@@ -1303,9 +1428,62 @@ async function reveal() {
   }
 }
 
-function zoomBy(delta) {
-  state.mapZoom = Math.max(-1, Math.min(6, state.mapZoom + delta));
+function scheduleMapRender() {
+  if (state.mapFrame !== null) return;
+  state.mapFrame = requestAnimationFrame(() => {
+    state.mapFrame = null;
+    renderMap(state.data);
+  });
+}
+
+function mapRootElement() {
+  return document.getElementById("map-root");
+}
+
+function clearMapPreviewTransform() {
+  const root = mapRootElement();
+  if (root) root.removeAttribute("transform");
+}
+
+function setMapPreviewTransform(transform) {
+  const root = mapRootElement();
+  if (root) root.setAttribute("transform", transform);
+}
+
+function zoomBy(delta, anchorX = 550, anchorY = 320) {
+  const previousZoom = state.mapZoom;
+  const nextZoom = Math.max(-1, Math.min(6, previousZoom + delta));
+  if (nextZoom === previousZoom) return;
+
+  const scale = 2 ** (nextZoom - previousZoom);
+  const offsetX = Number(anchorX) - 550;
+  const offsetY = Number(anchorY) - 320;
+  state.mapPanX = scale * state.mapPanX + (1 - scale) * offsetX;
+  state.mapPanY = scale * state.mapPanY + (1 - scale) * offsetY;
+  state.mapZoom = nextZoom;
   renderMap(state.data);
+}
+
+function commitZoomPreview() {
+  if (state.zoomCommitTimer !== null) {
+    clearTimeout(state.zoomCommitTimer);
+    state.zoomCommitTimer = null;
+  }
+
+  const scale = Number(state.zoomPreviewScale || 1);
+  const anchorX = state.zoomPreviewAnchorX;
+  const anchorY = state.zoomPreviewAnchorY;
+  clearMapPreviewTransform();
+
+  let step = 0;
+  if (scale > 1.10) {
+    step = Math.min(2, Math.max(1, Math.ceil(Math.log2(scale))));
+  } else if (scale < 0.91) {
+    step = Math.max(-2, Math.min(-1, Math.floor(Math.log2(scale))));
+  }
+
+  state.zoomPreviewScale = 1;
+  if (step !== 0) zoomBy(step, anchorX, anchorY);
 }
 
 $("clear-world-btn").addEventListener("click", () => {
@@ -1345,9 +1523,16 @@ $("layer-select").addEventListener("change", () => {
   render(state.data);
 });
 
-$("zoom-in").addEventListener("click", () => zoomBy(1));
-$("zoom-out").addEventListener("click", () => zoomBy(-1));
+$("zoom-in").addEventListener("click", () => {
+  commitZoomPreview();
+  zoomBy(1);
+});
+$("zoom-out").addEventListener("click", () => {
+  commitZoomPreview();
+  zoomBy(-1);
+});
 $("zoom-fit").addEventListener("click", () => {
+  commitZoomPreview();
   state.mapZoom = 0;
   state.mapPanX = 0;
   state.mapPanY = 0;
@@ -1356,16 +1541,34 @@ $("zoom-fit").addEventListener("click", () => {
 
 $("graph").addEventListener("wheel", (event) => {
   event.preventDefault();
-  zoomBy(event.deltaY < 0 ? 1 : -1);
+  if (!state.data || state.drag) return;
+
+  const rect = $("graph").getBoundingClientRect();
+  const anchorX = ((event.clientX - rect.left) / Math.max(1, rect.width)) * 1100;
+  const anchorY = ((event.clientY - rect.top) / Math.max(1, rect.height)) * 640;
+  const factor = Math.exp(-Number(event.deltaY) * 0.0024);
+
+  state.zoomPreviewAnchorX = anchorX;
+  state.zoomPreviewAnchorY = anchorY;
+  state.zoomPreviewScale = Math.max(0.48, Math.min(2.15, state.zoomPreviewScale * factor));
+
+  const s = state.zoomPreviewScale;
+  setMapPreviewTransform(
+    `translate(${anchorX} ${anchorY}) scale(${s}) translate(${-anchorX} ${-anchorY})`
+  );
+
+  if (state.zoomCommitTimer !== null) clearTimeout(state.zoomCommitTimer);
+  state.zoomCommitTimer = setTimeout(commitZoomPreview, 95);
 }, { passive: false });
 
 $("graph").addEventListener("pointerdown", (event) => {
   if (event.button !== 0) return;
+  commitZoomPreview();
   state.drag = {
     x: event.clientX,
     y: event.clientY,
-    panX: state.mapPanX,
-    panY: state.mapPanY,
+    dx: 0,
+    dy: 0,
   };
   $("graph").setPointerCapture(event.pointerId);
   $("graph").classList.add("dragging");
@@ -1373,16 +1576,27 @@ $("graph").addEventListener("pointerdown", (event) => {
 
 $("graph").addEventListener("pointermove", (event) => {
   if (!state.drag) return;
-  state.mapPanX = state.drag.panX + (event.clientX - state.drag.x);
-  state.mapPanY = state.drag.panY + (event.clientY - state.drag.y);
-  renderMap(state.data);
+  const rect = $("graph").getBoundingClientRect();
+  const scaleX = 1100 / Math.max(1, rect.width);
+  const scaleY = 640 / Math.max(1, rect.height);
+  const dx = (event.clientX - state.drag.x) * scaleX;
+  const dy = (event.clientY - state.drag.y) * scaleY;
+  state.drag.dx = dx;
+  state.drag.dy = dy;
+  setMapPreviewTransform(`translate(${dx} ${dy})`);
 });
 
 function endDrag(event) {
   if (!state.drag) return;
+  const dx = Number(state.drag.dx || 0);
+  const dy = Number(state.drag.dy || 0);
+  state.mapPanX += dx;
+  state.mapPanY += dy;
   state.drag = null;
+  clearMapPreviewTransform();
   try { $("graph").releasePointerCapture(event.pointerId); } catch (_) {}
   $("graph").classList.remove("dragging");
+  renderMap(state.data);
 }
 $("graph").addEventListener("pointerup", endDrag);
 $("graph").addEventListener("pointercancel", endDrag);

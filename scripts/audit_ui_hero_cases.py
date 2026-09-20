@@ -9,9 +9,9 @@ from adaptive_response.mission_control import MissionControlSession
 
 
 def _run_follow_marine(session: MissionControlSession, case_id: str) -> dict:
-    """Run the interactive track by following Marine's current site + effort advice.
+    """Run the interactive track by following the current adaptive site + effort advice.
 
-    This audit is for judging-case legibility and RAMP product behavior only.
+    This audit is for judging-case legibility and resource-efficiency product behavior only.
     It is not a replacement for the frozen R8/R10 benchmark protocols.
     """
 
@@ -182,7 +182,7 @@ def _causal_key(row: dict) -> tuple:
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Audit the frozen UI case library under the RAMP-aware three-deployment "
+            "Audit the frozen UI case library under the resource-efficiency-aware three-deployment "
             "Marine policy. This is an illustrative-case selector, not a formal benchmark."
         )
     )
@@ -274,8 +274,8 @@ def main() -> None:
     print("\nSUMMARY")
     print(json.dumps(summary, indent=2))
 
-    print("\nTOP RAMP ILLUSTRATIVE CANDIDATES")
-    print(json.dumps(ramp[: args.top], indent=2) if ramp else "None under the frozen RAMP gate.")
+    print("\nTOP resource-efficiency ILLUSTRATIVE CANDIDATES")
+    print(json.dumps(ramp[: args.top], indent=2) if ramp else "None under the frozen resource-efficiency gate.")
 
     print("\nTOP DETECTION-ADVANTAGE CANDIDATES")
     print(json.dumps(detection[: args.top], indent=2) if detection else "None under the frozen detection gate.")
