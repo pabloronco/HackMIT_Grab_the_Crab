@@ -271,4 +271,136 @@ function renderQ() {
     <p><b>q is not occupancy.</b> q = P(detect in one check | site truly occupied). Lower q means a real population is easier to miss.</p>
     <p>Detections usually support higher q; repeated non-detections can support lower q. Occupancy and q are partly confounded, so Marine carries both uncertainties together.</p>
     <div class="q-watch ${qd?.edge_concentrated ? "active" : ""}"><b>Support edge:</b> ${edge} · ${fmtPct(edgeMass)} mass. ${qd?.edge_concentrated ? "Posterior is leaning on an edge of the tested q range." : "No strong edge concentration."}</div>
-    <p class="q-note">Edge concentration is <b>not</b> model stress. Stress is measured separately by how surprising the actual field return was und
+    <p class="q-note">Edge concentration is <b>not</b> model stress. Stress is measured separately by how surprising the actual field return was under the current model ensemble.</p>`;
+}
+
+function renderWhyMission() {
+  const node = nodeById(state.selectedSite);
+  if (!node) return;
+  const rec = recommendationBySite(node.id);
+  const recommendedEffort = rec?.recommended_effort ?? node.recommended_effort;
+  const predictive = node.predictive_detection?.[String(state.selectedEffort)];
+
+  $("why-subtitle").textContent = `Site ${node.id} · ${node.marine_rank ? "Marine rank #" + node.marine_rank : "operator override"} · ${fmtNum(node.distance_from_detection_km, 1)} km from first detection`;
+  $("why-frontier-value").textContent = node.frontier ? "YES" : "NO";
+  $("why-frontier-copy").textContent = node.frontier
+    ? "This site lies on the current response frontier."
+    : "Not currently a frontier site; selecting it is an operator override or fallback.";
+  $("why-belief-value").textContent = fmtPct(node.belief);
+  $("why-belief-copy").textContent = "Belief is posterior mass, not inverse distance. A nearby site can be low if the ecological hypotheses and field evidence currently place little probability there.";
+  $("why-detection-value").textContent = fmtPct(predictive);
+  $("why-detection-copy").textContent = `P(at least one detection) at effort ${state.selectedEffort}, marginalizing both occupancy and q uncertainty.`;
+  $("why-effort-value").textContent = recommendedEffort ?? "—";
+  const saved = rec?.effort_recommendation?.effort_saved_vs_max ?? node.effort_recommendation?.effort_saved_vs_max ?? 0;
+  $("why-effort-copy").textContent = recommendedEffort
+    ? `Marine recommends effort ${recommendedEffort}, preserving ${saved} units versus maximum effort while satisfying the transparent retention rule.`
+    : "No effort recommendation after campaign completion.";
+}
+
+function renderEvidence() {
+  const panel = $("evidence-panel");
+  const last = state.data.last_round;
+  if (!last) {
+    panel.className = "evidence-content muted";
+    panel.textContent = "Awaiting field evidence.";
+    return;
+  }
+  panel.className = "evidence-content";
+  panel.innerHTML = last.observations.map((obs) => `<div class="evidence-line ${obs.detection ? "positive" : ""}">
+    <div><b>Site ${obs.site_id}</b><span>${obs.detection ? "DETECTION" : "NO DETECTION"} · effort ${obs.effort}</span></div>
+    <strong>${fmtPct(obs.belief_before)} → ${fmtPct(obs.belief_after)}</strong>
+  </div>`).join("");
+}
+
+function renderDecisionReceipt() {
+  const panel = $("decision-receipt");
+  const receipt = state.data.decision_receipt;
+  if (!receipt) {
+    panel.className = "evidence-content muted";
+    panel.textContent = "No mission executed yet.";
+    return;
+  }
+  panel.className = "evidence-content";
+  const status = receipt.marine_aligned ? "Marine-aligned ex ante" : "Operator override";
+  const miss = !receipt.detection && receipt.conditional_miss_if_occupied != null
+    ? ` If occupied, this effort still had a ${fmtPct(receipt.conditional_miss_if_occupied)} miss probability.`
+    : "";
+  panel.innerHTML = `<div class="receipt-head"><b>${status}</b><span>${receipt.detection ? "detection" : "no detection"}</span></div><p>${receipt.interpretation}${miss}</p>`;
+}
+
+function renderPropagation() {
+  const panel = $("propagation-panel");
+  const rows = state.data.last_round?.propagated_belief_changes || [];
+  if (!rows.length) {
+    panel.className = "evidence-content muted";
+    panel.textContent = "No propagated update yet.";
+    return;
+  }
+  panel.className = "evidence-content";
+  panel.innerHTML = rows.slice(0, 3).map((row) => `<div class="prop-row"><b>Site ${row.site_id}</b><span>${fmtPct(row.belief_before)} → ${fmtPct(row.belief_after)}</span><strong>${fmtPp(row.delta)}</strong></div>`).join("");
+}
+
+function renderStress() {
+  const panel = $("stress-panel");
+  const stress = state.data.model_stress;
+  if (!stress) {
+    panel.className = "evidence-content muted";
+    panel.textContent = "No field result yet.";
+    return;
+  }
+  panel.className = "evidence-content";
+  panel.innerHTML = `<div class="stress-value ${stress.impossible_under_current_ensemble ? "warning" : ""}"><span>P(observed result)</span><strong>${fmtPct(stress.observation_probability)}</strong></div><p>${stress.impossible_under_current_ensemble ? "Outside current ensemble support." : "Posterior-predictive surprise of the actual field return."}</p><small>${stress.surprise_bits == null ? "∞" : Number(stress.surprise_bits).toFixed(2)} bits</small>`;
+}
+
+function renderResourceCard() {
+  const r = state.data.resource_summary;
+  $("resource-spent").textContent = `${r.effort_spent} / ${state.data.resources.initial_budget}`;
+  $("resource-left").textContent = r.budget_remaining;
+  $("resource-missions").textContent = r.missions_completed;
+  $("resource-avoided").textContent = r.effort_avoided_vs_always_high_for_completed_missions;
+}
+
+function ordinalValue(raw) {
+  if (!raw) return null;
+  const value = String(raw).trim().toUpperCase();
+  const map = {
+    "ABSENT": 0,
+    "NONE": 0,
+    "PATCHY": 0.5,
+    "SPARSE": 0.35,
+    "CONTINUOUS": 1,
+    "PRESENT": 1,
+    "EXPOSED": 1,
+    "SEMI-EXPOSED": 0.75,
+    "SEMI EXPOSED": 0.75,
+    "PROTECTED": 0.35,
+    "VERY PROTECTED": 0.1,
+  };
+  return Object.prototype.hasOwnProperty.call(map, value) ? map[value] : null;
+}
+
+function activeWorldOccupancy() {
+  const world = worldById(state.selectedWorld);
+  return new Set(world?.occupied_site_ids || []);
+}
+
+function layerDescriptor() {
+  const nodes = state.data.nodes || [];
+  if (state.selectedWorld) {
+    const occupied = activeWorldOccupancy();
+    return {
+      title: "Possible extent occupancy",
+      low: "Not occupied",
+      high: "Occupied",
+      provenance: "What-if posterior extent; not hidden truth",
+      value: (node) => occupied.has(node.id) ? 1 : 0,
+    };
+  }
+  if (state.layer === "uncertainty") return {
+    title: "Occupancy uncertainty",
+    low: "Low",
+    high: "High",
+    provenance: "Posterior Bernoulli entropy",
+    value: (node) => clamp01(node.uncertainty),
+  };
+  if (state.layer === "habitat") retu
