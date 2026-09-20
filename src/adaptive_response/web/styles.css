@@ -69,6 +69,7 @@ button{color:inherit}
   grid-template-areas:
     "mission map worlds"
     "ramp why detect"
+    "ramp why species"
     "live live live"
     "evaluation evaluation evaluation"
     "tape tape tape";
@@ -175,21 +176,6 @@ body{
 .map-chip{background:rgba(250,253,255,.86);box-shadow:0 6px 18px rgba(3,39,62,.12)}
 .layer-legend,.map-legend,.map-inspector{background:rgba(250,253,255,.88);border-color:rgba(219,232,241,.68);box-shadow:0 10px 30px rgba(3,39,62,.16)}
 .layer-legend i{height:12px;background:linear-gradient(90deg,#236be4,#34b8da,#f3d95c,#ff5a5f);box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
-.species-poster{
-  position:absolute;right:13px;top:13px;width:248px;z-index:7;overflow:hidden;
-  border-radius:16px;background:rgba(255,255,255,.94);border:1px solid rgba(225,235,242,.82);
-  box-shadow:0 16px 38px rgba(3,39,62,.22);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  transition:transform .2s ease,box-shadow .2s ease
-}
-.species-poster:hover{transform:translateY(-2px);box-shadow:0 21px 44px rgba(3,39,62,.27)}
-.species-art{height:116px;overflow:hidden;background:#0f6b80}.species-art svg{display:block;width:100%;height:100%}
-.species-copy{padding:11px 12px 12px}
-.species-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.species-title-row strong{display:block;color:var(--navy);font-size:11px;line-height:1.2}
-.species-title-row em{display:block;color:#7890a5;font-size:7px;margin-top:2px}
-.species-title-row>span{padding:4px 6px;border-radius:999px;background:#fff0ee;color:#d74d47;font-size:6px;font-weight:900;letter-spacing:.08em}
-.species-copy p{margin:8px 0 9px;color:#60788d;font-size:7px;line-height:1.45}
-.species-problem{display:flex;gap:4px;flex-wrap:wrap}.species-problem span{padding:4px 6px;border-radius:999px;background:#eef7fb;color:#3f6d83;font-size:6px;font-weight:800}
 .worlds-card,.detectability-card{background:linear-gradient(180deg,#fff,#fbfdff)}
 .world-card{transition:transform .15s ease,border-color .15s ease,background .15s ease,box-shadow .15s ease}
 .world-card:hover{transform:translateX(-2px);box-shadow:0 7px 17px rgba(35,73,103,.07)}
@@ -199,6 +185,102 @@ body{
 .effort-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 13px rgba(35,73,103,.08)}
 .map-top-left{z-index:8}
 .replan-callout{z-index:10}
+
+
+/* Final visual pass — white mission cards on a deep black/navy canvas */
+html,body{background:#05090d}
+body{
+  background:
+    radial-gradient(circle at 50% 0,rgba(30,57,80,.22),transparent 34%),
+    linear-gradient(180deg,#05090d 0,#071018 45%,#05090d 100%);
+}
+.app-shell{background:transparent}
+.dashboard-grid{padding:2px;border-radius:22px}
+.card{
+  background:#ffffff;
+  border-color:rgba(218,227,235,.92);
+  box-shadow:0 15px 38px rgba(0,0,0,.28);
+}
+.card:not(.map-card):hover{box-shadow:0 18px 44px rgba(0,0,0,.34)}
+.status-ribbon{box-shadow:0 14px 34px rgba(0,0,0,.24)}
+.app-header{box-shadow:0 10px 28px rgba(0,0,0,.20)}
+.map-card{border-color:rgba(190,205,216,.88);box-shadow:0 18px 48px rgba(0,0,0,.38)}
+
+/* Muted, reference-like heat field: blue-grey -> dusty violet -> coral */
+.layer-legend i{
+  background:linear-gradient(90deg,#4f6f99 0%,#7f7897 52%,#bd6870 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.48);
+}
+.heat-ring{mix-blend-mode:normal;filter:url(#heat-soften)}
+.heat-core-glow{mix-blend-mode:normal}
+.heat-influence{mix-blend-mode:normal;filter:url(#influence-blur)}
+.map-tile{filter:saturate(.82) contrast(1.02) brightness(.80)}
+.map-tile-fade{fill:rgba(4,16,25,.14);mix-blend-mode:multiply}
+.graph-edge{stroke:rgba(232,239,244,.58);stroke-width:1.25;stroke-dasharray:6 7}
+
+/* Site markers: double-outline discs rather than flat dots */
+.node-outline{
+  fill:rgba(8,24,36,.46);
+  stroke:rgba(255,255,255,.96);
+  stroke-width:2.2;
+  vector-effect:non-scaling-stroke;
+  filter:drop-shadow(0 3px 7px rgba(0,0,0,.42));
+}
+.node-core{
+  stroke:rgba(255,255,255,.98);
+  stroke-width:1.5;
+  vector-effect:non-scaling-stroke;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.36));
+}
+.node-core.layer-colored{stroke:#fff}
+.node-core.confirmed,.node-core.detected{fill:#c95f66;stroke:#fff}
+.node-core.surveyed:not(.confirmed):not(.detected){fill:#d7e4eb;stroke:#fff}
+.frontier-ring{stroke:#74ad9b;stroke-width:2;stroke-dasharray:4 5}
+.selected-ring{stroke:#dcecff;stroke-width:3.2;filter:drop-shadow(0 0 7px rgba(66,112,164,.62))}
+.marine-ring{stroke:#d9b868;stroke-width:3;stroke-dasharray:8 6;filter:drop-shadow(0 0 5px rgba(217,184,104,.48))}
+.node-label-bg{fill:rgba(255,255,255,.93);stroke:rgba(9,24,38,.18)}
+.node-label{fill:#10283a}
+
+/* Right-rail species card */
+.species-card{grid-area:species;padding:0;overflow:hidden}
+.species-photo-wrap{position:relative;height:190px;overflow:hidden;background:#101820}
+.species-photo{
+  width:100%;height:100%;display:block;object-fit:cover;object-position:center 58%;
+  filter:saturate(.82) contrast(1.04) brightness(.88);
+  transform:scale(1.015)
+}
+.species-photo-wrap:after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(3,10,15,.03) 35%,rgba(3,10,15,.58) 100%);
+  pointer-events:none
+}
+.species-badge{
+  position:absolute;left:12px;top:12px;z-index:1;
+  padding:5px 8px;border-radius:999px;
+  background:rgba(9,18,25,.76);border:1px solid rgba(255,255,255,.22);
+  color:#fff;font-size:6.5px;font-weight:900;letter-spacing:.11em;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)
+}
+.species-card-body{padding:14px 15px 13px}
+.species-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.species-card-head h2{font-size:16px}
+.species-card-head em{display:block;color:#8494a3;font-size:8px;margin-top:2px}
+.species-status-dot{width:10px;height:10px;border-radius:50%;background:#bc6369;box-shadow:0 0 0 6px rgba(188,99,105,.10);margin-top:3px}
+.species-pitch{margin:10px 0 0!important;font-size:8px!important;line-height:1.55!important;color:#667a8d!important}
+.species-pitch b{color:#253f56}
+.species-challenges{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+.species-challenges span{
+  padding:5px 7px;border-radius:999px;background:#f1f4f6;border:1px solid #e1e7ec;
+  color:#53697d;font-size:6.5px;font-weight:800
+}
+.species-credit{margin:10px 0 0!important;padding-top:8px;border-top:1px solid #e8edf1;color:#9aa7b1!important;font-size:5.8px!important}
+
+/* Keep probable worlds and q visually compact so the three-card right rail reads as one stack */
+.world-list{max-height:425px}
+.detectability-card{padding-bottom:13px}
+.q-panel{height:132px}
+.q-bar-shell{height:78px}
+
 @media(max-width:1320px){
   .dashboard-grid{grid-template-columns:300px minmax(560px,1fr) 310px}
   .status-ribbon{grid-template-columns:minmax(240px,1.5fr) 125px 145px 190px 130px}
@@ -206,14 +288,14 @@ body{
 }
 @media(max-width:1080px){
   .app-header{align-items:flex-start;flex-direction:column;padding-top:12px;padding-bottom:12px}.header-controls{width:100%}.header-field{flex:1}.header-field select{width:100%}
-  .dashboard-grid{grid-template-columns:1fr 1fr;grid-template-areas:"mission worlds" "map map" "ramp detect" "why why" "live live" "evaluation evaluation" "tape tape"}
+  .dashboard-grid{grid-template-columns:1fr 1fr;grid-template-areas:"mission worlds" "map map" "ramp detect" "why species" "live live" "evaluation evaluation" "tape tape"}
   .status-ribbon{grid-template-columns:1fr 1fr 1fr}.detection-status{grid-column:1/-1}.map-stage{height:620px}
 }
 @media(max-width:760px){
   .app-shell{padding:0 8px 18px}.app-header{margin:0 -8px;padding-left:14px;padding-right:14px}.brand-row span,.brand-copy p{display:none}.brand-mark{width:48px}.brand-mark svg{width:48px}
-  .dashboard-grid{grid-template-columns:1fr;grid-template-areas:"mission" "worlds" "detect" "map" "ramp" "why" "live" "evaluation" "tape"}
+  .dashboard-grid{grid-template-columns:1fr;grid-template-areas:"mission" "worlds" "detect" "species" "map" "ramp" "why" "live" "evaluation" "tape"}
   .status-ribbon{grid-template-columns:1fr 1fr}.status-item{min-height:62px}.detection-status{grid-column:1/-1}
-  .map-toolbar{align-items:flex-start;flex-direction:column}.map-toolbar-actions{width:100%;justify-content:space-between}.layer-select-label{flex:1}.layer-select-label select{width:100%}.map-stage{height:520px}.map-legend{display:none}.layer-legend{width:155px;right:8px;bottom:10px}.map-inspector{left:8px;bottom:10px;max-width:220px}.species-poster{width:210px;right:8px;top:46px}.species-art{height:92px}.species-copy p{display:none}
+  .map-toolbar{align-items:flex-start;flex-direction:column}.map-toolbar-actions{width:100%;justify-content:space-between}.layer-select-label{flex:1}.layer-select-label select{width:100%}.map-stage{height:520px}.map-legend{display:none}.layer-legend{width:155px;right:8px;bottom:10px}.map-inspector{left:8px;bottom:10px;max-width:220px}
   .why-grid{grid-template-columns:1fr 1fr}.evidence-strip{grid-template-columns:1fr 1fr}.evidence-cell:nth-child(3){border-left:0;border-top:1px solid var(--line)}.evidence-cell:nth-child(4){border-top:1px solid var(--line)}
   .dual-chart-grid{grid-template-columns:1fr}.scorecards,.luck-receipts{grid-template-columns:1fr}.tape-card{grid-template-columns:1fr}.tape-label{display:none}
 }
