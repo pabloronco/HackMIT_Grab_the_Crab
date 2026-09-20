@@ -33,7 +33,7 @@ The three-deployment window is a **demo/product horizon**. Formal R8/R10 protoco
 - judge site/effort controls;
 - field return;
 - `MISSION UPDATED BY EVIDENCE` when causal replan occurs;
-- RAMP capacity-preservation card.
+- resource-efficiency capacity-preservation card.
 
 ### Explainability layer
 - top unique ecological extents marginalized over q;
@@ -105,7 +105,7 @@ For a selected candidate site and each feasible `e ∈ {1,3,6}`, Marine calculat
 
 Marine then chooses the smallest effort retaining enough of the maximum-effort information value and conditional detection power. Detection-power retention is stricter at higher occupancy belief.
 
-This is a transparent RAMP product rule. Its thresholds are **DESIGN CHOICES**, not ecological constants and not agency preferences.
+This is a transparent resource-efficiency product rule. Its thresholds are **DESIGN CHOICES**, not ecological constants and not agency preferences.
 
 The judge may override effort.
 
@@ -154,13 +154,13 @@ It combines:
 
 This distinction must remain visible in the UI.
 
-## RAMP resource semantics
+## resource-efficiency resource semantics
 
 Maximum available response capacity is 18 effort units.
 
 The judging response window contains up to three field deployments. Marine may leave capacity unspent.
 
-Primary RAMP quantities:
+Primary resource-efficiency quantities:
 - effort spent;
 - capacity preserved;
 - effort avoided relative to effort 6 on the same number of deployments;
@@ -216,8 +216,8 @@ No arbitrary alert threshold is presented as ecological fact.
 
 Desktop hierarchy:
 
-- first row: Mission / dominant Map / Probable Worlds;
-- second row: RAMP resource receipt / Why This Mission / Detectability;
+- first row: Mission / dominant Map / Detectability;
+- second row: resource-efficiency receipt / Why This Mission / Probable Worlds;
 - third row: two simple resource/evidence charts;
 - fourth row: reveal/evaluation;
 - final full-width row: Decision Log.
@@ -248,7 +248,7 @@ Legacy rehearsal endpoints may remain but are not the primary UI path.
 
 Safe:
 - “Non-detection is not absence; effort and detectability matter.”
-- “Marine recommends both where to survey and how much effort to spend.”
+- “Catch the Crab recommends both where to survey and how much effort to spend.”
 - “Unused effort is preserved field capacity in this three-deployment response window.”
 - “New evidence can change the next mission.”
 - “This selected case is an illustrative blinded synthetic incident on a real monitoring graph.”
@@ -269,7 +269,7 @@ Not safe without separate validation:
 - hidden truth absent before reveal;
 - exactly three judging deployments complete the response window;
 - unspent effort remains preserved;
-- Marine site+effort recommendation visible;
+- Catch the Crab site+effort recommendation visible;
 - map zoom/pan works in Safari;
 - environmental layers do not fabricate missing values;
 - probable-world panel does not overflow;
@@ -283,8 +283,8 @@ Not safe without separate validation:
 
 ```bash
 git fetch origin
-git switch ui/ramp-final-pass
-git pull origin ui/ramp-final-pass
+git switch ui/catch-the-crab-polish
+git pull origin ui/catch-the-crab-polish
 uv pip install -e ".[dev,ui]"
 
 pytest tests/test_frontier_planner.py tests/test_mission_control.py tests/test_spatial_mission_loop.py tests/test_real_incident_source.py -q
