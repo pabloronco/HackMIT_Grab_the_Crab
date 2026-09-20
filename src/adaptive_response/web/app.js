@@ -251,7 +251,8 @@ function renderWorlds() {
   const expanded = state.selectedWorld || bundle.items?.[0]?.world_id || null;
 
   $("world-list").innerHTML = bundle.items.map((world) => {
-    const selected = world.world_id === expanded;
+    const selected = state.selectedWorld === world.world_id;
+    const isExpanded = world.world_id === expanded;
     const family = world.families.length ? world.families.join(" · ") : "mixed provenance";
     const delta = Math.abs(world.delta) < 0.0005 ? "stable" : fmtPp(world.delta);
     return `<button class="world-card ${selected ? "selected" : ""}" data-world="${world.world_id}">
@@ -261,7 +262,7 @@ function renderWorlds() {
         <span>${world.occupied_count} occupied sites · ${family}</span>
       </span>
       <span class="world-mass"><b>${fmtPct(world.posterior)}</b><small>${delta}</small></span>
-      ${selected ? `<span class="world-expanded"><b>What-if hypothesis — not hidden truth.</b><br>
+      ${isExpanded ? `<span class="world-expanded"><b>${selected ? "What-if view active" : "Highest-posterior extent"} — not hidden truth.</b><br>
         ${world.occupied_count} sites are occupied in this extent. Latest evidence changed its posterior mass by ${fmtPp(world.delta)}.</span>` : ""}
     </button>`;
   }).join("") + `<div class="other-worlds"><span>All other unique extents</span><b>${fmtPct(bundle.remaining_mass)}</b></div>`;
@@ -1181,6 +1182,7 @@ function renderControls() {
   });
 
   const layerMeta = state.data.environment_layers || {};
+  $("layer-select").value = state.layer;
   Array.from($("layer-select").options).forEach((option) => {
     const meta = layerMeta[option.value];
     option.disabled = meta?.available === false;
