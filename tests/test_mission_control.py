@@ -66,13 +66,14 @@ def test_hidden_truth_is_absent_from_every_snapshot_before_reveal() -> None:
     assert revealed["incident"]["truth_family"]
 
 
-def test_full_round_trip_spends_the_whole_budget_and_reaches_reveal() -> None:
+def test_full_round_trip_completes_three_deployment_window_and_reaches_reveal() -> None:
     session = MissionControlSession()
-    initial_budget = session.snapshot()["resources"]["initial_budget"]
 
     snap = _run_to_completion(session)
-    assert snap["resources"]["remaining_budget"] == 0
-    assert snap["resources"]["spent_budget"] == initial_budget
+    assert snap["resources"]["round"] == 3
+    assert snap["resources"]["mission_horizon"] == 3
+    assert snap["resources"]["missions_remaining"] == 0
+    assert 0 <= snap["resources"]["remaining_budget"] <= snap["resources"]["initial_budget"]
     assert snap["can_reveal"] and not snap["can_plan"] and not snap["can_execute"]
 
     snap = session.reveal()
@@ -220,11 +221,17 @@ def test_reveal_scores_marine_static_and_human_against_same_hidden_incident() ->
         row = performance[name]
         assert row["detected_occupied"] + row["undetected_occupied"] == row["occupied_total"]
         assert row["curve"][0]["effort"] == 0
-        assert row["curve"][-1]["effort"] == 18
+        assert row["missions_completed"] == 3
+        assert 0 < row["curve"][-1]["effort"] <= 18
         assert 0.0 <= row["curve"][-1]["detected_fraction"] <= 1.0
 
+    assert performance["static"]["effort_spent"] == 18
+    assert performance["resource_receipt"]["effort_saved_vs_static"] == (
+        performance["static"]["effort_spent"] - performance["marine"]["effort_spent"]
+    )
 
-def test_low_effort_judge_path_can_still_exhaust_budget_without_dead_end() -> None:
+
+def test_low_effort_judge_path_preserves_capacity_after_three_deployments() -> None:
     session = MissionControlSession()
     snap = session.snapshot()
 
@@ -232,8 +239,10 @@ def test_low_effort_judge_path_can_still_exhaust_budget_without_dead_end() -> No
         site_id = snap["global_recommendations"][0]["site_id"]
         snap = session.deploy(site_id=site_id, effort=1)
 
-    assert snap["resources"]["remaining_budget"] == 0
-    assert snap["resources"]["spent_budget"] == 18
+    assert snap["resources"]["round"] == 3
+    assert snap["resources"]["spent_budget"] == 3
+    assert snap["resources"]["remaining_budget"] == 15
+    assert snap["resource_summary"]["capacity_preserved"] == 15
 
 
 def test_mission_updated_flag_means_evidence_changed_counterfactual_next_site() -> None:
@@ -300,3 +309,39 @@ def test_live_curve_contains_only_observable_progress_and_tracks_budget() -> Non
     assert point["field_detections"] >= 1
     assert math.isclose(point["budget_used_fraction"], 6 / 18)
     assert "true_occupied" not in point
+
+
+def test_resource_aware_recommendation_exposes_site_and_effort_diagnostics() -> None:
+    session = MissionControlSession()
+    snap = session.snapshot()
+    top = snap["global_recommendations"][0]
+
+    assert top["recommended_effort"] in (1, 3, 6)
+    diag = top["effort_recommendation"]
+    assert diag["recommended_effort"] == top["recommended_effort"]
+    assert diag["occupancy_band"] in {"exploratory", "medium", "high"}
+    assert 0.0 <= diag["occupancy_belief"] <= 1.0
+    assert 0.0 < diag["information_retention_required"] <= 1.0
+    assert 0.0 < diag["detection_power_retention_required"] <= 1.0
+    assert diag["rule"] == "occupancy_aware_smallest_effort_retaining_information_and_detection_power"
+
+
+def test_q_boundary_pressure_is_separate_from_model_stress() -> None:
+    session = MissionControlSession()
+    snap = session.snapshot()
+
+    qd = snap["q_diagnostics"]
+    assert 0.0 <= qd["boundary_pressure"] <= 1.0
+    assert "stress" in qd["edge_note"].lower()
+    assert snap["model_stress"] is None
+
+
+def test_environment_layers_never_impute_temperature() -> None:
+    session = MissionControlSession()
+    snap = session.snapshot()
+    temp = snap["environment_layers"]["temperature"]
+
+    observed = sum(node["temperature_median_c"] is not None for node in snap["nodes"])
+    assert temp["observed_sites"] == observed
+    assert temp["total_sites"] == len(snap["nodes"])
+    assert "no imputation" in temp["provenance"].lower()

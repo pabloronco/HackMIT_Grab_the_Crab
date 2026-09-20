@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#f5f7fa" />
+  <meta name="theme-color" content="#f4f7fb" />
   <title>MARINE — Adaptive First Response</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
@@ -20,164 +20,392 @@
     <header class="app-header">
       <div class="brand-block">
         <div class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 68 48"><path d="M4 20c13-11 24-10 34-2 9 7 17 8 26 1-5 10-13 15-23 13-9-2-16-10-25-9-5 0-9 1-12 3 2-2 2-4 0-6Z"></path><path d="M8 31c10-7 19-6 27 0 8 5 16 6 25 1-6 8-14 11-23 9-8-2-15-7-22-7-3 0-5 0-7 1Z"></path></svg>
+          <svg viewBox="0 0 68 48">
+            <path d="M4 20c13-11 24-10 34-2 9 7 17 8 26 1-5 10-13 15-23 13-9-2-16-10-25-9-5 0-9 1-12 3 2-2 2-4 0-6Z"></path>
+            <path d="M8 31c10-7 19-6 27 0 8 5 16 6 25 1-6 8-14 11-23 9-8-2-15-7-22-7-3 0-5 0-7 1Z"></path>
+          </svg>
         </div>
-        <div>
-          <div class="brand-row"><h1>MARINE</h1><span>Map · Infer · Recommend · Replan</span></div>
-          <p>Adaptive ecological first-response mission control</p>
+        <div class="brand-copy">
+          <div class="brand-row">
+            <h1>MARINE</h1>
+            <span>Observe · Infer · Decide · Survey · Replan</span>
+          </div>
+          <p>Adaptive first-response mission control for marine invasive species</p>
         </div>
       </div>
+
       <div class="header-controls">
-        <label class="header-field"><span>Scenario</span><select id="case-select"></select></label>
+        <label class="header-field">
+          <span>Scenario</span>
+          <select id="case-select"></select>
+        </label>
         <button id="next-case-btn" class="icon-button" title="Next incident">→</button>
         <button id="reset-btn" class="icon-button" title="Reset incident">↻</button>
       </div>
     </header>
 
-    <section class="status-ribbon">
-      <div class="status-item detection-status"><span class="status-dot"></span><div><small>Confirmed first detection</small><strong>Site <span id="initial-detection">—</span></strong></div></div>
-      <div class="status-item"><small>Incident</small><strong id="case-number">—</strong></div>
-      <div class="status-item budget-status"><small>Field budget remaining</small><strong id="budget-left">—</strong><div class="budget-track"><span id="budget-fill"></span></div></div>
-      <div class="status-item"><small>Decision round</small><strong id="round">—</strong></div>
-      <div class="status-item truth-status"><small>Hidden extent</small><strong id="truth-state">LOCKED</strong></div>
+    <section class="status-ribbon" aria-label="Incident status">
+      <div class="status-item detection-status">
+        <span class="status-dot"></span>
+        <div>
+          <small>Confirmed first detection</small>
+          <strong>Site <span id="initial-detection">—</span></strong>
+        </div>
+      </div>
+      <div class="status-item">
+        <small>Incident</small>
+        <strong id="case-number">—</strong>
+      </div>
+      <div class="status-item">
+        <small>Response window</small>
+        <strong id="round">—</strong>
+      </div>
+      <div class="status-item budget-status">
+        <small>Field capacity remaining</small>
+        <strong id="budget-left">—</strong>
+        <div class="budget-track"><span id="budget-fill"></span></div>
+      </div>
+      <div class="status-item truth-status">
+        <small>Hidden extent</small>
+        <strong id="truth-state">LOCKED</strong>
+      </div>
     </section>
 
     <main class="dashboard-grid">
       <aside class="card mission-panel">
-        <div class="card-title-row"><div class="title-icon">⌖</div><div><h2>Mission</h2><p>Marine recommends both where to go and how much effort to spend.</p></div></div>
-
-        <section class="mission-card marine-card">
-          <div class="mission-card-head"><span class="mini-icon">✦</span><strong>Marine recommendation</strong></div>
-          <div class="recommend-hero">
-            <div><small>Next site</small><b id="marine-site">Site —</b></div>
-            <div><small>Effort</small><b id="marine-effort">—</b></div>
+        <div class="section-heading">
+          <span class="section-icon">⌖</span>
+          <div>
+            <h2>Next field mission</h2>
+            <p>Marine recommends both a site and an effort level. You remain in control.</p>
           </div>
-          <div class="mini-metrics">
-            <span>Belief <b id="marine-belief">—</b></span>
-            <span>P(detect) <b id="marine-pdetect">—</b></span>
-            <span>Effort saved <b id="marine-saved">—</b></span>
+        </div>
+
+        <div class="marine-recommendation">
+          <div class="recommendation-label">
+            <span>MARINE RECOMMENDS</span>
+            <span id="marine-rank-badge" class="soft-badge">#1</span>
           </div>
-          <p id="marine-copy">Frontier site ranking with Bayesian effort allocation.</p>
-        </section>
+          <div class="recommendation-hero">
+            <div>
+              <small>Survey site</small>
+              <strong id="marine-site">Site —</strong>
+            </div>
+            <div class="effort-hero">
+              <small>Effort</small>
+              <strong id="marine-effort">—</strong>
+              <span>units</span>
+            </div>
+          </div>
+          <div class="recommendation-metrics">
+            <div><small>Occupancy belief</small><b id="marine-belief">—</b></div>
+            <div><small>Predicted detection</small><b id="marine-pdetect">—</b></div>
+            <div><small>Capacity preserved</small><b id="marine-saved">—</b></div>
+          </div>
+          <p id="marine-copy">Recommendation is computed from observable belief only.</p>
+        </div>
 
-        <section class="mission-card static-card">
-          <div class="mission-card-head"><span class="mini-icon">≡</span><strong>Static response</strong></div>
-          <small>Precommitted at t0 · effort 6 each</small>
-          <div class="site-line"><b id="static-site">Site —</b><span class="pill">Fixed</span></div>
-          <div id="static-route" class="route-chips"></div>
-        </section>
-
-        <section class="mission-card choice-card">
-          <div class="mission-card-head"><span class="mini-icon">●</span><strong>Your choice</strong></div>
-          <label class="field-label" for="site-select">Survey site</label>
+        <div class="control-section">
+          <div class="control-title">
+            <span>Your decision</span>
+            <button id="follow-marine-btn" class="inline-action">Use Marine recommendation</button>
+          </div>
+          <label class="field-label" for="site-select">Site</label>
           <select id="site-select" class="large-select"></select>
-          <button id="follow-marine-btn" class="text-button">Use Marine site + effort</button>
-        </section>
 
-        <section class="mission-card effort-card">
-          <div class="mission-card-head"><span class="mini-icon">⚙</span><strong>Field effort</strong><span id="effort-rec-badge" class="recommend-badge">Marine: —</span></div>
+          <div class="effort-title-row">
+            <label class="field-label">Effort</label>
+            <span id="effort-rec-badge" class="recommended-chip">Marine: —</span>
+          </div>
           <div id="effort-controls" class="effort-controls">
             <button class="effort-btn" data-effort="1"><b>1</b><span>LIGHT</span></button>
             <button class="effort-btn" data-effort="3"><b>3</b><span>MEDIUM</span></button>
             <button class="effort-btn" data-effort="6"><b>6</b><span>HIGH</span></button>
           </div>
           <div id="effort-options" class="effort-options"></div>
-          <p id="effort-caption" class="effort-caption"></p>
-        </section>
+          <p id="effort-caption" class="microcopy"></p>
+        </div>
 
-        <button id="deploy-btn" class="deploy-button"><span class="play-mark">▶</span><span><b>Deploy mission</b><small>Execute survey → update Bayes → replan</small></span></button>
+        <button id="deploy-btn" class="deploy-button">
+          <span class="play-mark">▶</span>
+          <span>
+            <b>Deploy mission</b>
+            <small>Survey → field return → Bayes update → replan</small>
+          </span>
+        </button>
+
+        <div class="static-strip">
+          <div>
+            <small>STATIC RESPONSE</small>
+            <strong id="static-site">Site —</strong>
+          </div>
+          <div id="static-route" class="route-chips"></div>
+          <span class="soft-badge">precommitted · e6</span>
+        </div>
       </aside>
 
       <section class="card map-card">
         <div class="map-toolbar">
-          <div><span class="eyebrow">REAL MONITORING COAST</span><h2 id="map-title">Posterior occupancy belief</h2></div>
-          <div class="map-actions">
-            <div id="layer-tabs" class="layer-tabs" role="group" aria-label="Map layers">
-              <button class="layer-btn active" data-layer="belief">Belief</button>
-              <button class="layer-btn" data-layer="uncertainty">Uncertainty</button>
-              <button class="layer-btn" data-layer="habitat">Habitat</button>
-              <button class="layer-btn" data-layer="temperature">Temperature</button>
-              <button class="layer-btn" data-layer="exposure">Exposure</button>
-              <button class="layer-btn" data-layer="eelgrass">Eelgrass</button>
-              <button class="layer-btn" data-layer="salt_marsh">Salt marsh</button>
-              <button class="layer-btn" data-layer="field_effort">Field effort</button>
+          <div>
+            <span class="eyebrow">REAL MONITORING COAST · SALISH SEA</span>
+            <h2 id="map-title">Posterior occupancy belief</h2>
+          </div>
+          <div class="map-toolbar-actions">
+            <label class="layer-select-label">
+              <span>Data layer</span>
+              <select id="layer-select">
+                <option value="belief">Occupancy belief</option>
+                <option value="uncertainty">Uncertainty</option>
+                <option value="habitat">Habitat suitability</option>
+                <option value="temperature">Temperature</option>
+                <option value="exposure">Exposure</option>
+                <option value="eelgrass">Eelgrass</option>
+                <option value="salt_marsh">Salt marsh</option>
+                <option value="field_effort">Field effort</option>
+              </select>
+            </label>
+            <div class="zoom-controls" aria-label="Map zoom">
+              <button id="zoom-out" title="Zoom out">−</button>
+              <button id="zoom-fit" title="Fit all sites">Fit</button>
+              <button id="zoom-in" title="Zoom in">+</button>
             </div>
-            <div class="zoom-controls"><button id="zoom-out" title="Zoom out">−</button><button id="zoom-fit" title="Fit sites">Fit</button><button id="zoom-in" title="Zoom in">+</button></div>
           </div>
         </div>
+
         <div id="scenario-banner" class="scenario-banner hidden"></div>
-        <div class="map-stage">
-          <svg id="graph" viewBox="0 0 1100 620" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Real coastal monitoring network"></svg>
-          <div id="layer-legend" class="layer-legend"><span id="layer-legend-title">Occupancy belief</span><i id="layer-gradient"></i><div><small id="legend-low">Low</small><small id="legend-high">High</small></div><p id="layer-provenance"></p></div>
-          <div class="map-legend"><div><span class="legend-node"></span> Survey site</div><div><span class="legend-line"></span> Graph connection</div><div><span class="legend-marine"></span> Marine #1</div><div><span class="legend-detection"></span> Detection</div></div>
+
+        <div class="map-stage" id="map-stage">
+          <svg id="graph" viewBox="0 0 1100 640" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Real coastal monitoring network"></svg>
+
+          <div class="map-top-left">
+            <span id="zoom-readout" class="map-chip">Fit</span>
+            <span class="map-chip">Scroll to zoom · drag to pan</span>
+          </div>
+
+          <div id="layer-legend" class="layer-legend">
+            <span id="layer-legend-title">Occupancy belief</span>
+            <i id="layer-gradient"></i>
+            <div><small id="legend-low">Low</small><small id="legend-high">High</small></div>
+            <p id="layer-provenance"></p>
+          </div>
+
+          <div class="map-legend">
+            <div><span class="legend-node"></span> Survey site</div>
+            <div><span class="legend-line"></span> Graph connection</div>
+            <div><span class="legend-marine"></span> Marine #1</div>
+            <div><span class="legend-detection"></span> Detection</div>
+            <div><span class="legend-missing"></span> No layer data</div>
+          </div>
+
+          <div id="map-inspector" class="map-inspector"></div>
           <div class="map-attribution">Real monitoring coordinates · © OpenStreetMap contributors</div>
           <div id="node-tooltip" class="tooltip hidden"></div>
-          <div id="replan-callout" class="replan-callout hidden"><span>MISSION UPDATED BY EVIDENCE</span><strong id="replan-route">—</strong><p>The field return changed the next site and/or effort allocation.</p></div>
+
+          <div id="replan-callout" class="replan-callout hidden">
+            <span>MISSION UPDATED BY EVIDENCE</span>
+            <strong id="replan-route">—</strong>
+            <p>The latest field return changed the next site and/or effort recommendation.</p>
+          </div>
         </div>
       </section>
 
-      <aside class="right-stack">
-        <section class="card worlds-card">
-          <div class="card-title-row compact"><div class="title-icon">◎</div><div><h2>Probable worlds</h2><p>Unique ecological extents, marginalized over q.</p></div><span id="world-count" class="count-badge">—</span></div>
-          <div id="world-list" class="world-list"></div>
-          <button id="clear-world-btn" class="text-button hidden">Return to posterior map</button>
-        </section>
+      <aside class="card worlds-card">
+        <div class="section-heading compact">
+          <span class="section-icon">◎</span>
+          <div>
+            <h2>Probable worlds</h2>
+            <p>Top unique ecological extents after marginalizing detectability.</p>
+          </div>
+          <span id="world-count" class="count-badge">—</span>
+        </div>
+        <div id="world-list" class="world-list"></div>
+        <button id="clear-world-btn" class="inline-action hidden">Return to posterior map</button>
+      </aside>
 
-        <section class="card detectability-card">
-          <div class="card-title-row compact"><div class="title-icon">q</div><div><h2>Detectability belief</h2><p>How easy the species is to detect if it is present.</p></div></div>
-          <div id="q-panel" class="q-panel"></div>
-          <div id="q-explainer" class="q-explainer"></div>
-        </section>
+      <aside class="card ramp-card">
+        <div class="ramp-heading">
+          <span class="sponsor-pill">RAMP</span>
+          <div>
+            <h2>Save field capacity</h2>
+            <p>Three deployments. Marine can preserve unused effort instead of automatically spending the full budget.</p>
+          </div>
+        </div>
+
+        <div class="ramp-primary">
+          <div>
+            <small>Capacity preserved</small>
+            <strong id="resource-left">—</strong>
+            <span>effort units</span>
+          </div>
+          <div class="capacity-ring" id="capacity-ring"><b id="capacity-percent">—</b><span>left</span></div>
+        </div>
+
+        <div class="ramp-kpis">
+          <div><small>Effort spent</small><b id="resource-spent">—</b></div>
+          <div><small>Deployments</small><b id="resource-missions">—</b></div>
+          <div><small>Avoided vs e6*</small><b id="resource-avoided">—</b></div>
+        </div>
+
+        <details class="conversion-panel">
+          <summary>Translate saved effort into local time / cost</summary>
+          <p>Optional operator inputs. MARINE does not assume a universal dollar or time conversion.</p>
+          <div class="conversion-grid">
+            <label><span>Minutes per effort unit</span><input id="minutes-per-unit" type="number" min="0" step="1" placeholder="e.g. 20" /></label>
+            <label><span>$ per effort unit</span><input id="cost-per-unit" type="number" min="0" step="1" placeholder="e.g. 25" /></label>
+          </div>
+          <div id="conversion-output" class="conversion-output">Enter local rates to estimate operational savings.</div>
+        </details>
+
+        <p class="footnote">*Compared with effort 6 for the same number of completed deployments. Formal R8/R10 benchmarks remain separate.</p>
       </aside>
 
       <section class="card why-card">
-        <div class="why-head"><div class="title-icon">✦</div><div><h2>Why this mission?</h2><p id="why-subtitle">Decision quality is evaluated before seeing the outcome.</p></div></div>
-        <div class="why-grid">
-          <div class="why-item"><span class="why-icon">⌖</span><div><strong>Frontier</strong><b id="why-frontier-value">—</b><p id="why-frontier-copy"></p></div></div>
-          <div class="why-item"><span class="why-icon">◔</span><div><strong>Occupancy belief</strong><b id="why-belief-value">—</b><p id="why-belief-copy"></p></div></div>
-          <div class="why-item"><span class="why-icon">◉</span><div><strong>Predicted detection</strong><b id="why-detection-value">—</b><p id="why-detection-copy"></p></div></div>
-          <div class="why-item"><span class="why-icon">↯</span><div><strong>Recommended effort</strong><b id="why-effort-value">—</b><p id="why-effort-copy"></p></div></div>
+        <div class="section-heading">
+          <span class="section-icon">✦</span>
+          <div>
+            <h2>Why this mission?</h2>
+            <p id="why-subtitle">Decision quality is judged before the outcome is known.</p>
+          </div>
         </div>
+
+        <div class="why-grid">
+          <div class="why-item">
+            <small>FRONTIER</small>
+            <strong id="why-frontier-value">—</strong>
+            <p id="why-frontier-copy"></p>
+          </div>
+          <div class="why-item">
+            <small>OCCUPANCY BELIEF</small>
+            <strong id="why-belief-value">—</strong>
+            <p id="why-belief-copy"></p>
+          </div>
+          <div class="why-item">
+            <small>DETECTION POWER IF OCCUPIED</small>
+            <strong id="why-power-value">—</strong>
+            <p id="why-power-copy"></p>
+          </div>
+          <div class="why-item">
+            <small>PREDICTED DETECTION</small>
+            <strong id="why-detection-value">—</strong>
+            <p id="why-detection-copy"></p>
+          </div>
+        </div>
+
+        <div class="why-effort-banner">
+          <div>
+            <small>RESOURCE-AWARE EFFORT</small>
+            <strong id="why-effort-value">—</strong>
+          </div>
+          <p id="why-effort-copy"></p>
+        </div>
+
         <div class="evidence-strip">
-          <div class="evidence-cell"><small>Latest field return</small><div id="evidence-panel" class="evidence-content muted">Awaiting field evidence.</div></div>
-          <div class="evidence-cell"><small>Decision quality receipt</small><div id="decision-receipt" class="evidence-content muted">No mission executed yet.</div></div>
-          <div class="evidence-cell"><small>Largest propagated changes</small><div id="propagation-panel" class="evidence-content muted">No propagated update yet.</div></div>
-          <div class="evidence-cell"><small>Model stress</small><div id="stress-panel" class="evidence-content muted">No field result yet.</div></div>
+          <div class="evidence-cell">
+            <small>Latest field return</small>
+            <div id="evidence-panel" class="evidence-content muted">Awaiting field evidence.</div>
+          </div>
+          <div class="evidence-cell">
+            <small>Decision quality receipt</small>
+            <div id="decision-receipt" class="evidence-content muted">No mission executed yet.</div>
+          </div>
+          <div class="evidence-cell">
+            <small>Largest propagated changes</small>
+            <div id="propagation-panel" class="evidence-content muted">No propagated update yet.</div>
+          </div>
+          <div class="evidence-cell">
+            <small>Model stress</small>
+            <div id="stress-panel" class="evidence-content muted">No field result yet.</div>
+          </div>
         </div>
       </section>
 
-      <aside class="card ramp-card">
-        <div class="ramp-head"><span class="sponsor-pill">RAMP</span><div><h2>Save field effort</h2><p>Use the smallest survey effort that retains enough expected information and detection power.</p></div></div>
-        <div class="ramp-kpis">
-          <div><small>Effort spent</small><b id="resource-spent">—</b></div>
-          <div><small>Budget left</small><b id="resource-left">—</b></div>
-          <div><small>Missions completed</small><b id="resource-missions">—</b></div>
-          <div><small>Effort avoided*</small><b id="resource-avoided">—</b></div>
+      <aside class="card detectability-card">
+        <div class="section-heading compact">
+          <span class="section-icon">q</span>
+          <div>
+            <h2>Detectability belief</h2>
+            <p>How easy the species is to detect <em>if it is actually present</em>.</p>
+          </div>
         </div>
-        <p class="footnote">*Versus using effort 6 for the same number of completed mission actions. This is a field-effort comparison, not a dollar estimate.</p>
+
+        <div id="q-panel" class="q-panel"></div>
+        <div id="q-effort-preview" class="q-effort-preview"></div>
+
+        <details class="q-details">
+          <summary>What does q mean?</summary>
+          <p><b>q = P(detection in one check | occupied).</b> It is not occupancy probability. Marine infers q jointly with possible invasion extents.</p>
+          <p>You do not directly set q during a mission. Your operational control is effort: more checks reduce the chance of missing an occupied site.</p>
+          <p id="q-boundary-copy"></p>
+        </details>
       </aside>
 
       <section class="card live-card">
-        <div class="live-head"><div><span class="eyebrow">RESOURCE EFFICIENCY</span><h2>Evidence gained per mission</h2><p>Bars = effort spent this mission. Line = cumulative confirmed detections.</p></div><div class="live-legend"><span><i class="legend-bar"></i> Mission effort</span><span><i class="dot blue"></i> Confirmed detections</span></div></div>
-        <div id="live-kpis" class="live-kpis"></div>
-        <svg id="live-chart" viewBox="0 0 980 260" role="img" aria-label="Mission effort and confirmed detection trajectory"></svg>
+        <div class="live-head">
+          <div>
+            <span class="eyebrow">RAMP · RESOURCE EFFICIENCY</span>
+            <h2>What are we spending, and what are we learning?</h2>
+            <p>Separate resource use from field outcomes so one lucky detection does not masquerade as a better policy.</p>
+          </div>
+          <div id="live-kpis" class="live-kpis"></div>
+        </div>
+
+        <div class="dual-chart-grid">
+          <div class="chart-panel">
+            <div class="chart-panel-head">
+              <strong>Effort per deployment</strong>
+              <span>Marine / your path vs static e6 reference</span>
+            </div>
+            <svg id="effort-chart" viewBox="0 0 560 250" role="img" aria-label="Effort per deployment"></svg>
+          </div>
+          <div class="chart-panel">
+            <div class="chart-panel-head">
+              <strong>Cumulative confirmed detections</strong>
+              <span>Observable field returns only</span>
+            </div>
+            <svg id="detection-chart" viewBox="0 0 560 250" role="img" aria-label="Cumulative confirmed detections"></svg>
+          </div>
+        </div>
       </section>
 
       <section class="card evaluation-card">
-        <div class="evaluation-head"><div><span class="eyebrow">EVALUATE</span><h2>Same hidden incident. Different allocation strategies.</h2><p>Marine vs precommitted Static Response are the main policy comparison; Your Path is a single interactive realization.</p></div><button id="reveal-btn" class="reveal-button" disabled>Reveal true extent</button></div>
-        <div id="performance-locked" class="performance-locked"><span>⌁</span><div><b>Outcome receipt locked</b><small>Complete the campaign to reveal hidden occupancy.</small></div></div>
+        <div class="evaluation-head">
+          <div>
+            <span class="eyebrow">EVALUATE</span>
+            <h2>Same hidden incident. Same three-deployment response window.</h2>
+            <p>Marine vs Static is the policy comparison. Your Path is an interactive realization and can be luckier or unluckier on one incident.</p>
+          </div>
+          <button id="reveal-btn" class="reveal-button" disabled>Reveal true extent</button>
+        </div>
+
+        <div id="performance-locked" class="performance-locked">
+          <span>⌁</span>
+          <div>
+            <b>Outcome receipt locked</b>
+            <small>Complete three field deployments to reveal hidden occupancy.</small>
+          </div>
+        </div>
+
         <div id="performance-content" class="performance-content hidden">
+          <div id="resource-receipt" class="resource-receipt"></div>
           <div id="scorecards" class="scorecards"></div>
-          <div class="performance-right"><svg id="performance-chart" viewBox="0 0 900 250" role="img" aria-label="True occupied sites detected by cumulative effort"></svg><p id="performance-note" class="performance-note"></p></div>
+          <div class="performance-chart-wrap">
+            <svg id="performance-chart" viewBox="0 0 920 270" role="img" aria-label="True occupied sites detected by cumulative effort"></svg>
+            <p id="performance-note" class="performance-note"></p>
+          </div>
+          <div id="luck-receipts" class="luck-receipts"></div>
         </div>
       </section>
 
       <section class="card tape-card">
-        <div class="tape-label"><span>DECISION LOG</span><b>OBSERVE → INFER → DECIDE → SURVEY → LEARN → REPLAN</b></div>
+        <div class="tape-label">
+          <span>DECISION LOG</span>
+          <b>OBSERVE → INFER → DECIDE → SURVEY → LEARN → REPLAN</b>
+        </div>
         <div id="timeline" class="timeline"></div>
       </section>
     </main>
   </div>
+
   <script src="/static/app.js"></script>
 </body>
 </html>

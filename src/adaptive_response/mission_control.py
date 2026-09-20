@@ -43,7 +43,13 @@ _INCIDENT_PREFERRED_MIN_SITES = 12
 _DRAWS_PER_MODEL = 60
 _Q_BELIEF_VALUES = (0.05, 0.10, 0.20)
 _EFFORT_LEVELS = (1, 3, 6)
-_EFFORT_VALUE_RETENTION = 0.60
+_DEMO_MISSION_HORIZON = 3
+_EFFORT_INFORMATION_RETENTION = 0.65
+_EFFORT_DETECTION_RETENTION_LOW = 0.55
+_EFFORT_DETECTION_RETENTION_MEDIUM = 0.68
+_EFFORT_DETECTION_RETENTION_HIGH = 0.82
+_EFFORT_MEDIUM_OCCUPANCY = 0.25
+_EFFORT_HIGH_OCCUPANCY = 0.55
 _TOP_PROPAGATED_CHANGES = 5
 _TOP_RECOMMENDATIONS = 5
 _TOP_WORLDS = 5
@@ -326,11 +332,22 @@ class MissionControlFrontierPlanner:
         if not options:
             raise ValueError("No allowed effort level fits remaining budget.")
 
+        occupancy_belief = float(spatial.p_by_site()[site_id])
+        if occupancy_belief >= _EFFORT_HIGH_OCCUPANCY:
+            detection_retention_required = _EFFORT_DETECTION_RETENTION_HIGH
+            occupancy_band = "high"
+        elif occupancy_belief >= _EFFORT_MEDIUM_OCCUPANCY:
+            detection_retention_required = _EFFORT_DETECTION_RETENTION_MEDIUM
+            occupancy_band = "medium"
+        else:
+            detection_retention_required = _EFFORT_DETECTION_RETENTION_LOW
+            occupancy_band = "exploratory"
+
         chosen = options[-1]
         for row in options:
             if (
-                float(row["information_retention"]) >= _EFFORT_VALUE_RETENTION
-                and float(row["detection_power_retention"]) >= _EFFORT_VALUE_RETENTION
+                float(row["information_retention"]) >= _EFFORT_INFORMATION_RETENTION
+                and float(row["detection_power_retention"]) >= detection_retention_required
             ):
                 chosen = row
                 break
@@ -342,9 +359,18 @@ class MissionControlFrontierPlanner:
             "recommended_effort": chosen_effort,
             "effort_saved_vs_max": max_effort - chosen_effort,
             "max_feasible_effort": max_effort,
-            "retention_threshold": _EFFORT_VALUE_RETENTION,
+            "occupancy_belief": occupancy_belief,
+            "occupancy_band": occupancy_band,
+            "information_retention_required": _EFFORT_INFORMATION_RETENTION,
+            "detection_power_retention_required": detection_retention_required,
             "options": [dict(row) for row in options],
-            "rule": "smallest_effort_retaining_information_and_detection_power",
+            "rule": "occupancy_aware_smallest_effort_retaining_information_and_detection_power",
+            "design_note": (
+                "Exploratory low-belief sites accept a larger reduction in conditional "
+                "detection power to preserve field capacity; high-belief sites require "
+                "much stronger detection-power retention. Thresholds are product design "
+                "choices for the RAMP demo, not ecological constants."
+            ),
         }
 
     def plan(
@@ -795,6 +821,17 @@ class MissionControlSession:
         self._world_mass_before = self._ecological_world_mass_map(spatial_before)
 
         transition = loop.execute_pending()
+        if (
+            not transition.done
+            and transition.public_state_after.round >= _DEMO_MISSION_HORIZON
+        ):
+            loop.force_complete()
+            transition = replace(
+                transition,
+                next_mission=None,
+                done=True,
+            )
+
         self._last_transition = transition
         self._last_counterfactual_next = self._counterfactual_next_without_evidence(
             transition,
@@ -909,6 +946,7 @@ class MissionControlSession:
                 "mission": transition.mission,
                 "observations": transition.observations,
                 "effort_spent": int(transition.simulator_metrics["effort_spent"]),
+                "decision_receipt": deepcopy(self._last_decision_receipt),
             }
         )
         self._events.append(
@@ -945,8 +983,11 @@ class MissionControlSession:
                 {
                     "kind": "complete",
                     "round": transition.observations.round,
-                    "title": "Field budget exhausted",
-                    "detail": "Reveal gate is now available.",
+                    "title": "Response window complete",
+                    "detail": (
+                        "Three field deployments are complete. Any unspent effort "
+                        "remains preserved capacity; reveal is now available."
+                    ),
                 }
             )
 
@@ -1100,13 +1141,46 @@ class MissionControlSession:
 
         performance = None
         if self._revealed_world is not None:
+            marine_performance = self._comparison_receipt["marine"]
+            static_performance = self._comparison_receipt["static"]
+            you_performance = self._judge_performance(self._revealed_world)
+            effort_saved_vs_static = (
+                int(static_performance["effort_spent"])
+                - int(marine_performance["effort_spent"])
+            )
             performance = {
-                "marine": self._comparison_receipt["marine"],
-                "static": self._comparison_receipt["static"],
-                "you": self._judge_performance(self._revealed_world),
+                "marine": marine_performance,
+                "static": static_performance,
+                "you": you_performance,
+                "resource_receipt": {
+                    "marine_effort_spent": int(marine_performance["effort_spent"]),
+                    "static_effort_spent": int(static_performance["effort_spent"]),
+                    "effort_saved_vs_static": effort_saved_vs_static,
+                    "effort_reduction_fraction_vs_static": (
+                        effort_saved_vs_static / float(static_performance["effort_spent"])
+                        if static_performance["effort_spent"]
+                        else 0.0
+                    ),
+                    "marine_detected_occupied": int(
+                        marine_performance["detected_occupied"]
+                    ),
+                    "static_detected_occupied": int(
+                        static_performance["detected_occupied"]
+                    ),
+                    "detected_delta_marine_minus_static": int(
+                        marine_performance["detected_occupied"]
+                    )
+                    - int(static_performance["detected_occupied"]),
+                    "claim_scope": (
+                        "Illustrative blinded synthetic incident on the real monitoring "
+                        "graph; effort units are field-capacity units, not dollars."
+                    ),
+                },
                 "interpretation": (
-                    "Single-incident realized outcomes can favor any path by chance. "
-                    "Use ex-ante decision quality and aggregate frozen audits for policy claims."
+                    "Realized detections are stochastic. A single interactive path can "
+                    "beat Marine by luck or lose by luck. Decision receipts therefore "
+                    "separate ex-ante action quality from realized outcome; aggregate "
+                    "policy claims require the frozen case audit."
                 ),
             }
 
@@ -1126,11 +1200,12 @@ class MissionControlSession:
             "high_edge_mass": high_mass,
             "dominant_edge": dominant_edge,
             "dominant_edge_mass": dominant_edge_mass,
-            "edge_concentrated": dominant_edge_mass >= 0.60,
+            "boundary_pressure": dominant_edge_mass,
             "edge_note": (
-                "Posterior concentration at an edge of the tested q support can signal "
-                "limited support or q/occupancy confounding. It is not the same as "
-                "posterior-predictive model stress."
+                "Mass near one edge of the tested q support is a boundary-pressure "
+                "diagnostic, not a stress score. It can suggest that q support is narrow "
+                "or that occupancy and detectability remain confounded. Posterior-"
+                "predictive model stress is computed separately from observation surprise."
             ),
         }
 
@@ -1183,9 +1258,18 @@ class MissionControlSession:
                 "initial_budget": self._budget,
                 "remaining_budget": public.remaining_budget,
                 "spent_budget": self._budget - public.remaining_budget,
+                "capacity_preserved": public.remaining_budget,
                 "teams": public.teams,
                 "round": public.round,
+                "mission_horizon": _DEMO_MISSION_HORIZON,
+                "missions_remaining": max(
+                    0, _DEMO_MISSION_HORIZON - public.round
+                ),
                 "effort_levels": list(_EFFORT_LEVELS),
+                "horizon_semantics": (
+                    "Hackathon response window: up to three field deployments. "
+                    "Unspent effort remains preserved capacity."
+                ),
             },
             "mission": self._serialize_mission(self._mission),
             "static_response": {
@@ -1499,18 +1583,79 @@ class MissionControlSession:
         mission_efforts: list[int] = []
         new_field_detections = 0
 
-        while loop.phase not in (LoopPhase.COMPLETE, LoopPhase.REVEALED):
+        mission_receipts: list[dict[str, Any]] = []
+
+        while (
+            loop.phase not in (LoopPhase.COMPLETE, LoopPhase.REVEALED)
+            and len(mission_efforts) < _DEMO_MISSION_HORIZON
+        ):
+            spatial_before = loop.current_spatial_belief
             transition = loop.run_round()
             spent = int(transition.simulator_metrics["effort_spent"])
             cumulative_effort += spent
             mission_efforts.append(spent)
             detected = set(detected_snapshots[-1][1])
+
+            first_observation = (
+                transition.observations.observations[0]
+                if transition.observations.observations
+                else None
+            )
+            if first_observation is not None:
+                predictive_detection = SpatialBeliefEngine.predictive_detection_probability(
+                    spatial_before,
+                    site_id=first_observation.site_id,
+                    effort=first_observation.effort,
+                )
+                conditional_detection = (
+                    MissionControlFrontierPlanner._conditional_detection_if_occupied(
+                        spatial_before,
+                        site_id=first_observation.site_id,
+                        effort=first_observation.effort,
+                    )
+                )
+                expected_information_gain = (
+                    MissionControlFrontierPlanner._expected_information_gain_bits(
+                        spatial_before,
+                        site_id=first_observation.site_id,
+                        effort=first_observation.effort,
+                    )
+                )
+                mission_receipts.append(
+                    {
+                        "site_id": first_observation.site_id,
+                        "effort": int(first_observation.effort),
+                        "detection": bool(first_observation.detection),
+                        "occupancy_belief_before": float(
+                            spatial_before.p_by_site()[first_observation.site_id]
+                        ),
+                        "predictive_detection_probability": float(
+                            predictive_detection
+                        ),
+                        "conditional_detection_if_occupied": float(
+                            conditional_detection
+                        ),
+                        "conditional_miss_if_occupied": float(
+                            1.0 - conditional_detection
+                        ),
+                        "expected_information_gain_bits": float(
+                            expected_information_gain
+                        ),
+                    }
+                )
+
             for observation in transition.observations.observations:
                 mission_sites.append(observation.site_id)
                 if observation.detection:
                     detected.add(observation.site_id)
                     new_field_detections += 1
             detected_snapshots.append((cumulative_effort, detected))
+
+            if (
+                len(mission_efforts) >= _DEMO_MISSION_HORIZON
+                and loop.phase not in (LoopPhase.COMPLETE, LoopPhase.REVEALED)
+            ):
+                loop.force_complete()
 
         hidden = loop.reveal()
         occupied = {
@@ -1531,8 +1676,26 @@ class MissionControlSession:
             }
             for effort, detected in detected_snapshots
         ]
+        for receipt in mission_receipts:
+            true_occupied = receipt["site_id"] in occupied
+            receipt["true_occupied"] = true_occupied
+            if true_occupied and receipt["detection"]:
+                receipt["realization"] = "occupied_and_detected"
+            elif true_occupied:
+                receipt["realization"] = "occupied_but_missed"
+            else:
+                receipt["realization"] = "surveyed_not_occupied"
+
         final_detected = int(curve[-1]["detected_occupied"])
         high_effort_equivalent = 6 * len(mission_efforts)
+        expected_detection_sum = sum(
+            float(row["predictive_detection_probability"])
+            for row in mission_receipts
+        )
+        expected_information_sum = sum(
+            float(row["expected_information_gain_bits"])
+            for row in mission_receipts
+        )
         return {
             "name": name,
             "occupied_total": occupied_total,
@@ -1540,9 +1703,19 @@ class MissionControlSession:
             "undetected_occupied": occupied_total - final_detected,
             "mission_sites": mission_sites,
             "mission_efforts": mission_efforts,
+            "mission_receipts": mission_receipts,
             "missions_completed": len(mission_efforts),
+            "mission_horizon": _DEMO_MISSION_HORIZON,
             "field_detections_beyond_initial": new_field_detections,
             "effort_spent": cumulative_effort,
+            "capacity_preserved": max(0, int(incident.budget) - cumulative_effort),
+            "expected_detection_sum": expected_detection_sum,
+            "expected_information_gain_bits_sum": expected_information_sum,
+            "expected_information_gain_per_effort": (
+                expected_information_sum / cumulative_effort
+                if cumulative_effort > 0
+                else None
+            ),
             "effort_per_detected_occupied": (
                 cumulative_effort / final_detected
                 if final_detected > 0
@@ -1632,7 +1805,15 @@ class MissionControlSession:
         return {
             "effort_spent": spent,
             "budget_remaining": max(0, self._budget - spent),
+            "capacity_preserved": max(0, self._budget - spent),
+            "capacity_preserved_fraction": (
+                max(0, self._budget - spent) / float(self._budget)
+                if self._budget
+                else 0.0
+            ),
             "missions_completed": completed,
+            "mission_horizon": _DEMO_MISSION_HORIZON,
+            "missions_remaining": max(0, _DEMO_MISSION_HORIZON - completed),
             "confirmed_detections": int(curve[-1]["field_detections"]) if curve else 1,
             "next_recommended_effort": next_effort,
             "high_effort_equivalent_for_completed_missions": high_equivalent,
@@ -1640,8 +1821,9 @@ class MissionControlSession:
                 0, high_equivalent - spent
             ),
             "semantics": (
-                "Effort avoided compares completed missions with using effort=6 "
-                "for every one of those same mission actions; it is not a dollar estimate."
+                "The judging response window allows three deployments. Marine may "
+                "leave part of the 18-unit field budget unspent; preserved capacity is "
+                "the direct RAMP time/resource signal. No dollar conversion is assumed."
             ),
         }
 
@@ -1670,12 +1852,27 @@ class MissionControlSession:
         ]
         mission_sites: list[str] = []
         mission_efforts: list[int] = []
+        mission_receipts: list[dict[str, Any]] = []
         new_field_detections = 0
 
         for row in self._judge_history:
             spent = int(row["effort_spent"])
             cumulative_effort += spent
             mission_efforts.append(spent)
+            decision_receipt = row.get("decision_receipt")
+            if isinstance(decision_receipt, dict):
+                receipt = dict(decision_receipt)
+                site_id = str(receipt.get("site_id"))
+                true_occupied = site_id in occupied
+                receipt["true_occupied"] = true_occupied
+                if true_occupied and bool(receipt.get("detection")):
+                    receipt["realization"] = "occupied_and_detected"
+                elif true_occupied:
+                    receipt["realization"] = "occupied_but_missed"
+                else:
+                    receipt["realization"] = "surveyed_not_occupied"
+                mission_receipts.append(receipt)
+
             for observation in row["observations"].observations:
                 mission_sites.append(observation.site_id)
                 if observation.detection:
@@ -1695,6 +1892,11 @@ class MissionControlSession:
 
         final_detected = len(detected & occupied)
         high_effort_equivalent = 6 * len(mission_efforts)
+        expected_detection_sum = sum(
+            float(row["predictive_detection_probability"])
+            for row in mission_receipts
+            if row.get("predictive_detection_probability") is not None
+        )
         return {
             "name": "you",
             "occupied_total": occupied_total,
@@ -1702,9 +1904,13 @@ class MissionControlSession:
             "undetected_occupied": occupied_total - final_detected,
             "mission_sites": mission_sites,
             "mission_efforts": mission_efforts,
+            "mission_receipts": mission_receipts,
             "missions_completed": len(mission_efforts),
+            "mission_horizon": _DEMO_MISSION_HORIZON,
             "field_detections_beyond_initial": new_field_detections,
             "effort_spent": cumulative_effort,
+            "capacity_preserved": max(0, self._budget - cumulative_effort),
+            "expected_detection_sum": expected_detection_sum,
             "effort_per_detected_occupied": (
                 cumulative_effort / final_detected
                 if final_detected > 0

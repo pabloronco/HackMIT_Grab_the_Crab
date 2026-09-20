@@ -1,230 +1,298 @@
 # Interactive Judge Mode UI Specification
 
-**Status:** CURRENT DEFAULT for HackMIT judging branch `ui/interactive-judge-mode`.
+**Status:** CURRENT DEFAULT for HackMIT judging branch `ui/ramp-final-pass`.
 
 ## Product sentence
 
-Marine is mission control for ecological first response: it keeps several plausible invasion extents alive, recommends where to survey next, interprets imperfect field evidence, and changes the next mission when the belief changes.
+Marine is ecological first-response mission control: it maintains explicit probabilistic belief over a hidden invasive-species extent, recommends **where to survey and how much effort to spend**, interprets imperfect field evidence, and replans when that evidence changes what remains plausible.
 
-## Judge experience
+## Frozen judging experience
 
-1. A confirmed first detection is visible on a real monitoring-site graph.
-2. Marine shows the current posterior occupancy belief and its top five recommended survey sites.
-3. The judge can follow Marine or override the site.
-4. The judge chooses field effort from `{1, 3, 6}`.
-5. The field result is simulated against hidden truth that remains unavailable to the browser/planner.
-6. The spatial Bayesian engine reweights ecological extents and detectability hypotheses.
-7. The UI highlights:
-   - surveyed-site belief before/after;
-   - largest propagated belief changes at unsurveyed sites;
-   - reordered top ecological extents;
-   - posterior-predictive model stress;
-   - the changed next recommendation when applicable.
-8. The loop repeats until the field budget is exhausted.
-9. The evaluator reveal unlocks hidden truth.
-10. A receipt compares Marine, Static Response, and the judge on the same hidden incident and same budget.
+1. A confirmed first detection appears on the real monitoring-site graph.
+2. The hidden ecological extent stays locked.
+3. Marine shows the current posterior occupancy belief and a next-site recommendation.
+4. Marine also recommends effort from `{1, 3, 6}`.
+5. The judge may follow Marine or override site and/or effort.
+6. The field result is generated against the same blinded synthetic incident.
+7. Explicit spatial Bayes updates occupancy-world weights and q uncertainty.
+8. The UI shows local belief change, propagated changes, probable-world movement, q/detectability diagnostics, model stress and any evidence-caused mission update.
+9. The judging response window ends after **three field deployments**. Unspent effort remains preserved capacity.
+10. Reveal unlocks hidden truth and a receipt comparing Marine, Static Response and the interactive path.
 
-## Main-screen information hierarchy
+The three-deployment window is a **demo/product horizon**. Formal R8/R10 protocols and conclusions remain unchanged.
 
-### Always visible
+## Main information hierarchy
+
+### Hero layer — always visible
 - confirmed first detection;
-- incident number;
-- remaining field budget;
-- round;
-- hidden truth lock;
-- monitoring graph;
-- posterior occupancy belief at nodes;
-- top Marine recommendations;
-- selected site;
-- selected effort;
-- latest field result;
-- largest propagated changes.
+- current incident and deployment count;
+- remaining field capacity;
+- real monitoring-coast map;
+- Marine next site;
+- Marine recommended effort;
+- judge site/effort controls;
+- field return;
+- `MISSION UPDATED BY EVIDENCE` when causal replan occurs;
+- RAMP capacity-preservation card.
 
-### Explainability / secondary
+### Explainability layer
 - top unique ecological extents marginalized over q;
 - q posterior and q mean;
-- predictive detection probabilities for effort 1/3/6;
-- posterior-predictive observation probability and surprise.
+- occupancy belief;
+- conditional detection power if occupied;
+- posterior-predictive probability of detection;
+- effort options and expected information gain;
+- decision-quality receipt;
+- posterior-predictive model stress.
 
-### Reveal-only
+### Reveal layer
 - true occupied sites;
-- hidden world family provenance;
-- comparator outcome scores;
-- effort-vs-detected-occupied trajectory chart.
+- occupied-and-detected / occupied-but-missed mission receipts;
+- Marine / Static / Your Path detection outcomes;
+- actual effort spent and capacity preserved;
+- effort-vs-detected-occupied trajectory.
 
 ## Map semantics
 
-The map is a graph of discrete monitoring sites. Node intensity represents the chosen observable layer:
+The map uses real monitoring-site coordinates from the frozen real graph.
 
-- **Probability:** posterior marginal P(occupied).
-- **Habitat:** site habitat score used as model/context input.
-- **Survey History:** cumulative observed effort.
+Available layers are:
+- posterior occupancy belief;
+- posterior occupancy uncertainty;
+- habitat suitability proxy;
+- historical direct logger temperature when available;
+- exposure;
+- eelgrass;
+- salt marsh;
+- field effort in the current incident.
 
-No continuous interpolated probability surface is claimed.
+Environmental values are site context only unless the ecological world model explicitly uses them. Missing data remain missing.
 
-Clicking a possible-world card temporarily shows that occupancy extent as a **what-if hypothesis view**, explicitly labelled as not hidden truth.
+**Temperature:** direct logger summaries only. No interpolation or imputation is allowed. If an incident subgraph has no direct temperature records, the layer is disabled.
 
-## Recommendation semantics
+Site-centered colored halos are visual emphasis around discrete monitoring sites. They are **not** a continuous interpolated probability surface.
 
-The current product planner is Frontier. Candidate order is:
+The map supports zoom and pan so closely spaced sites can be separated.
+
+## Nearby low-belief sites
+
+Distance from the confirmed detection is not itself occupancy probability. Site belief is a posterior marginal over the whole ecological hypothesis ensemble conditioned on all current evidence.
+
+Therefore a nearby site can legitimately have lower belief than a farther site. The UI must explain this instead of silently implying a distance-decay rule.
+
+A low-belief frontier site may still be operationally valuable because observing it can distinguish competing plausible invasion extents.
+
+## Site recommendation semantics
+
+Current product site ordering is Frontier:
 
 1. frontier first;
 2. higher occupancy belief;
 3. higher uncertainty;
-4. deterministic site id tie-break.
+4. deterministic site-id tie break.
 
-The browser does not reproduce this rule. The backend exports the exact ranking.
+The browser never reimplements this rule; it renders backend diagnostics.
 
-For each candidate, the backend may also show posterior-predictive detection probability for effort 1, 3, and 6. This is descriptive evidence support, not an optimized effort recommendation under Frontier.
+Static Response uses the same initial Frontier logic but precommits three effort-6 targets at t0. It is a benchmark design, **not** an expert/professional/WDFW simulation.
 
-## Human override
+## Effort recommendation semantics
 
-The system is advisory.
+For a selected candidate site and each feasible `e ∈ {1,3,6}`, Marine calculates:
 
-The judge may select any valid delimitation site and effort allowed by budget. The selection is wrapped in a normal `MissionAction` and executed through the same environment/belief/update path.
+- `P(detection at site with effort e | current posterior)`;
+- `P(detection | occupied, effort e, posterior over q)`;
+- expected reduction in marginal occupancy entropy.
 
-The UI may show the chosen site's Marine rank. It must not label the judge's choice as wrong.
+Marine then chooses the smallest effort retaining enough of the maximum-effort information value and conditional detection power. Detection-power retention is stricter at higher occupancy belief.
 
-## Possible worlds
+This is a transparent RAMP product rule. Its thresholds are **DESIGN CHOICES**, not ecological constants and not agency preferences.
 
-The inference engine is joint over ecological occupancy extent and q.
+The judge may override effort.
 
-UI world cards aggregate posterior mass over q for each unique ecological occupancy map. This avoids showing duplicate `(world, q)` rows.
+## q / detectability semantics
 
-A card may display:
-- posterior mass;
-- posterior change since the latest evidence packet;
-- occupied-site count;
-- family provenance labels when available.
+`q = P(detection in one check | occupied)`.
 
-Do not implement "optimal mission if this world were true" in the MVP.
+q is:
+- not occupancy probability;
+- not simulator truth exposed to the planner;
+- not directly set by the judge;
+- inferred jointly with ecological extent from field evidence.
+
+Operationally, the judge controls effort. At effort `e`, the occupied-site detection probability under a fixed q is:
+
+`1 - (1 - q)^e`.
+
+### Boundary pressure vs model stress
+
+If posterior mass piles up at the minimum or maximum q in the tested support, the UI calls this **boundary pressure**.
+
+Boundary pressure may indicate:
+- tested q support is narrow;
+- occupancy and detectability remain confounded.
+
+It does **not** automatically mean model stress is high.
+
+Model stress is separate: it is the posterior-predictive probability/surprise of the actual observed field result.
+
+## Predicted detection vs detection power
+
+**Detection power if occupied** answers:
+
+> If this site truly contains the invasive species, how likely are we to detect it with this effort?
+
+It marginalizes q uncertainty but conditions on occupancy.
+
+**Predicted detection** answers:
+
+> Before knowing whether the site is occupied, how likely are we to get a detection here with this effort?
+
+It combines:
+- occupancy uncertainty;
+- detectability uncertainty;
+- effort.
+
+This distinction must remain visible in the UI.
+
+## RAMP resource semantics
+
+Maximum available response capacity is 18 effort units.
+
+The judging response window contains up to three field deployments. Marine may leave capacity unspent.
+
+Primary RAMP quantities:
+- effort spent;
+- capacity preserved;
+- effort avoided relative to effort 6 on the same number of deployments;
+- detections achieved at that expenditure.
+
+The UI may optionally translate saved effort into local minutes or dollars only from values explicitly entered by the operator. Such conversion values are display-only and never affect inference/planning.
+
+Do not present a generic dollar-savings claim without a user-supplied conversion.
+
+## Good decision vs lucky outcome
+
+Detection is stochastic.
+
+A good ex-ante mission can fail to detect a population that is truly present. Therefore the UI keeps a pre-outcome decision receipt.
+
+After reveal, each surveyed Marine site is classified as:
+- `occupied_and_detected`;
+- `occupied_but_missed`;
+- `surveyed_not_occupied`.
+
+For an occupied-but-missed mission, show the conditional miss probability at the chosen effort. This demonstrates that the engine can make a defensible decision and still receive an unlucky field realization.
+
+Do not retroactively label a mission as poor solely because it produced a non-detection.
+
+## Marine vs Static vs Your Path
+
+**Marine vs Static Response** is the policy comparison in the demo.
+
+**Your Path** is an interactive stochastic realization. It is deliberately secondary. A judge can sometimes obtain more realized detections than Marine by chance; the UI must not rewrite or hide that result.
+
+When that happens, explain that one stochastic realization is not a policy benchmark and show the pre-outcome decision receipts.
+
+Aggregate/fixed-case evaluation, not one live draw, is required for policy-performance claims.
+
+## Probable worlds
+
+The inference engine is joint over ecological extent and q.
+
+World cards aggregate posterior mass over q for each unique occupancy extent. Cards are bounded/scrollable and must never overflow their panel.
+
+Clicking a world enables a labelled **what-if hypothesis view** on the map. It does not reveal truth and does not invoke a world-conditioned planner.
 
 ## Model stress
 
-After an observation, show:
-- P(observed result | pre-update posterior);
+After a field return show:
+- `P(observed result | pre-update posterior)`;
 - surprise in bits;
-- explicit impossible-under-current-ensemble state when probability is zero.
+- impossible-under-current-ensemble status if probability is zero.
 
-No universal warning threshold is asserted.
-No automatic scenario-set expansion is claimed.
+No arbitrary alert threshold is presented as ecological fact.
 
-## Comparator receipt
+## UI layout
 
-### Marine
-Adaptive Frontier: re-runs after every field result.
+Desktop hierarchy:
 
-### Static Response
-Same initial Frontier logic, three effort-6 missions committed at t0. Later evidence is recorded but cannot change the precommitted targets.
+- first row: Mission / dominant Map / Probable Worlds;
+- second row: RAMP resource receipt / Why This Mission / Detectability;
+- third row: two simple resource/evidence charts;
+- fourth row: reveal/evaluation;
+- final full-width row: Decision Log.
 
-### You
-The judge's actual live choices.
+The Decision Log must never sit beneath a taller sticky mission panel.
 
-The comparator must not be labelled "expert", "professional", "WDFW", or "standard of care".
-
-Primary visible outcome:
-- true occupied sites confirmed/detected;
-- true occupied sites remaining undetected;
-- cumulative effort trajectory.
-
-Hidden truth is available only after reveal.
+Design direction: quiet white surfaces, strong spacing, minimal border hierarchy, one primary blue action, limited accent colors, progressive disclosure — closer to a polished native productivity tool than a dense dashboard.
 
 ## Reproducible case library
 
-`configs/ui_case_manifest_v1.json` contains 100 frozen demo case seeds.
+`configs/ui_case_manifest_v1.json` contains 100 frozen demo seeds on the real monitoring graph.
 
-These are:
-- real monitoring-site graph geometry/context;
-- synthetic hidden ecological truth;
-- explicit imperfect detection;
-- deterministic potential field outcomes;
-- independently sampled belief ensemble.
+These are synthetic hidden incidents for counterfactual scoring; they are not represented as 100 historical outbreaks.
 
-They are **not** 100 historical outbreaks.
+A separate resource-aware case audit chooses illustrative hero cases under a predeclared rubric. Hero selection must not be presented as aggregate performance.
 
 ## API contract
 
 - `GET /api/state` — observable UI snapshot.
-- `GET /api/cases` — frozen case library metadata.
-- `POST /api/reset` — reset by `case_id` or ad-hoc seed.
-- `POST /api/deploy` — human-in-loop `site_id + effort`, execute field mission, Bayes update, replan.
-- `POST /api/reveal` — reveal only after completion.
+- `GET /api/cases` — frozen case metadata.
+- `POST /api/reset` — reset by case id or ad-hoc seed.
+- `POST /api/deploy` — operator site + effort; execute field mission, Bayes update, replan.
+- `POST /api/reveal` — hidden truth only after completion.
 
-Legacy `/api/plan` and `/api/execute` remain for rehearsal/backwards compatibility.
+Legacy rehearsal endpoints may remain but are not the primary UI path.
 
 ## Claim discipline
 
-Safe demo claims:
-- "New evidence changes the posterior belief."
-- "Non-detection is not absence; effort and detectability matter."
-- "Marine can reallocate the next mission after evidence arrives."
-- "The judge can override Marine; the engine remains advisory."
-- "The hidden extent is synthetic and blinded so counterfactual policies can be scored."
-- "Real monitoring sites and real-data-constrained context are used."
+Safe:
+- “Non-detection is not absence; effort and detectability matter.”
+- “Marine recommends both where to survey and how much effort to spend.”
+- “Unused effort is preserved field capacity in this three-deployment response window.”
+- “New evidence can change the next mission.”
+- “This selected case is an illustrative blinded synthetic incident on a real monitoring graph.”
 
-Do not claim:
-- real-world operational effectiveness;
-- superiority to field professionals;
+Not safe without separate validation:
+- proven real-world cost savings;
+- universal superiority to human operators;
 - ecological optimality;
 - WDFW endorsement;
-- that every demo case is historical;
-- that the learned RL policy is the deployed planner.
+- learned-policy superiority;
+- treating the selected hero incident as aggregate evidence.
 
-## Acceptance gate
+## Acceptance gate before merge
 
-The judging UI is ready for merge when:
-- one case can run end-to-end through custom site/effort choices;
-- truth is absent from all pre-reveal snapshots;
-- same case/site/effort is reproducible;
-- top recommendations and possible extents update after evidence;
-- propagated belief changes are visible;
-- reveal produces a same-incident comparator receipt;
-- existing core tests remain green;
-- a live browser rehearsal can be completed reliably in under ~90 seconds.
+- targeted mission-control tests green;
+- full pytest green;
+- same case/action deterministic;
+- hidden truth absent before reveal;
+- exactly three judging deployments complete the response window;
+- unspent effort remains preserved;
+- Marine site+effort recommendation visible;
+- map zoom/pan works in Safari;
+- environmental layers do not fabricate missing values;
+- probable-world panel does not overflow;
+- q boundary pressure and model stress remain distinct;
+- reveal shows stochastic miss receipts;
+- Decision Log remains fully visible;
+- 100-case resource-aware audit completed before freezing final hero case;
+- one 90-second browser rehearsal completed successfully.
 
-
-## Local validation / rehearsal commands
-
-From the repository root:
+## Local validation
 
 ```bash
 git fetch origin
-git checkout ui/interactive-judge-mode
-git pull
+git switch ui/ramp-final-pass
+git pull origin ui/ramp-final-pass
 uv pip install -e ".[dev,ui]"
 
 pytest tests/test_frontier_planner.py tests/test_mission_control.py tests/test_spatial_mission_loop.py tests/test_real_incident_source.py -q
 pytest -q
 
-python scripts/smoke_interactive_judge_mode.py --case-id incident_001
+python scripts/smoke_interactive_judge_mode.py --case-id incident_097 --effort marine
+python scripts/audit_ui_hero_cases.py --csv reports/ui_ramp_case_audit.csv
 python -m adaptive_response.web_app
 ```
 
-Then open `http://127.0.0.1:8000` and rehearse at least:
-
-1. follow Marine with effort 6 for a full incident;
-2. override Marine once, then continue;
-3. inspect a possible extent and return to posterior;
-4. use Probability / Habitat / Field History layers;
-5. reveal and inspect the three-track receipt;
-6. reset the same case and verify the same site+effort produces the same field outcome;
-7. run one low-effort path to confirm the interface does not dead-end.
-
-Do not merge the judging branch until the full suite and one ~90-second browser rehearsal are green.
-
-
-## Polished real-coast dashboard implementation
-
-The implemented judging surface now follows the reviewed light marine-dashboard direction:
-
-- **Left:** Marine recommendation, frozen Static Response route, operator site selector, effort selector, deploy control.
-- **Center:** dominant real-coast map using actual monitoring-site latitude/longitude and the current graph edges.
-- **Right:** probable ecological extents and detectability posterior.
-- **Below map:** explicit, source-faithful "Why this mission?" evidence plus latest return / propagated changes / model stress.
-- **Bottom:** live observable response curve before reveal and evaluator receipt after reveal.
-
-The map uses OpenStreetMap raster tiles when network access is available, with required attribution. Tiles are cartography only. Marine's graph state, posterior, recommendations, field outcomes and evidence remain local/backend-derived. If external tiles fail, the SVG graph still renders on a water fallback.
-
-Probability visualization is node-centered. Colored halos are visual emphasis around discrete survey sites; they must not be described as a continuous interpolated ecological probability field.
-
-The default dashboard incident is `incident_097`, selected under the preregistered illustrative-case rubric. The scenario selector still exposes all 100 frozen cases.
+Open `http://127.0.0.1:8000` and verify the acceptance gate before merging.
