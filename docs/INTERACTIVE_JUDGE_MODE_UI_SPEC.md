@@ -248,7 +248,7 @@ Legacy rehearsal endpoints may remain but are not the primary UI path.
 
 Safe:
 - “Non-detection is not absence; effort and detectability matter.”
-- “Catch the Crab recommends both where to survey and how much effort to spend.”
+- “Grab the Crab recommends both where to survey and how much effort to spend.”
 - “Unused effort is preserved field capacity in this three-deployment response window.”
 - “New evidence can change the next mission.”
 - “This selected case is an illustrative blinded synthetic incident on a real monitoring graph.”
@@ -269,7 +269,7 @@ Not safe without separate validation:
 - hidden truth absent before reveal;
 - exactly three judging deployments complete the response window;
 - unspent effort remains preserved;
-- Catch the Crab site+effort recommendation visible;
+- Grab the Crab site+effort recommendation visible;
 - map zoom/pan works in Safari;
 - environmental layers do not fabricate missing values;
 - probable-world panel does not overflow;
