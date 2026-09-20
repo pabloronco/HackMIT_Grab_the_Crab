@@ -116,7 +116,7 @@ def _load_case_manifest() -> list[dict[str, Any]]:
 
 
 def _masked_for_product_recommendations(graph_state: GraphState) -> GraphState:
-    """Exclude already-observed nodes from Marine's recommendation list.
+    """Exclude already-observed nodes from the adaptive planner's recommendation list.
 
     This is a product/demo choice, not a change to the benchmark Frontier baseline.
     A human override may still revisit a site; only automatic recommendations are
@@ -179,7 +179,7 @@ class MissionControlFrontierPlanner:
     detection power under the q posterior, then chooses the smallest effort retaining
     at least 60% of the maximum-effort value on both dimensions.
 
-    This is a transparent DESIGN CHOICE for the RAMP "Save Time. Save Money." demo.
+    This is a transparent DESIGN CHOICE for the resource-efficiency demo.
     It is not an ecological constant and it does not use hidden truth.
     """
 
@@ -369,7 +369,7 @@ class MissionControlFrontierPlanner:
                 "Exploratory low-belief sites accept a larger reduction in conditional "
                 "detection power to preserve field capacity; high-belief sites require "
                 "much stronger detection-power retention. Thresholds are product design "
-                "choices for the RAMP demo, not ecological constants."
+                "choices for the resource-efficiency demo, not ecological constants."
             ),
         }
 
@@ -497,7 +497,7 @@ class MissionControlSession:
     """Interactive product adapter over the real spatial mission loop.
 
     The browser receives observable state only. Hidden truth and simulator q remain
-    evaluator-only until the reveal gate opens. Marine recommends; the operator may
+    evaluator-only until the reveal gate opens. The adaptive planner recommends; the operator may
     follow or override both site and effort. Field evidence is still interpreted by
     the explicit spatial Bayesian engine before the next recommendation is produced.
     """
@@ -685,7 +685,7 @@ class MissionControlSession:
             {
                 "kind": "mission",
                 "round": loop.current_public_state.round,
-                "title": "Marine recommendation accepted",
+                "title": "Adaptive recommendation accepted",
                 "detail": self._mission_text(self._mission),
             }
         )
@@ -793,7 +793,7 @@ class MissionControlSession:
                 "kind": "mission",
                 "round": public.round,
                 "title": (
-                    "Marine recommendation selected"
+                    "Adaptive recommendation selected"
                     if source == "marine_recommendation"
                     else "Human override selected"
                 ),
@@ -802,7 +802,7 @@ class MissionControlSession:
                     + (
                         ""
                         if marine_rank is None
-                        else f" / Marine rank #{marine_rank}"
+                        else f" / recommendation rank #{marine_rank}"
                     )
                 ),
             }
@@ -885,17 +885,17 @@ class MissionControlSession:
             aligned = site_followed and effort_followed
             if aligned and first_observation.detection:
                 interpretation = (
-                    "Marine-aligned decision; the field return produced a detection."
+                    "Recommendation-aligned decision; the field return produced a detection."
                 )
             elif aligned:
                 interpretation = (
-                    "Marine-aligned decision selected before the outcome. "
+                    "Recommendation-aligned decision selected before the outcome. "
                     "A non-detection remains possible under imperfect detection; "
                     "the result does not retroactively make the decision wrong."
                 )
             else:
                 interpretation = (
-                    "Operator override. Compare the realized outcome with Marine's "
+                    "Operator override. Compare the realized outcome with the adaptive planner's "
                     "pre-outcome recommendation rather than treating one stochastic "
                     "return as a policy benchmark."
                 )
@@ -1178,7 +1178,7 @@ class MissionControlSession:
                 },
                 "interpretation": (
                     "Realized detections are stochastic. A single interactive path can "
-                    "beat Marine by luck or lose by luck. Decision receipts therefore "
+                    "beat the adaptive response by luck or lose by luck. Decision receipts therefore "
                     "separate ex-ante action quality from realized outcome; aggregate "
                     "policy claims require the frozen case audit."
                 ),
@@ -1240,7 +1240,7 @@ class MissionControlSession:
                 "outcome_protocol": _CASE_OUTCOME_VERSION,
             },
             "incident": {
-                "label": "Marine invasive species - confirmed first detection",
+                "label": "Marine invasive species — confirmed first detection",
                 "scenario_name": (
                     f"Response incident {self._case_id} / seed site "
                     f"{public.initial_detection}"
@@ -1374,7 +1374,7 @@ class MissionControlSession:
         """Compute the next Frontier mission with the survey recorded but evidence ignored.
 
         This isolates the causal question shown in the UI: did the *field result*
-        change Marine's next recommendation, rather than merely advancing from the
+        change the adaptive planner's next recommendation, rather than merely advancing from the
         just-executed site to another site? The counterfactual keeps the survey action
         itself (effort spent, budget and round advanced) but removes the newly returned
         ecological outcome: detections/status and occupancy belief stay at their
@@ -1760,7 +1760,7 @@ class MissionControlSession:
         return rows
 
     def _resource_curve(self) -> list[dict[str, Any]]:
-        """Per-mission resource trajectory for the RAMP-facing product surface."""
+        """Per-mission resource trajectory for the resource-efficiency product surface."""
 
         cumulative_effort = 0
         cumulative_detections = 1
@@ -1821,9 +1821,9 @@ class MissionControlSession:
                 0, high_equivalent - spent
             ),
             "semantics": (
-                "The judging response window allows three deployments. Marine may "
+                "The judging response window allows three deployments. The adaptive planner may "
                 "leave part of the 18-unit field budget unspent; preserved capacity is "
-                "the direct RAMP time/resource signal. No dollar conversion is assumed."
+                "the direct field-capacity signal. No dollar conversion is assumed."
             ),
         }
 
