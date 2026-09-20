@@ -329,3 +329,10 @@ Open `http://127.0.0.1:8000` and verify the acceptance gate before merging.
 - Heat legend and map values use a muted red → orange → yellow → green scale.
 - Species card contains a static, non-interactive “Other invasive species” preview only to communicate extensibility.
 - Preview list is illustrative and not exhaustive; it must not imply that the current ecological model is calibrated or validated for those additional species.
+
+
+## Final UI freeze correction
+
+- Heat encoding direction: **low = green, high = red**, passing through yellow/orange.
+- “Other invasive species” is a native collapsed disclosure control, closed by default and expandable on click.
+- Opening the drawer is presentation-only and must not alter ecological or planner state.
