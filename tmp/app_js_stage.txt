@@ -403,4 +403,173 @@ function layerDescriptor() {
     provenance: "Posterior Bernoulli entropy",
     value: (node) => clamp01(node.uncertainty),
   };
-  if (state.layer === "habitat") retu
+  if (state.layer === "habitat") return {
+    title: "Habitat suitability proxy",
+    low: "Lower",
+    high: "Higher",
+    provenance: "Real-data-constrained habitat score",
+    value: (node) => clamp01(node.habitat),
+  };
+  if (state.layer === "temperature") {
+    const vals = nodes.map((node) => node.temperature_median_c).filter((value) => value != null).map(Number);
+    if (!vals.length) return {
+      title: "Historical logger temperature",
+      low: "No data",
+      high: "No data",
+      provenance: "No direct logger rows available for this incident subgraph; no imputation performed.",
+      value: () => null,
+    };
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    return {
+      title: "Historical logger temperature",
+      low: `${min.toFixed(1)}°C`,
+      high: `${max.toFixed(1)}°C`,
+      provenance: "Direct Crab Team daily-max logger rows; median by site; missing sites are not imputed",
+      value: (node) => node.temperature_median_c == null ? null : (Number(node.temperature_median_c) - min) / Math.max(0.001, max - min),
+    };
+  }
+  if (state.layer === "exposure") return {
+    title: "ShoreZone exposure",
+    low: "Protected",
+    high: "Exposed",
+    provenance: "WA DNR ShoreZone categorical exposure",
+    value: (node) => ordinalValue(node.exposure),
+  };
+  if (state.layer === "eelgrass") return {
+    title: "Eelgrass",
+    low: "Absent",
+    high: "Continuous",
+    provenance: "WA DNR ShoreZone eelgrass class",
+    value: (node) => ordinalValue(node.eelgrass),
+  };
+  if (state.layer === "salt_marsh") return {
+    title: "Salt marsh",
+    low: "Absent",
+    high: "Continuous",
+    provenance: "WA DNR ShoreZone salt-marsh class",
+    value: (node) => ordinalValue(node.salt_marsh),
+  };
+  if (state.layer === "field_effort") return {
+    title: "Observed field effort",
+    low: "0",
+    high: "More effort",
+    provenance: "Effort spent in the current blinded response incident",
+    value: (node) => Math.min(1, Number(node.effort || 0) / 6),
+  };
+  return {
+    title: "Occupancy belief",
+    low: "Low",
+    high: "High",
+    provenance: "Posterior P(occupied) from the explicit spatial Bayesian engine",
+    value: (node) => clamp01(node.belief),
+  };
+}
+
+function mercatorWorld(lon, lat, zoom) {
+  const scale = 256 * (2 ** zoom);
+  const x = ((Number(lon) + 180) / 360) * scale;
+  const sinLat = Math.sin(Number(lat) * Math.PI / 180);
+  const y = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * scale;
+  return { x, y };
+}
+
+function chooseMapProjection(nodes, width, height) {
+  const geo = nodes.filter((node) => Number.isFinite(Number(node.latitude)) && Number.isFinite(Number(node.longitude)));
+  if (geo.length < 2) return null;
+
+  let baseZoom = 5;
+  for (let zoom = 13; zoom >= 5; zoom -= 1) {
+    const points = geo.map((node) => mercatorWorld(node.longitude, node.latitude, zoom));
+    const xs = points.map((point) => point.x);
+    const ys = points.map((point) => point.y);
+    if (
+      Math.max(...xs) - Math.min(...xs) <= width - 160 &&
+      Math.max(...ys) - Math.min(...ys) <= height - 130
+    ) {
+      baseZoom = zoom;
+      break;
+    }
+  }
+
+  const zoom = Math.max(4, Math.min(17, baseZoom + state.mapZoom));
+  const points = geo.map((node) => mercatorWorld(node.longitude, node.latitude, zoom));
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+  const centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const originX = centerX - width / 2;
+  const originY = centerY - height / 2;
+
+  return {
+    geo: true,
+    zoom,
+    originX,
+    originY,
+    project: (node) => {
+      const point = mercatorWorld(node.longitude, node.latitude, zoom);
+      return { x: point.x - originX, y: point.y - originY };
+    },
+  };
+}
+
+function appendMapTiles(svg, projection, width, height) {
+  svg.appendChild(svgEl("rect", { x: 0, y: 0, width, height, class: "map-fallback-water" }));
+  if (!projection) return;
+
+  const size = 256;
+  const z = projection.zoom;
+  const max = (2 ** z) - 1;
+  const minX = Math.floor(projection.originX / size) - 1;
+  const maxX = Math.floor((projection.originX + width) / size) + 1;
+  const minY = Math.floor(projection.originY / size) - 1;
+  const maxY = Math.floor((projection.originY + height) / size) + 1;
+
+  for (let tx = minX; tx <= maxX; tx += 1) {
+    for (let ty = minY; ty <= maxY; ty += 1) {
+      if (ty < 0 || ty > max) continue;
+      const wrappedX = ((tx % (max + 1)) + (max + 1)) % (max + 1);
+      const image = svgEl("image", {
+        href: `https://tile.openstreetmap.org/${z}/${wrappedX}/${ty}.png`,
+        x: tx * size - projection.originX,
+        y: ty * size - projection.originY,
+        width: size,
+        height: size,
+        class: "map-tile",
+        preserveAspectRatio: "none",
+      });
+      image.addEventListener("error", () => image.remove());
+      svg.appendChild(image);
+    }
+  }
+  svg.appendChild(svgEl("rect", { x: 0, y: 0, width, height, class: "map-tile-fade" }));
+}
+
+function heatColor(value) {
+  if (value == null) return "#9aa9b7";
+  const x = clamp01(value);
+  if (x < 0.25) return "#286fd3";
+  if (x < 0.5) return "#29bdd3";
+  if (x < 0.75) return "#f1d64b";
+  return "#ef4b4f";
+}
+
+function renderMap(previous) {
+  const svg = $("graph");
+  svg.innerHTML = "";
+  const width = 1100;
+  const height = 620;
+  const nodes = state.data.nodes || [];
+  if (!nodes.length) return;
+
+  const projection = chooseMapProjection(nodes, width, height);
+  if (!projection) return;
+  const points = Object.fromEntries(nodes.map((node) => [node.id, projection.project(node)]));
+  const previousById = Object.fromEntries((previous?.nodes || []).map((node) => [node.id, node]));
+  const descriptor = layerDescriptor();
+
+  $("layer-legend-title").textContent = descriptor.title;
+  $("legend-low").textContent = descriptor.low;
+  $("legend-high").textContent = descriptor.high;
+  $("layer-provenance").textContent = descriptor.provenance;
+  $("map-title").textContent = 
