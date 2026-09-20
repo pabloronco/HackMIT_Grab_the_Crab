@@ -600,3 +600,14 @@ Marine then chooses the smallest effort meeting a minimum information-retention 
 **Map/UI interaction:** the map supports explicit zoom and pan so geographically close monitoring sites can be separated. Heat visualization remains site-centered and discrete; no continuous ecological surface is claimed. Probable-world cards are bounded/scrollable and never imply hidden truth. The Decision Log spans the full layout and must not sit underneath the mission panel.
 
 **Owner:** team. Implementation branch `ui/ramp-final-pass`.
+
+
+## 2026-09-20 — Resource-aware hero-case rubric
+
+**Status:** FROZEN before running the updated 100-case UI audit. This rubric is for demo-case legibility only; formal R8/R10 evaluation is unchanged.
+
+**Primary RAMP candidate gate:** Marine must use fewer effort units than Static Response over the same three-deployment window, confirm at least as many true occupied sites in that case, diverge from Static in at least one target, show at least one evidence-caused mission update, and produce at least one field detection beyond the initial confirmed detection.
+
+Candidates are ordered by: Marine-minus-Static detected-occupied difference, then effort saved, path divergence, evidence-caused replans, additional field detections, propagated belief change, possible-world turnover, and deterministic case ID.
+
+The audit must still report all 100 cases, including Marine-better, equal, and worse realized outcomes plus effort-saving counts. A selected hero case is an illustrative blinded scenario, not an aggregate performance claim.
