@@ -625,3 +625,16 @@ The audit must still report all 100 cases, including Marine-better, equal, and w
 - Map wheel zoom is anchored to the pointer and map rerenders are requestAnimationFrame-throttled during pan/zoom to reduce jitter and repeated DOM work.
 
 **Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
+
+
+## 2026-09-20 — Grab the Crab map rebuild and right-rail restoration
+
+**Status:** CURRENT DEFAULT / team-directed UI change.
+
+- Desktop right rail is restored to **Probable Worlds first, Detectability Belief directly below**. The species problem card lives inside the map surface so it does not displace those evidence panels.
+- The demo species card identifies the **European Green Crab (Carcinus maenas)** and states only the operational problem supported by the project framing: confirmed detection, hidden extent, imperfect detection and limited field capacity.
+- The default basemap requests satellite-style World Imagery tiles with OpenStreetMap as a visual fallback. Real monitoring coordinates remain unchanged; basemap choice is presentation only.
+- Heat zones use fixed-radius radial gradients centered on actual survey sites plus low-opacity blurred graph-edge influence. This is a visualization of graph-structured posterior state, **not an interpolated ecological ground-truth surface**.
+- Zoom/pan no longer rerender the full SVG on every pointer movement. During interaction the existing map root is transformed directly; one committed reprojection occurs after the gesture. Wheel zoom previews continuously around the pointer and commits after a short idle window. This specifically reduces Safari/trackpad jank.
+
+**Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
