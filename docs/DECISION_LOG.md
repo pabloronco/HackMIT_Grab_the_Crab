@@ -665,3 +665,15 @@ The audit must still report all 100 cases, including Marine-better, equal, and w
 - Ecological impact wording is grounded in Washington Sea Grant / WDFW public green-crab materials; it is not a claim of measured damage at the specific synthetic demo incident.
 
 **Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
+
+
+## 2026-09-20 — Final UI pause: heat palette and extensibility preview
+
+**Status:** CURRENT DEFAULT / UI freeze candidate.
+
+- Heat visualization now uses a muted **red → orange → yellow → green** scale. The same scale is used by the map legend and site-layer core colors. Opacity remains deliberately subdued so satellite imagery, graph topology and mission markers stay readable.
+- The species card includes a **non-interactive “Other invasive species” roadmap preview**. It has no click handler and does not alter runtime state; it exists only to signal that the same mission-control architecture could be extended beyond the current European Green Crab demo.
+- The preview is explicitly labelled **illustrative, not exhaustive**. Current examples are Lionfish, Asian shore crab, Chinese mitten crab, Veined rapa whelk, Didemnum vexillum, Undaria pinnatifida, Zebra mussel and Quagga mussel.
+- Species examples are grounded to NOAA/USGS invasive-species materials. Including them in the roadmap preview does not imply that the current simulator, priors, detectability model or planner has been validated for those taxa.
+
+**Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
