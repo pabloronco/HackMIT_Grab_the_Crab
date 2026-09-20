@@ -613,11 +613,11 @@ Candidates are ordered by: Marine-minus-Static detected-occupied difference, the
 The audit must still report all 100 cases, including Marine-better, equal, and worse realized outcomes plus effort-saving counts. A selected hero case is an illustrative blinded scenario, not an aggregate performance claim.
 
 
-## 2026-09-20 — Catch the Crab product/UI polish
+## 2026-09-20 — Grab the Crab product/UI polish
 
 **Status:** CURRENT DEFAULT / team-directed UI change.
 
-- Product-facing name is now **Catch the Crab**. The ecological first-response scope, Bayesian evidence semantics, graph state, planner interfaces and validation claims are unchanged.
+- Product-facing name is now **Grab the Crab**. The ecological first-response scope, Bayesian evidence semantics, graph state, planner interfaces and validation claims are unchanged.
 - The header uses a minimal crab mark; old MARINE branding is removed from the visible product surface.
 - Sponsor/challenge naming is removed from the product UI and runtime explanatory copy. Resource-efficiency remains expressed generically as preserved field capacity, effort spent and effort avoided versus the static e6 reference.
 - Detectability belief is promoted to the upper-right of the desktop layout so q semantics are visible earlier without preceding the core mission/map loop.
