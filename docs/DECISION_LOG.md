@@ -569,3 +569,34 @@ The judging interface has been rebuilt around the visual/product direction revie
 **Live chart:** before reveal, the chart uses observable quantities only: cumulative confirmed detections and field budget used. Hidden occupied-site coverage is not exposed. After reveal, the evaluator receipt separately compares Marine / Static Response / You on true occupied sites confirmed/detected.
 
 **Owner:** team.
+
+
+## 2026-09-20 — RAMP resource-efficiency product layer and final judging UI
+
+**Status:** FROZEN for the HackMIT judging/demo product surface only. Formal R8/R10 benchmark protocols, results and claim scope are unchanged.
+
+**Why this was added:** The RAMP sponsor challenge is “Save Time. Save Money.” The existing Marine kernel already represented finite field effort, but the earlier UI mostly treated the 18-unit budget as something to exhaust. That hid the operational value of *not spending unnecessary effort*. The judging product now makes site choice and effort choice explicit while keeping the ecological evidence model unchanged.
+
+**Judging response window:** the live demo uses up to **three field deployments**. The maximum available field capacity remains 18 effort units. Marine may recommend effort blocks from `{1,3,6}`; any capacity not spent after the third deployment is explicitly reported as **preserved field capacity**. This three-deployment horizon is a product/demo framing, not a rewrite of the formal R8/R10 experiments.
+
+**Site recommendation:** remains the current transparent Frontier ordering: frontier first, then higher occupancy belief, then uncertainty, deterministic site-id tie break. Hidden truth remains unavailable.
+
+**Effort recommendation:** a transparent Bayesian resource rule is layered on top of the selected site. For each feasible effort `e in {1,3,6}`, Marine computes:
+- posterior-predictive probability of at least one detection;
+- conditional detection power `P(detect | occupied,e,posterior q)`;
+- expected reduction in marginal occupancy entropy.
+Marine then chooses the smallest effort meeting a minimum information-retention threshold plus an occupancy-dependent detection-power retention threshold. Higher-belief sites require stronger detection-power retention; exploratory low-belief frontier sites may use less effort to preserve response capacity. Thresholds are **DESIGN CHOICES for the hackathon product**, not ecological constants and not agency preferences.
+
+**RAMP receipt semantics:** primary resource quantities are effort spent, effort preserved, deployments completed and effort avoided relative to using effort 6 on the same number of completed deployments. No dollar or time claim is hard-coded. The UI may optionally translate saved effort into minutes or dollars only when the operator explicitly supplies a local conversion rate; those inputs never enter ecological inference or planning.
+
+**Stochastic outcome discipline:** a good ex-ante mission can return a non-detection because detection is imperfect. The judging adapter now stores a pre-outcome decision receipt. After reveal, each Marine mission is classified as `occupied_and_detected`, `occupied_but_missed`, or `surveyed_not_occupied`. An `occupied_but_missed` receipt displays the conditional miss probability under the chosen effort/q posterior so the demo can distinguish a poor decision from an unlucky field realization.
+
+**Marine vs You:** `Your Path` is an interactive realization, not a scientific benchmark. A judge may occasionally confirm more occupied sites than Marine in one stochastic case. The UI must not hide or rewrite that outcome. Policy claims come from the fixed-case audit / formal benchmarks; the live case shows decision causality and resource trade-offs.
+
+**q semantics:** `q = P(detection in one check | occupied)`. q is inferred jointly with ecological extent and is not a user control. Posterior mass concentrating near the lower or upper edge of the tested q support is shown as **boundary pressure**, which can indicate narrow q support or occupancy/q confounding. It is explicitly **not equivalent to model stress**. Model stress remains the posterior-predictive surprise of the actual observation.
+
+**Environmental map layers:** only source-backed site data may be rendered. Current product layers are posterior belief, uncertainty, habitat proxy, direct historical temperature logger summaries when available, exposure, eelgrass, salt marsh and observed response effort. Temperature is never spatially imputed; unavailable values remain visibly missing.
+
+**Map/UI interaction:** the map supports explicit zoom and pan so geographically close monitoring sites can be separated. Heat visualization remains site-centered and discrete; no continuous ecological surface is claimed. Probable-world cards are bounded/scrollable and never imply hidden truth. The Decision Log spans the full layout and must not sit underneath the mission panel.
+
+**Owner:** team. Implementation branch `ui/ramp-final-pass`.
