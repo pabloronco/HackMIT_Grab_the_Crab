@@ -230,12 +230,27 @@ class MissionControlFrontierPlanner:
     def _conditional_detection_if_occupied(
         spatial: SpatialBeliefState,
         *,
+        site_id: str,
         effort: int,
     ) -> float:
-        return sum(
-            weight * (1.0 - (1.0 - float(q)) ** effort)
-            for q, weight in spatial.q_posterior().items()
-        )
+        index = spatial.site_ids.index(site_id)
+        occupied_mass = 0.0
+        detection_mass = 0.0
+        for hypothesis, weight in zip(spatial.hypotheses, spatial.weights):
+            if not hypothesis.presence[index]:
+                continue
+            occupied_mass += float(weight)
+            detection_mass += float(weight) * (
+                1.0 - (1.0 - float(hypothesis.q)) ** effort
+            )
+        if occupied_mass <= 1e-12:
+            # Degenerate fallback only: the candidate is effectively impossible
+            # under the current occupancy posterior, so use the marginal q belief.
+            return sum(
+                float(weight) * (1.0 - (1.0 - float(q)) ** effort)
+                for q, weight in spatial.q_posterior().items()
+            )
+        return detection_mass / occupied_mass
 
     def effort_options(
         self,
@@ -266,6 +281,7 @@ class MissionControlFrontierPlanner:
             )
             conditional_detection = self._conditional_detection_if_occupied(
                 spatial,
+                site_id=site_id,
                 effort=effort,
             )
             rows.append(
@@ -811,15 +827,19 @@ class MissionControlSession:
             if transition.observations.observations
             else None
         )
-        q_before = spatial_before.q_posterior()
         selected_effort = (
             int(first_observation.effort)
             if first_observation is not None
             else int(transition.mission.total_cost)
         )
-        conditional_detection_if_occupied = sum(
-            weight * (1.0 - (1.0 - float(q)) ** selected_effort)
-            for q, weight in q_before.items()
+        conditional_detection_if_occupied = (
+            MissionControlFrontierPlanner._conditional_detection_if_occupied(
+                spatial_before,
+                site_id=first_observation.site_id,
+                effort=selected_effort,
+            )
+            if first_observation is not None
+            else None
         )
         selected_recommendation = decision_context.get("selected_recommendation")
         if first_observation is not None:
@@ -863,7 +883,11 @@ class MissionControlSession:
                     else None
                 ),
                 "conditional_detection_if_occupied": conditional_detection_if_occupied,
-                "conditional_miss_if_occupied": 1.0 - conditional_detection_if_occupied,
+                "conditional_miss_if_occupied": (
+                    1.0 - conditional_detection_if_occupied
+                    if conditional_detection_if_occupied is not None
+                    else None
+                ),
                 "observation_probability": (
                     self._last_surprise["observation_probability"]
                     if self._last_surprise is not None
@@ -1188,6 +1212,7 @@ class MissionControlSession:
             "q_mean": q_diagnostics["mean"],
             "q_diagnostics": q_diagnostics,
             "live_curve": self._observable_live_curve(),
+            "resource_curve": self._resource_curve(),
             "resource_summary": self._resource_summary(),
             "performance": performance,
         }
@@ -1539,9 +1564,39 @@ class MissionControlSession:
             {
                 "round": 0,
                 "effort": 0,
-                "mission_effort": 0,
                 "field_detections": cumulative_detections,
                 "budget_used_fraction": 0.0,
+            }
+        ]
+        for index, row in enumerate(self._judge_history, start=1):
+            cumulative_effort += int(row["effort_spent"])
+            cumulative_detections += sum(
+                int(bool(observation.detection))
+                for observation in row["observations"].observations
+            )
+            rows.append(
+                {
+                    "round": index,
+                    "effort": cumulative_effort,
+                    "field_detections": cumulative_detections,
+                    "budget_used_fraction": (
+                        cumulative_effort / self._budget if self._budget else 0.0
+                    ),
+                }
+            )
+        return rows
+
+    def _resource_curve(self) -> list[dict[str, Any]]:
+        """Per-mission resource trajectory for the RAMP-facing product surface."""
+
+        cumulative_effort = 0
+        cumulative_detections = 1
+        rows: list[dict[str, Any]] = [
+            {
+                "round": 0,
+                "cumulative_effort": 0,
+                "mission_effort": 0,
+                "field_detections": cumulative_detections,
                 "budget_remaining": self._budget,
             }
         ]
@@ -1555,20 +1610,17 @@ class MissionControlSession:
             rows.append(
                 {
                     "round": index,
-                    "effort": cumulative_effort,
+                    "cumulative_effort": cumulative_effort,
                     "mission_effort": mission_effort,
                     "field_detections": cumulative_detections,
-                    "budget_used_fraction": (
-                        cumulative_effort / self._budget if self._budget else 0.0
-                    ),
                     "budget_remaining": max(0, self._budget - cumulative_effort),
                 }
             )
         return rows
 
     def _resource_summary(self) -> dict[str, Any]:
-        curve = self._observable_live_curve()
-        spent = int(curve[-1]["effort"]) if curve else 0
+        curve = self._resource_curve()
+        spent = int(curve[-1]["cumulative_effort"]) if curve else 0
         completed = max(0, len(curve) - 1)
         high_equivalent = 6 * completed
         latest_recommendation = self._global_recommendations(limit=1)
