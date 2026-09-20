@@ -819,4 +819,157 @@ function drawPerformanceChart(entries) {
 
   [0, 6, 12, 18].filter((value) => value <= maxEffort).forEach((effort) => {
     const text = svgEl("text", { x: sx(effort), y: height - 14, "text-anchor": "middle", class: "chart-label" });
-    tex
+    text.textContent = String(effort);
+    svg.appendChild(text);
+  });
+}
+
+function renderTimeline() {
+  const recent = (state.data.events || []).slice(-10);
+  $("timeline").innerHTML = recent.map((event) => `<div class="tape-event kind-${event.kind}"><span>R${event.round}</span><div><b>${event.title}</b><small>${event.detail}</small></div></div>`).join("");
+  $("timeline").scrollLeft = $("timeline").scrollWidth;
+}
+
+function renderControls() {
+  if (!state.data) return;
+
+  document.querySelectorAll(".effort-btn").forEach((button) => {
+    const effort = Number(button.dataset.effort);
+    button.disabled = !canSpend(effort) || state.data.can_reveal || state.data.revealed;
+    button.classList.toggle("active", effort === state.selectedEffort);
+  });
+
+  document.querySelectorAll(".layer-btn").forEach((button) => {
+    const metadata = state.data.environment_layers?.[button.dataset.layer];
+    button.disabled = metadata?.available === false;
+    button.title = metadata?.available === false
+      ? (metadata.provenance || "Layer unavailable in this incident")
+      : "";
+  });
+
+  const done = state.data.can_reveal || state.data.revealed;
+  const deploy = $("deploy-btn");
+  deploy.disabled = state.busy || !state.selectedSite || !canSpend(state.selectedEffort) || done;
+  deploy.querySelector("b").textContent = done
+    ? "Field work complete"
+    : `Deploy Site ${state.selectedSite || "—"} · e${state.selectedEffort}`;
+  deploy.querySelector("small").textContent = done
+    ? "Evaluator reveal available"
+    : "Execute survey → Bayes update → replan";
+
+  $("reset-btn").disabled = state.busy;
+  $("next-case-btn").disabled = state.busy;
+  $("case-select").disabled = state.busy;
+  $("site-select").disabled = state.busy || done;
+  $("reveal-btn").disabled = state.busy || !state.data.can_reveal;
+}
+
+async function resetCase(caseId = null) {
+  try {
+    setBusy(true);
+    state.selectedSite = null;
+    state.selectedWorld = null;
+    state.mapZoom = 0;
+    showTransition("NEW INCIDENT", "Initializing coastal response", "Loading real monitoring sites and a blinded synthetic hidden extent.");
+    const data = await api("/api/reset", "POST", { case_id: caseId || $("case-select").value });
+    render(data, null);
+    setTimeout(hideTransition, 280);
+  } catch (error) {
+    hideTransition();
+    alert(error.message);
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function deploy() {
+  if (!state.selectedSite || state.busy) return;
+  const before = state.data;
+  try {
+    setBusy(true);
+    showTransition("FIELD TEAM ACTIVE", `Surveying Site ${state.selectedSite}`, `Effort ${state.selectedEffort}. Hidden truth remains locked.`);
+    const data = await api("/api/deploy", "POST", { site_id: state.selectedSite, effort: state.selectedEffort });
+    const obs = data.last_round?.observations?.[0];
+    if (obs) {
+      $("transition-kicker").textContent = "FIELD RETURN";
+      $("transition-title").textContent = obs.detection
+        ? `Detection at Site ${obs.site_id}`
+        : `No detection at Site ${obs.site_id}`;
+      $("transition-detail").textContent = `Effort ${obs.effort} · local belief ${fmtPct(obs.belief_before)} → ${fmtPct(obs.belief_after)}. The full posterior is recomputed before the next mission.`;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 420));
+    state.selectedSite = data.global_recommendations?.[0]?.site_id || state.selectedSite;
+    if (state.selectedSite) state.selectedEffort = data.global_recommendations?.[0]?.recommended_effort || state.selectedEffort;
+    render(data, before);
+    setTimeout(hideTransition, 620);
+  } catch (error) {
+    hideTransition();
+    alert(error.message);
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function reveal() {
+  if (!state.data?.can_reveal || state.busy) return;
+  try {
+    setBusy(true);
+    showTransition("EVALUATE", "Revealing the hidden extent", "Scoring Marine, Static Response, and the interactive path on the same blinded incident.");
+    const before = state.data;
+    const data = await api("/api/reveal", "POST");
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    render(data, before);
+    $("transition-kicker").textContent = "TRUE EXTENT REVEALED";
+    $("transition-title").textContent = "Same incident. Different allocations.";
+    $("transition-detail").textContent = "Hidden occupancy remained unavailable during every recommendation and field decision.";
+    setTimeout(hideTransition, 1050);
+  } catch (error) {
+    hideTransition();
+    alert(error.message);
+  } finally {
+    setBusy(false);
+  }
+}
+
+$("clear-world-btn").addEventListener("click", () => {
+  state.selectedWorld = null;
+  render(state.data);
+});
+
+$("follow-marine-btn").addEventListener("click", () => {
+  const top = state.data.global_recommendations?.[0];
+  if (!top) return;
+  state.selectedSite = top.site_id;
+  state.selectedEffort = top.recommended_effort || state.selectedEffort;
+  render(state.data);
+});
+
+$("site-select").addEventListener("change", () => {
+  state.selectedSite = $("site-select").value;
+  applyRecommendedEffort(state.selectedSite);
+  render(state.data);
+});
+
+document.querySelectorAll(".effort-btn").forEach((button) => button.addEventListener("click", () => {
+  const effort = Number(button.dataset.effort);
+  if (!canSpend(effort)) return;
+  state.selectedEffort = effort;
+  render(state.data);
+}));
+
+document.querySelectorAll(".layer-btn").forEach((button) => button.addEventListener("click", () => {
+  const id = button.dataset.layer;
+  const metadata = state.data.environment_layers?.[id];
+  if (metadata?.available === false) return;
+  state.layer = id;
+  state.selectedWorld = null;
+  document.querySelectorAll(".layer-btn").forEach((candidate) => candidate.classList.toggle("active", candidate === button));
+  render(state.data);
+}));
+
+$("zoom-in").addEventListener("click", () => {
+  state.mapZoom = Math.min(5, state.mapZoom + 1);
+  renderMap(state.data);
+});
+$("zoom-out").addEventListener("click", () => {
+  state.mapZoom = Math.max(-1, state.map
