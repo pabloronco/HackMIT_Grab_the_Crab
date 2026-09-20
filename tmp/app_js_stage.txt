@@ -41,18 +41,27 @@ function svgEl(name, attrs = {}) {
 function nodeById(siteId) {
   return state.data?.nodes?.find((node) => node.id === siteId) || null;
 }
+
 function recommendationBySite(siteId) {
   return state.data?.global_recommendations?.find((row) => row.site_id === siteId) || null;
 }
+
 function worldById(worldId) {
   return state.data?.top_worlds?.items?.find((world) => world.world_id === worldId) || null;
 }
+
 function canSpend(effort) {
-  return Boolean(state.data && state.data.resources.remaining_budget >= effort && effort > 0);
+  return Boolean(
+    state.data &&
+    Number(effort) > 0 &&
+    Number(effort) <= state.data.resources.remaining_budget
+  );
 }
+
 function suggestedEffortForSite(siteId) {
   return recommendationBySite(siteId)?.recommended_effort ?? nodeById(siteId)?.recommended_effort ?? null;
 }
+
 function applyRecommendedEffort(siteId) {
   const recommended = suggestedEffortForSite(siteId);
   if (recommended && canSpend(recommended)) state.selectedEffort = Number(recommended);
@@ -66,11 +75,13 @@ function showTransition(kicker, title, detail) {
   layer.classList.remove("hidden");
   requestAnimationFrame(() => layer.classList.add("show"));
 }
+
 function hideTransition() {
   const layer = $("transition-layer");
   layer.classList.remove("show");
   setTimeout(() => layer.classList.add("hidden"), 180);
 }
+
 function setBusy(value) {
   state.busy = value;
   document.body.classList.toggle("is-busy", value);
@@ -119,12 +130,14 @@ function render(data, previous = state.data) {
 
   if (data.case?.case_id) $("case-select").value = data.case.case_id;
   $("initial-detection").textContent = data.incident.initial_detection;
-  $("case-number").textContent = data.case.index ? `${String(data.case.index).padStart(3, "0")} / ${data.case.count}` : data.case.case_id;
+  $("case-number").textContent = data.case.index
+    ? `${String(data.case.index).padStart(3, "0")} / ${data.case.count}`
+    : data.case.case_id;
   $("budget-left").textContent = `${data.resources.remaining_budget} / ${data.resources.initial_budget}`;
   $("round").textContent = data.resources.round;
   $("truth-state").textContent = data.revealed ? "REVEALED" : "LOCKED";
   $("truth-state").classList.toggle("revealed", data.revealed);
-  $("budget-fill").style.width = `${Math.round(clamp01(data.resources.remaining_budget / data.resources.initial_budget) * 100)}%`;
+  $("budget-fill").style.width = `${Math.round(clamp01(data.resources.remaining_budget / Math.max(1, data.resources.initial_budget)) * 100)}%`;
 
   renderMissionPanel();
   renderWorlds();
@@ -148,178 +161,12 @@ function renderMissionPanel() {
   $("marine-site").textContent = top ? `Site ${top.site_id}` : "Complete";
   $("marine-effort").textContent = top?.recommended_effort ?? "—";
   $("marine-belief").textContent = top ? fmtPct(top.belief) : "—";
-  $("marine-pdetect").textContent = top ? fmtPct(top.predictive_detection?.[String(top.recommended_effort)]) : "—";
-  $("marine-saved").textContent = top ? `${top.effort_recommendation?.effort_saved_vs_max ?? 0} units` : "—";
+  $("marine-pdetect").textContent = top
+    ? fmtPct(top.predictive_detection?.[String(top.recommended_effort)])
+    : "—";
+  $("marine-saved").textContent = top
+    ? `${top.effort_recommendation?.effort_saved_vs_max ?? 0} units`
+    : "—";
   $("marine-copy").textContent = top
-    ? "Frontier-first site ranking with Bayesian effort allocation."
-    : "Campaign complete. Hidden truth may now be revealed.";
-
-  const staticSites = state.data.static_response?.plan_sites || [];
-  $("static-site").textContent = staticSites.length ? `Site ${staticSites[0]}` : "—";
-  $("static-route").innerHTML = staticSites.map((siteId, index) => `<span class="route-chip"><b>${siteId}</b>${index < staticSites.length - 1 ? "<i>→</i>" : ""}</span>`).join("");
-
-  const selectable = (state.data.nodes || [])
-    .filter((node) => node.id !== state.data.incident.initial_detection)
-    .slice()
-    .sort((a, b) => (a.marine_rank ?? 9999) - (b.marine_rank ?? 9999) || String(a.id).localeCompare(String(b.id), undefined, { numeric:true }));
-  $("site-select").innerHTML = selectable.map((node) => {
-    const rank = node.marine_rank ? ` · Marine #${node.marine_rank}` : "";
-    const surveyed = node.effort > 0 ? " · surveyed" : "";
-    return `<option value="${node.id}" ${node.id === state.selectedSite ? "selected" : ""}>Site ${node.id}${rank}${surveyed}</option>`;
-  }).join("");
-
-  const selected = nodeById(state.selectedSite);
-  const rec = recommendationBySite(state.selectedSite);
-  const recommendedEffort = rec?.recommended_effort ?? selected?.recommended_effort;
-  $("effort-rec-badge").textContent = recommendedEffort ? `Marine: ${recommendedEffort}` : "Marine: —";
-  document.querySelectorAll(".effort-btn").forEach((button) => {
-    const effort = Number(button.dataset.effort);
-    button.classList.toggle("active", effort === state.selectedEffort);
-    button.classList.toggle("recommended", effort === recommendedEffort);
-  });
-
-  const options = rec?.effort_recommendation?.options || selected?.effort_recommendation_budget} / ${data.resources.initial_budget}`;
-  $("round").textContent = data.resources.round;
-  $("truth-state").textContent = data.revealed ? "REVEALED" : "LOCKED";
-  $("truth-state").classList.toggle("revealed", data.revealed);
-  $("budget-fill").style.width = `${Math.round(clamp01(data.resources.remaining_budget / data.resources.initial_budget) * 100)}%`;
-
-  renderMissionPanel();
-  renderWorlds();
-  renderQ();
-  renderWhyMission();
-  renderEvidence();
-  renderDecisionReceipt();
-  renderPropagation();
-  renderStress();
-  renderResourceCard();
-  renderMap(previous);
-  renderReplan();
-  renderLiveChart();
-  renderPerformance();
-  renderTimeline();
-  renderControls();
-}
-
-function renderMissionPanel() {
-  const top = state.data.global_recommendations?.[0] || null;
-  $("marine-site").textContent = top ? `Site ${top.site_id}` : "Complete";
-  $("marine-effort").textContent = top?.recommended_effort ?? "—";
-  $("marine-belief").textContent = top ? fmtPct(top.belief) : "—";
-  $("marine-pdetect").textContent = top ? fmtPct(top.predictive_detection?.[String(top.recommended_effort)]) : "—";
-  $("marine-saved").textContent = top ? `${top.effort_recommendation?.effort_saved_vs_max ?? 0} units` : "—";
-  $("marine-copy").textContent = top
-    ? "Frontier-first site ranking with Bayesian effort allocation."
-    : "Campaign complete. Hidden truth may now be revealed.";
-
-  const staticSites = state.data.static_response?.plan_sites || [];
-  $("static-site").textContent = staticSites.length ? `Site ${staticSites[0]}` : "—";
-  $("static-route").innerHTML = staticSites.map((siteId, index) => `<span class="route-chip"><b>${siteId}</b>${index < staticSites.length - 1 ? "<i>→</i>" : ""}</span>`).join("");
-
-  const selectable = (state.data.nodes || [])
-    .filter((node) => node.id !== state.data.incident.initial_detection)
-    .slice()
-    .sort((a, b) => (a.marine_rank ?? 9999) - (b.marine_rank ?? 9999) || String(a.id).localeCompare(String(b.id), undefined, { numeric:true }));
-  $("site-select").innerHTML = selectable.map((node) => {
-    const rank = node.marine_rank ? ` · Marine #${node.marine_rank}` : "";
-    const surveyed = node.effort > 0 ? " · surveyed" : "";
-    return `<option value="${node.id}" ${node.id === state.selectedSite ? "selected" : ""}>Site ${node.id}${rank}${surveyed}</option>`;
-  }).join("");
-
-  const selected = nodeById(state.selectedSite);
-  const rec = recommendationBySite(state.selectedSite);
-  const recommendedEffort = rec?.recommended_effort ?? selected?.recommended_effort;
-  $("effort-rec-badge").textContent = recommendedEffort ? `Marine: ${recommendedEffort}` : "Marine: —";
-  document.querySelectorAll(".effort-btn").forEach((button) => {
-    const effort = Number(button.dataset.effort);
-    button.classList.toggle("active", effort === state.selectedEffort);
-    button.classList.toggle("recommended", effort === recommendedEffort);
-  });
-
-  const options = rec?.effort_recommendation?.options || selected?.effort_recommendation?.options || [];
-  $("effort-options").innerHTML = options.map((row) => {
-    const chosen = Number(row.effort) === Number(recommendedEffort);
-    return `<div class="effort-option ${chosen ? "chosen" : ""}"><b>e${row.effort}</b><span>Pdet ${fmtPct(row.predictive_detection_probability)}</span><span>Info ${fmtNum(row.expected_information_gain_bits,2)}b</span></div>`;
-  }).join("");
-
-  const predictive = selected?.predictive_detection?.[String(state.selectedEffort)];
-  $("effort-caption").textContent = selected
-    ? `At Site ${selected.id}, P(at least one detection) at effort ${state.selectedEffort} = ${fmtPct(predictive)}. This includes occupancy and q uncertainty.`
-    : "";
-  $("follow-marine-btn").disabled = !top || (state.selectedSite === top.site_id && state.selectedEffort === top.recommended_effort);
-}
-
-function renderWorlds() {
-  const bundle = state.data.top_worlds;
-  $("world-count").textContent = `${bundle.unique_world_count} extents`;
-  const expanded = state.selectedWorld || bundle.items?.[0]?.world_id || null;
-  $("world-list").innerHTML = bundle.items.map((world) => {
-    const selected = world.world_id === expanded;
-    const family = world.families.length ? world.families.join(" · ") : "mixed";
-    return `
-      <button class="world-card ${selected ? "selected" : ""}" data-world="${world.world_id}">
-        <span class="world-rank">${world.rank}</span>
-        <span class="world-main"><strong>Possible extent ${world.rank}</strong><span>${world.occupied_count} occupied sites · ${family}</span></span>
-        <span class="world-mass"><b>${fmtPct(world.posterior)}</b><small>${Math.abs(world.delta) < 0.0005 ? "stable" : fmtPp(world.delta)}</small></span>
-        ${selected ? `<span class="world-expanded"><b>Posterior hypothesis, not hidden truth.</b><br>${world.occupied_count} sites are occupied in this extent. Evidence changed its posterior mass by ${fmtPp(world.delta)}.</span>` : ""}
-      </button>`;
-  }).join("") + `<div class="other-worlds"><span>All other unique extents</span><b>${fmtPct(bundle.remaining_mass)}</b></div>`;
-
-  document.querySelectorAll("[data-world]").forEach((button) => button.addEventListener("click", () => {
-    const id = button.dataset.world;
-    state.selectedWorld = state.selectedWorld === id ? null : id;
-    render(state.data);
-  }));
-  $("clear-world-btn").classList.toggle("hidden", !state.selectedWorld);
-  $("scenario-banner").classList.toggle("hidden", !state.selectedWorld);
-  if (state.selectedWorld) {
-    const world = worldById(state.selectedWorld);
-    $("scenario-banner").textContent = `WHAT-IF EXTENT #${world.rank} · posterior ${fmtPct(world.posterior)} · NOT HIDDEN TRUTH`;
-  }
-}
-
-function renderQ() {
-  const posterior = state.data.q_posterior || {};
-  const rows = Object.entries(posterior).sort(([a],[b]) => Number(a)-Number(b));
-  const maxWeight = Math.max(.0001, ...rows.map(([,w]) => Number(w)));
-  $("q-panel").innerHTML = rows.map(([q, weight]) => {
-    const height = Math.max(3, Math.round((Number(weight)/maxWeight)*100));
-    return `<div class="q-column"><b>${fmtPct(weight)}</b><div class="q-bar-shell"><i class="q-bar" style="height:${height}%"></i></div><span>q=${Number(q).toFixed(2)}</span></div>`;
-  }).join("") + `<div class="q-mean">mean q = <b>${Number(state.data.q_mean).toFixed(3)}</b></div>`;
-
-  const qd = state.data.q_diagnostics;
-  const edge = qd?.dominant_edge || "—";
-  const edgeMass = qd?.dominant_edge_mass;
-  $("q-explainer").innerHTML = `
-    <p><b>q is not occupancy.</b> q = P(detect in one check | site truly occupied). Lower q means a real population is easier to miss.</p>
-    <p>Detections usually support higher q; repeated non-detections can support lower q, although q and occupancy are partly confounded.</p>
-    <div class="q-watch ${qd?.edge_concentrated ? "active" : ""}"><b>Support edge:</b> ${edge} · ${fmtPct(edgeMass)} mass. ${qd?.edge_concentrated ? "Posterior is leaning on an edge of the tested q range." : "No strong edge concentration."}</div>
-    <p class="q-note">Edge concentration is <b>not</b> model stress. Stress is the separate posterior-predictive surprise of the observed field result.</p>`;
-}
-
-function renderWhyMission() {
-  const node = nodeById(state.selectedSite);
-  if (!node) return;
-  const rec = recommendationBySite(node.id);
-  const recommendedEffort = rec?.recommended_effort ?? node.recommended_effort;
-  const predictive = node.predictive_detection?.[String(state.selectedEffort)];
-  $("why-subtitle").textContent = `Site ${node.id} · ${node.marine_rank ? "Marine rank #" + node.marine_rank : "operator override"} · ${fmtNum(node.distance_from_detection_km,1)} km from first detection`;
-  $("why-frontier-value").textContent = node.frontier ? "YES" : "NO";
-  $("why-frontier-copy").textContent = node.frontier
-    ? "This site sits on the current response frontier."
-    : "Not currently a frontier site; selecting it is an operator override or fallback.";
-  $("why-belief-value").textContent = fmtPct(node.belief);
-  $("why-belief-copy").textContent = "Belief is posterior mass, not inverse distance. A nearby site can be low if current ecological worlds and field evidence do not support occupancy there.";
-  $("why-detection-value").textContent = fmtPct(predictive);
-  $("why-detection-copy").textContent = `P(at least one detection) at effort ${state.selectedEffort}, marginalizing occupancy and q uncertainty.`;
-  $("why-effort-value").textContent = recommendedEffort ?? "—";
-  const saved = rec?.effort_recommendation?.effort_saved_vs_max ?? node.effort_recommendation?.effort_saved_vs_max ?? 0;
-  $("why-effort-copy").textContent = recommendedEffort
-    ? `Marine recommends effort ${recommendedEffort}, saving ${saved} units versus max effort while meeting the transparent retention rule.`
-    : "No effort recommendation after campaign completion.";
-}
-
-function renderEvidence() {
-  const panel = $("evidence-panel");
-  const last = state.data.last_round;
-  if (!last) { panel.className="evidence-c
+    ? "Frontier-first site ranking plus an explicit Bayesian effort allocation. The recommendation is made before the field outcome is known."
+    : "Campaign complete. Hidden truth may no
