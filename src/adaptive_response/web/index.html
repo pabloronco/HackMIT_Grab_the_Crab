@@ -216,7 +216,35 @@
           </div>
         </div>
       </section>
-
+      <aside class="right-stack" aria-label="Incident evidence and species context">
+      <aside class="card species-card">
+        <div class="species-photo-wrap">
+          <img
+            class="species-photo"
+            src="https://upload.wikimedia.org/wikipedia/commons/0/06/European_Green_Crab.jpg"
+            alt="European Green Crab, Carcinus maenas"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+          />
+          <span class="species-badge">INVASIVE SPECIES</span>
+        </div>
+        <div class="species-card-body">
+          <div class="species-card-head">
+            <div>
+              <h2>European Green Crab</h2>
+              <em>Carcinus maenas</em>
+            </div>
+            <span class="species-status-dot" aria-hidden="true"></span>
+          </div>
+          <p class="species-pitch"><b>Why it matters:</b> where European green crabs become abundant, they can damage eelgrass and other seagrass beds, prey on shellfish, and threaten estuary habitat used by salmon and many other native species. Early detection and rapid removal while populations are still small gives managers the best chance to limit damage.</p>
+          <div class="species-challenges" aria-label="Ecological impacts">
+            <span>Eelgrass damage</span>
+            <span>Shellfish predation</span>
+            <span>Estuary habitat</span>
+          </div>
+          <p class="species-credit">Impact summary: Washington Sea Grant / WDFW · Photo: Tim Binns / Wikimedia Commons · CC BY-SA 2.0</p>
+        </div>
+      </aside>
       <aside class="card worlds-card">
         <div class="section-heading compact">
           <span class="section-icon">◎</span>
@@ -229,6 +257,29 @@
         <div id="world-list" class="world-list"></div>
         <button id="clear-world-btn" class="inline-action hidden">Return to posterior map</button>
       </aside>
+      <aside class="card detectability-card">
+        <div class="section-heading compact">
+          <span class="section-icon">q</span>
+          <div>
+            <h2>Detectability belief</h2>
+            <p>How easy the species is to detect <em>if it is actually present</em>.</p>
+          </div>
+        </div>
+
+        <div id="q-panel" class="q-panel"></div>
+        <div id="q-effort-preview" class="q-effort-preview"></div>
+
+        <details class="q-details">
+          <summary>What does q mean?</summary>
+          <p><b>q = P(detection in one check | occupied).</b> It is not occupancy probability. The inference engine estimates q jointly with possible invasion extents.</p>
+          <p>You do not directly set q during a mission. Your operational control is effort: more checks reduce the chance of missing an occupied site.</p>
+          <p id="q-boundary-copy"></p>
+        </details>
+      </aside>
+      </aside>
+
+
+
 
       <aside class="card ramp-card">
         <div class="ramp-heading">
@@ -327,54 +378,9 @@
         </div>
       </section>
 
-      <aside class="card detectability-card">
-        <div class="section-heading compact">
-          <span class="section-icon">q</span>
-          <div>
-            <h2>Detectability belief</h2>
-            <p>How easy the species is to detect <em>if it is actually present</em>.</p>
-          </div>
-        </div>
 
-        <div id="q-panel" class="q-panel"></div>
-        <div id="q-effort-preview" class="q-effort-preview"></div>
 
-        <details class="q-details">
-          <summary>What does q mean?</summary>
-          <p><b>q = P(detection in one check | occupied).</b> It is not occupancy probability. The inference engine estimates q jointly with possible invasion extents.</p>
-          <p>You do not directly set q during a mission. Your operational control is effort: more checks reduce the chance of missing an occupied site.</p>
-          <p id="q-boundary-copy"></p>
-        </details>
-      </aside>
 
-      <aside class="card species-card">
-        <div class="species-photo-wrap">
-          <img
-            class="species-photo"
-            src="https://upload.wikimedia.org/wikipedia/commons/0/06/European_Green_Crab.jpg"
-            alt="European Green Crab, Carcinus maenas"
-            loading="lazy"
-            referrerpolicy="no-referrer"
-          />
-          <span class="species-badge">INVASIVE SPECIES</span>
-        </div>
-        <div class="species-card-body">
-          <div class="species-card-head">
-            <div>
-              <h2>European Green Crab</h2>
-              <em>Carcinus maenas</em>
-            </div>
-            <span class="species-status-dot" aria-hidden="true"></span>
-          </div>
-          <p class="species-pitch"><b>One confirmed detection is enough to trigger response.</b> The true extent is unknown, field misses are possible, and survey capacity is limited—so every deployment must reduce uncertainty and improve the next mission.</p>
-          <div class="species-challenges" aria-label="Response challenge">
-            <span>Hidden extent</span>
-            <span>Imperfect detection</span>
-            <span>Limited capacity</span>
-          </div>
-          <p class="species-credit">Photo: Tim Binns / Wikimedia Commons · CC BY-SA 2.0</p>
-        </div>
-      </aside>
 
       <section class="card live-card">
         <div class="live-head">
