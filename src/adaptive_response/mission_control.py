@@ -13,7 +13,14 @@ from .environment import Environment
 from .graph_state import GraphStateExporter, NODE_FEATURE_NAMES
 from .mission_loop import LoopPhase, RoundTransition
 from .model_mismatch import posterior_predictive_surprise
-from .models import (\n    GraphState,\n    HiddenWorld,\n    MissionAction,\n    MissionAllocation,\n    Observation,\n    ObservationBatch,\n)
+from .models import (
+    GraphState,
+    HiddenWorld,
+    MissionAction,
+    MissionAllocation,
+    Observation,
+    ObservationBatch,
+)
 from .planners import FrontierPlanner, Planner
 from .real_incident_source import (
     build_real_incident,
