@@ -572,4 +572,132 @@ function renderMap(previous) {
   $("legend-low").textContent = descriptor.low;
   $("legend-high").textContent = descriptor.high;
   $("layer-provenance").textContent = descriptor.provenance;
-  $("map-title").textContent = 
+  $("map-title").textContent = descriptor.title;
+
+  appendMapTiles(svg, projection, width, height);
+
+  nodes.forEach((node) => {
+    const value = descriptor.value(node);
+    if (value == null) return;
+    const point = points[node.id];
+    const color = heatColor(value);
+    // Explicit concentric translucent rings are more reliable than SVG blur filters on Safari.
+    [[72, 0.07], [48, 0.12], [29, 0.19]].forEach(([radius, opacity]) => {
+      svg.appendChild(svgEl("circle", {
+        cx: point.x,
+        cy: point.y,
+        r: radius,
+        fill: color,
+        opacity: opacity * (0.45 + 0.55 * clamp01(value)),
+        class: "heat-ring",
+      }));
+    });
+  });
+
+  (state.data.edges || []).forEach((edge) => {
+    const a = points[edge.src];
+    const b = points[edge.dst];
+    if (!a || !b) return;
+    svg.appendChild(svgEl("line", { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: "graph-edge" }));
+  });
+
+  const topSite = state.data.global_recommendations?.[0]?.site_id || null;
+  if (state.data.mission_changed && state.data.replan?.from && state.data.replan?.to) {
+    const fromId = state.data.replan.from.allocations?.[0]?.site_id;
+    const toId = state.data.replan.to.allocations?.[0]?.site_id;
+    const a = points[fromId];
+    const b = points[toId];
+    if (a && b) svg.appendChild(svgEl("line", { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: "replan-vector" }));
+  }
+
+  nodes.forEach((node) => {
+    const point = points[node.id];
+    const group = svgEl("g", { class: "node-group", "data-site": node.id });
+
+    if (node.frontier && !state.selectedWorld) group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 21, class: "frontier-ring" }));
+    if (state.selectedSite === node.id) group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 27, class: "selected-ring" }));
+    if (topSite === node.id && !state.data.revealed) group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 33, class: "marine-ring" }));
+
+    const cls = [
+      "node-core",
+      node.status === "confirmed_detection" ? "confirmed" : "",
+      node.status === "detected" || node.detections > 1 ? "detected" : "",
+      node.effort > 0 ? "surveyed" : "",
+      state.data.revealed && node.true_occupied ? "true-occupied" : "",
+      state.data.revealed && node.true_occupied && node.detections === 0 ? "true-missed" : "",
+    ].filter(Boolean).join(" ");
+    group.appendChild(svgEl("circle", { cx: point.x, cy: point.y, r: 11, class: cls }));
+
+    const prev = previousById[node.id]?.belief ?? node.belief;
+    if (state.layer === "belief" && !state.selectedWorld && Math.abs(prev - node.belief) > 0.015) {
+      const label = svgEl("text", { x: point.x, y: point.y - 25, "text-anchor": "middle", class: "belief-delta" });
+      label.textContent = `${fmtPct(prev)}→${fmtPct(node.belief)}`;
+      group.appendChild(label);
+    }
+
+    const important = node.id === state.data.incident.initial_detection || node.id === topSite || node.id === state.selectedSite || node.detections > 0;
+    if (important) {
+      const text = `Site ${node.id}`;
+      const labelWidth = 48 + String(node.id).length * 5;
+      const lx = point.x + 16;
+      const ly = point.y - 11;
+      group.appendChild(svgEl("rect", { x: lx - 5, y: ly - 13, width: labelWidth, height: 22, rx: 5, class: "node-label-bg" }));
+      const label = svgEl("text", { x: lx, y: ly + 2, class: "node-label" });
+      label.textContent = text;
+      group.appendChild(label);
+    }
+
+    group.addEventListener("click", () => {
+      if (node.id === state.data.incident.initial_detection) return;
+      state.selectedSite = node.id;
+      applyRecommendedEffort(node.id);
+      render(state.data);
+    });
+    group.addEventListener("mouseenter", (event) => showTooltip(event, node));
+    group.addEventListener("mousemove", moveTooltip);
+    group.addEventListener("mouseleave", hideTooltip);
+    svg.appendChild(group);
+  });
+}
+
+function showTooltip(event, node) {
+  const tip = $("node-tooltip");
+  const predictive = node.predictive_detection?.[String(state.selectedEffort)];
+  tip.innerHTML = `<strong>Site ${node.id}</strong><div class="tip-grid">
+    <span>Occupancy belief</span><b>${fmtPct(node.belief)}</b>
+    <span>Uncertainty</span><b>${fmtPct(node.uncertainty)}</b>
+    <span>Distance from first detection</span><b>${fmtNum(node.distance_from_detection_km, 1)} km</b>
+    <span>Habitat</span><b>${node.habitat_label || "—"}</b>
+    <span>Exposure</span><b>${node.exposure || "—"}</b>
+    <span>Eelgrass</span><b>${node.eelgrass || "—"}</b>
+    <span>Salt marsh</span><b>${node.salt_marsh || "—"}</b>
+    <span>Temperature</span><b>${node.temperature_median_c == null ? "No direct logger data" : fmtNum(node.temperature_median_c, 1) + "°C"}</b>
+    <span>Marine rank</span><b>${node.marine_rank ? "#" + node.marine_rank : "—"}</b>
+    <span>Marine effort</span><b>${node.recommended_effort ?? "—"}</b>
+    <span>P(detect) @ e${state.selectedEffort}</span><b>${fmtPct(predictive)}</b>
+  </div>${state.data.revealed ? `<div class="truth-line">TRUE OCCUPANCY: <b>${node.true_occupied ? "PRESENT" : "ABSENT"}</b></div>` : ""}`;
+  tip.classList.remove("hidden");
+  moveTooltip(event);
+}
+
+function moveTooltip(event) {
+  const stage = document.querySelector(".map-stage");
+  const rect = stage.getBoundingClientRect();
+  const tip = $("node-tooltip");
+  tip.style.left = `${Math.max(8, Math.min(rect.width - 260, event.clientX - rect.left + 14))}px`;
+  tip.style.top = `${Math.max(8, Math.min(rect.height - 315, event.clientY - rect.top + 14))}px`;
+}
+
+function hideTooltip() {
+  $("node-tooltip").classList.add("hidden");
+}
+
+function renderReplan() {
+  const box = $("replan-callout");
+  if (!state.data.mission_changed || !state.data.replan?.from || !state.data.replan?.to || state.data.revealed) {
+    box.classList.add("hidden");
+    return;
+  }
+  const from = state.data.replan.from.allocations?.[0];
+  const to = state.data.replan.to.allocations?.[0];
+  $("replan-route").textContent = `Without new evidence: Site ${from?.site_id} · e${fr
