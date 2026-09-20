@@ -314,3 +314,11 @@ Open `http://127.0.0.1:8000` and verify the acceptance gate before merging.
 - Page canvas is black/deep navy; primary analytical cards remain white for contrast.
 - Heat palette is muted blue-grey → violet → coral, with low-opacity radial site halos and very weak graph-edge diffusion.
 - Site markers use a double-outline treatment with separate state rings for frontier, selected and recommended sites.
+
+
+## Final desktop right-rail contract
+
+- Right rail is a single stacked container with order: **Species / Problem → Probable Worlds → Detectability Belief**.
+- It spans exactly the same desktop grid rows as the map and Why This Mission region; its bottom must align with the bottom of Why This Mission before full-width sections begin.
+- Probable Worlds owns flexible vertical space and internal scrolling; species and q remain bounded.
+- Species copy describes ecological damage / control rationale, not the software workflow. Safe wording is source-grounded to Washington Sea Grant / WDFW: potential damage to eelgrass/seagrass, shellfish and estuary habitat; early detection/removal improves the chance of control while populations are small.
