@@ -972,4 +972,28 @@ $("zoom-in").addEventListener("click", () => {
   renderMap(state.data);
 });
 $("zoom-out").addEventListener("click", () => {
-  state.mapZoom = Math.max(-1, state.map
+  state.mapZoom = Math.max(-1, state.mapZoom - 1);
+  renderMap(state.data);
+});
+$("zoom-fit").addEventListener("click", () => {
+  state.mapZoom = 0;
+  renderMap(state.data);
+});
+$("graph").addEventListener("wheel", (event) => {
+  event.preventDefault();
+  state.mapZoom = Math.max(-1, Math.min(5, state.mapZoom + (event.deltaY < 0 ? 1 : -1)));
+  renderMap(state.data);
+}, { passive: false });
+
+$("deploy-btn").addEventListener("click", deploy);
+$("reveal-btn").addEventListener("click", reveal);
+$("reset-btn").addEventListener("click", () => resetCase(state.data?.case?.case_id));
+$("case-select").addEventListener("change", () => resetCase($("case-select").value));
+$("next-case-btn").addEventListener("click", () => {
+  const rows = state.cases?.cases || [];
+  if (!rows.length) return;
+  const current = rows.findIndex((row) => row.case_id === state.data?.case?.case_id);
+  resetCase(rows[(current + 1 + rows.length) % rows.length].case_id);
+});
+
+bootstrap();
