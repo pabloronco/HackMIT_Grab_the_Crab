@@ -11,7 +11,10 @@ const state = {
   mapPanY: 0,
   drag: null,
   mapFrame: null,
-  wheelDelta: 0,
+  zoomPreviewScale: 1,
+  zoomPreviewAnchorX: 550,
+  zoomPreviewAnchorY: 320,
+  zoomCommitTimer: null,
 };
 
 const NS = "http://www.w3.org/2000/svg";
@@ -630,8 +633,8 @@ function chooseMapProjection(nodes, width, height) {
   };
 }
 
-function appendMapTiles(svg, projection, width, height) {
-  svg.appendChild(svgEl("rect", { x: 0, y: 0, width, height, class: "map-fallback-water" }));
+function appendMapTiles(root, projection, width, height) {
+  root.appendChild(svgEl("rect", { x: 0, y: 0, width, height, class: "map-fallback-water" }));
   if (!projection) return;
 
   const size = 256;
@@ -646,8 +649,10 @@ function appendMapTiles(svg, projection, width, height) {
     for (let ty = minY; ty <= maxY; ty += 1) {
       if (ty < 0 || ty > max) continue;
       const wrappedX = ((tx % (max + 1)) + (max + 1)) % (max + 1);
+      const esri = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${wrappedX}`;
+      const osm = `https://tile.openstreetmap.org/${z}/${wrappedX}/${ty}.png`;
       const image = svgEl("image", {
-        href: `https://tile.openstreetmap.org/${z}/${wrappedX}/${ty}.png`,
+        href: esri,
         x: tx * size - projection.originX,
         y: ty * size - projection.originY,
         width: size,
@@ -655,21 +660,42 @@ function appendMapTiles(svg, projection, width, height) {
         class: "map-tile",
         preserveAspectRatio: "none",
       });
-      image.addEventListener("error", () => image.remove());
-      svg.appendChild(image);
+      image.dataset.fallback = "0";
+      image.addEventListener("error", () => {
+        if (image.dataset.fallback === "0") {
+          image.dataset.fallback = "1";
+          image.setAttribute("href", osm);
+        } else {
+          image.remove();
+        }
+      });
+      root.appendChild(image);
     }
   }
 
-  svg.appendChild(svgEl("rect", { x: 0, y: 0, width, height, class: "map-tile-fade" }));
+  root.appendChild(svgEl("rect", { x: 0, y: 0, width, height, class: "map-tile-fade" }));
+}
+
+function interpolateRgb(a, b, t) {
+  return [
+    Math.round(a[0] + (b[0] - a[0]) * t),
+    Math.round(a[1] + (b[1] - a[1]) * t),
+    Math.round(a[2] + (b[2] - a[2]) * t),
+  ];
 }
 
 function heatColor(value) {
   if (value == null) return "#aebbc6";
   const x = clamp01(value);
-  if (x < 0.25) return "#2b70d6";
-  if (x < 0.50) return "#33bdd3";
-  if (x < 0.75) return "#f0d84b";
-  return "#eb4c52";
+  const stops = [
+    [0.00, [39, 111, 226]],
+    [0.48, [62, 187, 211]],
+    [1.00, [245, 82, 91]],
+  ];
+  const [left, right] = x <= stops[1][0] ? [stops[0], stops[1]] : [stops[1], stops[2]];
+  const t = (x - left[0]) / Math.max(0.0001, right[0] - left[0]);
+  const rgb = interpolateRgb(left[1], right[1], Math.max(0, Math.min(1, t)));
+  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
 }
 
 function renderMap(previous) {
@@ -695,23 +721,35 @@ function renderMap(previous) {
     ? "Fit"
     : `Zoom ${state.mapZoom > 0 ? "+" : ""}${state.mapZoom}`;
 
-  appendMapTiles(svg, projection, width, height);
-
   const defs = svgEl("defs");
   const influenceBlur = svgEl("filter", {
     id: "influence-blur",
-    x: "-30%",
-    y: "-30%",
-    width: "160%",
-    height: "160%",
+    x: "-35%",
+    y: "-35%",
+    width: "170%",
+    height: "170%",
   });
-  influenceBlur.appendChild(svgEl("feGaussianBlur", { stdDeviation: "10" }));
+  influenceBlur.appendChild(svgEl("feGaussianBlur", { stdDeviation: "13" }));
   defs.appendChild(influenceBlur);
+
+  const heatSoften = svgEl("filter", {
+    id: "heat-soften",
+    x: "-40%",
+    y: "-40%",
+    width: "180%",
+    height: "180%",
+  });
+  heatSoften.appendChild(svgEl("feGaussianBlur", { stdDeviation: "3.8" }));
+  defs.appendChild(heatSoften);
   svg.appendChild(defs);
+
+  const mapRoot = svgEl("g", { id: "map-root" });
+  svg.appendChild(mapRoot);
+  appendMapTiles(mapRoot, projection, width, height);
 
   const continuousInfluenceLayer = ["belief", "uncertainty", "habitat"].includes(state.layer);
   if (continuousInfluenceLayer && !state.selectedWorld) {
-    (state.data.edges || []).forEach((edge) => {
+    (state.data.edges || []).forEach((edge, index) => {
       const aNode = nodeById(edge.src);
       const bNode = nodeById(edge.dst);
       const a = points[edge.src];
@@ -720,47 +758,78 @@ function renderMap(previous) {
       const av = descriptor.value(aNode);
       const bv = descriptor.value(bNode);
       if (av == null || bv == null) return;
-      const influence = clamp01((Number(av) + Number(bv)) / 2);
-      svg.appendChild(svgEl("line", {
+
+      const gradientId = `influence-${index}`;
+      const gradient = svgEl("linearGradient", {
+        id: gradientId,
+        gradientUnits: "userSpaceOnUse",
         x1: a.x,
         y1: a.y,
         x2: b.x,
         y2: b.y,
-        stroke: heatColor(influence),
-        "stroke-width": 20 + 18 * influence,
-        opacity: 0.035 + 0.075 * influence,
+      });
+      gradient.appendChild(svgEl("stop", {
+        offset: "0%",
+        "stop-color": heatColor(av),
+        "stop-opacity": 0.30,
+      }));
+      gradient.appendChild(svgEl("stop", {
+        offset: "100%",
+        "stop-color": heatColor(bv),
+        "stop-opacity": 0.30,
+      }));
+      defs.appendChild(gradient);
+
+      const influence = clamp01((Number(av) + Number(bv)) / 2);
+      mapRoot.appendChild(svgEl("line", {
+        x1: a.x,
+        y1: a.y,
+        x2: b.x,
+        y2: b.y,
+        stroke: `url(#${gradientId})`,
+        "stroke-width": 22 + 18 * influence,
+        opacity: 0.22 + 0.18 * influence,
         class: "heat-influence",
       }));
     });
   }
 
-  nodes.forEach((node) => {
+  nodes.forEach((node, index) => {
     const value = descriptor.value(node);
     if (value == null) return;
     const point = points[node.id];
     const color = heatColor(value);
-    const intensity = 0.55 + 0.45 * clamp01(value);
-    [
-      [92, 0.09],
-      [62, 0.15],
-      [38, 0.24],
-    ].forEach(([radius, opacity]) => {
-      svg.appendChild(svgEl("circle", {
-        cx: point.x,
-        cy: point.y,
-        r: radius,
-        fill: color,
-        opacity: opacity * intensity,
-        class: "heat-ring",
-      }));
-    });
+    const intensity = 0.48 + 0.52 * clamp01(value);
+    const gradientId = `heat-gradient-${index}`;
+    const gradient = svgEl("radialGradient", { id: gradientId, cx: "50%", cy: "50%", r: "50%" });
+    gradient.appendChild(svgEl("stop", { offset: "0%", "stop-color": color, "stop-opacity": 0.66 * intensity }));
+    gradient.appendChild(svgEl("stop", { offset: "26%", "stop-color": color, "stop-opacity": 0.43 * intensity }));
+    gradient.appendChild(svgEl("stop", { offset: "60%", "stop-color": color, "stop-opacity": 0.18 * intensity }));
+    gradient.appendChild(svgEl("stop", { offset: "100%", "stop-color": color, "stop-opacity": 0 }));
+    defs.appendChild(gradient);
+
+    mapRoot.appendChild(svgEl("circle", {
+      cx: point.x,
+      cy: point.y,
+      r: 88,
+      fill: `url(#${gradientId})`,
+      class: "heat-ring",
+    }));
+    mapRoot.appendChild(svgEl("circle", {
+      cx: point.x,
+      cy: point.y,
+      r: 34,
+      fill: color,
+      opacity: 0.10 + 0.11 * intensity,
+      class: "heat-core-glow",
+    }));
   });
 
   (state.data.edges || []).forEach((edge) => {
     const a = points[edge.src];
     const b = points[edge.dst];
     if (!a || !b) return;
-    svg.appendChild(svgEl("line", {
+    mapRoot.appendChild(svgEl("line", {
       x1: a.x,
       y1: a.y,
       x2: b.x,
@@ -777,7 +846,7 @@ function renderMap(previous) {
     const a = points[fromId];
     const b = points[toId];
     if (a && b) {
-      svg.appendChild(svgEl("line", {
+      mapRoot.appendChild(svgEl("line", {
         x1: a.x,
         y1: a.y,
         x2: b.x,
@@ -885,7 +954,7 @@ function renderMap(previous) {
     group.addEventListener("mouseenter", (event) => showTooltip(event, node));
     group.addEventListener("mousemove", moveTooltip);
     group.addEventListener("mouseleave", hideTooltip);
-    svg.appendChild(group);
+    mapRoot.appendChild(group);
   });
 
   renderMapInspector();
@@ -1259,6 +1328,11 @@ async function resetCase(caseId = null) {
     state.mapZoom = 0;
     state.mapPanX = 0;
     state.mapPanY = 0;
+    state.zoomPreviewScale = 1;
+    if (state.zoomCommitTimer !== null) {
+      clearTimeout(state.zoomCommitTimer);
+      state.zoomCommitTimer = null;
+    }
     showTransition(
       "NEW INCIDENT",
       "Initializing first response",
@@ -1352,6 +1426,20 @@ function scheduleMapRender() {
   });
 }
 
+function mapRootElement() {
+  return document.getElementById("map-root");
+}
+
+function clearMapPreviewTransform() {
+  const root = mapRootElement();
+  if (root) root.removeAttribute("transform");
+}
+
+function setMapPreviewTransform(transform) {
+  const root = mapRootElement();
+  if (root) root.setAttribute("transform", transform);
+}
+
 function zoomBy(delta, anchorX = 550, anchorY = 320) {
   const previousZoom = state.mapZoom;
   const nextZoom = Math.max(-1, Math.min(6, previousZoom + delta));
@@ -1363,7 +1451,29 @@ function zoomBy(delta, anchorX = 550, anchorY = 320) {
   state.mapPanX = scale * state.mapPanX + (1 - scale) * offsetX;
   state.mapPanY = scale * state.mapPanY + (1 - scale) * offsetY;
   state.mapZoom = nextZoom;
-  scheduleMapRender();
+  renderMap(state.data);
+}
+
+function commitZoomPreview() {
+  if (state.zoomCommitTimer !== null) {
+    clearTimeout(state.zoomCommitTimer);
+    state.zoomCommitTimer = null;
+  }
+
+  const scale = Number(state.zoomPreviewScale || 1);
+  const anchorX = state.zoomPreviewAnchorX;
+  const anchorY = state.zoomPreviewAnchorY;
+  clearMapPreviewTransform();
+
+  let step = 0;
+  if (scale > 1.10) {
+    step = Math.min(2, Math.max(1, Math.ceil(Math.log2(scale))));
+  } else if (scale < 0.91) {
+    step = Math.max(-2, Math.min(-1, Math.floor(Math.log2(scale))));
+  }
+
+  state.zoomPreviewScale = 1;
+  if (step !== 0) zoomBy(step, anchorX, anchorY);
 }
 
 $("clear-world-btn").addEventListener("click", () => {
@@ -1403,35 +1513,52 @@ $("layer-select").addEventListener("change", () => {
   render(state.data);
 });
 
-$("zoom-in").addEventListener("click", () => zoomBy(1));
-$("zoom-out").addEventListener("click", () => zoomBy(-1));
+$("zoom-in").addEventListener("click", () => {
+  commitZoomPreview();
+  zoomBy(1);
+});
+$("zoom-out").addEventListener("click", () => {
+  commitZoomPreview();
+  zoomBy(-1);
+});
 $("zoom-fit").addEventListener("click", () => {
+  commitZoomPreview();
   state.mapZoom = 0;
   state.mapPanX = 0;
   state.mapPanY = 0;
-  scheduleMapRender();
+  renderMap(state.data);
 });
 
 $("graph").addEventListener("wheel", (event) => {
   event.preventDefault();
-  state.wheelDelta += event.deltaY;
-  if (Math.abs(state.wheelDelta) < 36) return;
+  if (!state.data || state.drag) return;
 
   const rect = $("graph").getBoundingClientRect();
-  const anchorX = ((event.clientX - rect.left) / rect.width) * 1100;
-  const anchorY = ((event.clientY - rect.top) / rect.height) * 640;
-  const direction = state.wheelDelta < 0 ? 1 : -1;
-  state.wheelDelta = 0;
-  zoomBy(direction, anchorX, anchorY);
+  const anchorX = ((event.clientX - rect.left) / Math.max(1, rect.width)) * 1100;
+  const anchorY = ((event.clientY - rect.top) / Math.max(1, rect.height)) * 640;
+  const factor = Math.exp(-Number(event.deltaY) * 0.0024);
+
+  state.zoomPreviewAnchorX = anchorX;
+  state.zoomPreviewAnchorY = anchorY;
+  state.zoomPreviewScale = Math.max(0.48, Math.min(2.15, state.zoomPreviewScale * factor));
+
+  const s = state.zoomPreviewScale;
+  setMapPreviewTransform(
+    `translate(${anchorX} ${anchorY}) scale(${s}) translate(${-anchorX} ${-anchorY})`
+  );
+
+  if (state.zoomCommitTimer !== null) clearTimeout(state.zoomCommitTimer);
+  state.zoomCommitTimer = setTimeout(commitZoomPreview, 95);
 }, { passive: false });
 
 $("graph").addEventListener("pointerdown", (event) => {
   if (event.button !== 0) return;
+  commitZoomPreview();
   state.drag = {
     x: event.clientX,
     y: event.clientY,
-    panX: state.mapPanX,
-    panY: state.mapPanY,
+    dx: 0,
+    dy: 0,
   };
   $("graph").setPointerCapture(event.pointerId);
   $("graph").classList.add("dragging");
@@ -1442,16 +1569,24 @@ $("graph").addEventListener("pointermove", (event) => {
   const rect = $("graph").getBoundingClientRect();
   const scaleX = 1100 / Math.max(1, rect.width);
   const scaleY = 640 / Math.max(1, rect.height);
-  state.mapPanX = state.drag.panX + (event.clientX - state.drag.x) * scaleX;
-  state.mapPanY = state.drag.panY + (event.clientY - state.drag.y) * scaleY;
-  scheduleMapRender();
+  const dx = (event.clientX - state.drag.x) * scaleX;
+  const dy = (event.clientY - state.drag.y) * scaleY;
+  state.drag.dx = dx;
+  state.drag.dy = dy;
+  setMapPreviewTransform(`translate(${dx} ${dy})`);
 });
 
 function endDrag(event) {
   if (!state.drag) return;
+  const dx = Number(state.drag.dx || 0);
+  const dy = Number(state.drag.dy || 0);
+  state.mapPanX += dx;
+  state.mapPanY += dy;
   state.drag = null;
+  clearMapPreviewTransform();
   try { $("graph").releasePointerCapture(event.pointerId); } catch (_) {}
   $("graph").classList.remove("dragging");
+  renderMap(state.data);
 }
 $("graph").addEventListener("pointerup", endDrag);
 $("graph").addEventListener("pointercancel", endDrag);
