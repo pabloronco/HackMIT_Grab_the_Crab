@@ -660,10 +660,10 @@ function appendMapTiles(root, projection, width, height) {
         class: "map-tile",
         preserveAspectRatio: "none",
       });
-      image.dataset.fallback = "0";
+      image.setAttribute("data-fallback", "0");
       image.addEventListener("error", () => {
-        if (image.dataset.fallback === "0") {
-          image.dataset.fallback = "1";
+        if (image.getAttribute("data-fallback") === "0") {
+          image.setAttribute("data-fallback", "1");
           image.setAttribute("href", osm);
         } else {
           image.remove();
