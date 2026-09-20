@@ -9,8 +9,8 @@ from adaptive_response.mission_control import MissionControlSession
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Deterministic backend smoke test for the RAMP-aware Marine judge mode. "
-            "By default the script follows both Marine's site and effort recommendation."
+            "Deterministic backend smoke test for the resource-efficiency-aware Marine judge mode. "
+            "By default the script follows both the current site and effort recommendation."
         )
     )
     parser.add_argument(
@@ -23,7 +23,7 @@ def main() -> None:
         default="marine",
         choices=("marine", "1", "3", "6"),
         help=(
-            "Effort policy for the interactive path. 'marine' follows Marine's "
+            "Effort policy for the interactive path. 'marine' follows the adaptive planner's "
             "current recommended effort; 1/3/6 force that effort when affordable."
         ),
     )
