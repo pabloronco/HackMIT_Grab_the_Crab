@@ -43,7 +43,13 @@ _INCIDENT_PREFERRED_MIN_SITES = 12
 _DRAWS_PER_MODEL = 60
 _Q_BELIEF_VALUES = (0.05, 0.10, 0.20)
 _EFFORT_LEVELS = (1, 3, 6)
-_EFFORT_VALUE_RETENTION = 0.60
+_DEMO_MISSION_HORIZON = 3
+_EFFORT_INFORMATION_RETENTION = 0.65
+_EFFORT_DETECTION_RETENTION_LOW = 0.55
+_EFFORT_DETECTION_RETENTION_MEDIUM = 0.68
+_EFFORT_DETECTION_RETENTION_HIGH = 0.82
+_EFFORT_MEDIUM_OCCUPANCY = 0.25
+_EFFORT_HIGH_OCCUPANCY = 0.55
 _TOP_PROPAGATED_CHANGES = 5
 _TOP_RECOMMENDATIONS = 5
 _TOP_WORLDS = 5
@@ -326,11 +332,22 @@ class MissionControlFrontierPlanner:
         if not options:
             raise ValueError("No allowed effort level fits remaining budget.")
 
+        occupancy_belief = float(spatial.p_by_site()[site_id])
+        if occupancy_belief >= _EFFORT_HIGH_OCCUPANCY:
+            detection_retention_required = _EFFORT_DETECTION_RETENTION_HIGH
+            occupancy_band = "high"
+        elif occupancy_belief >= _EFFORT_MEDIUM_OCCUPANCY:
+            detection_retention_required = _EFFORT_DETECTION_RETENTION_MEDIUM
+            occupancy_band = "medium"
+        else:
+            detection_retention_required = _EFFORT_DETECTION_RETENTION_LOW
+            occupancy_band = "exploratory"
+
         chosen = options[-1]
         for row in options:
             if (
-                float(row["information_retention"]) >= _EFFORT_VALUE_RETENTION
-                and float(row["detection_power_retention"]) >= _EFFORT_VALUE_RETENTION
+                float(row["information_retention"]) >= _EFFORT_INFORMATION_RETENTION
+                and float(row["detection_power_retention"]) >= detection_retention_required
             ):
                 chosen = row
                 break
@@ -342,9 +359,18 @@ class MissionControlFrontierPlanner:
             "recommended_effort": chosen_effort,
             "effort_saved_vs_max": max_effort - chosen_effort,
             "max_feasible_effort": max_effort,
-            "retention_threshold": _EFFORT_VALUE_RETENTION,
+            "occupancy_belief": occupancy_belief,
+            "occupancy_band": occupancy_band,
+            "information_retention_required": _EFFORT_INFORMATION_RETENTION,
+            "detection_power_retention_required": detection_retention_required,
             "options": [dict(row) for row in options],
-            "rule": "smallest_effort_retaining_information_and_detection_power",
+            "rule": "occupancy_aware_smallest_effort_retaining_information_and_detection_power",
+            "design_note": (
+                "Exploratory low-belief sites accept a larger reduction in conditional "
+                "detection power to preserve field capacity; high-belief sites require "
+                "much stronger detection-power retention. Thresholds are product design "
+                "choices for the RAMP demo, not ecological constants."
+            ),
         }
 
     def plan(
@@ -795,6 +821,17 @@ class MissionControlSession:
         self._world_mass_before = self._ecological_world_mass_map(spatial_before)
 
         transition = loop.execute_pending()
+        if (
+            not transition.done
+            and transition.public_state_after.round >= _DEMO_MISSION_HORIZON
+        ):
+            loop.force_complete()
+            transition = replace(
+                transition,
+                next_mission=None,
+                done=True,
+            )
+
         self._last_transition = transition
         self._last_counterfactual_next = self._counterfactual_next_without_evidence(
             transition,
@@ -945,8 +982,11 @@ class MissionControlSession:
                 {
                     "kind": "complete",
                     "round": transition.observations.round,
-                    "title": "Field budget exhausted",
-                    "detail": "Reveal gate is now available.",
+                    "title": "Response window complete",
+                    "detail": (
+                        "Three field deployments are complete. Any unspent effort "
+                        "remains preserved capacity; reveal is now available."
+                    ),
                 }
             )
 
@@ -1126,11 +1166,12 @@ class MissionControlSession:
             "high_edge_mass": high_mass,
             "dominant_edge": dominant_edge,
             "dominant_edge_mass": dominant_edge_mass,
-            "edge_concentrated": dominant_edge_mass >= 0.60,
+            "boundary_pressure": dominant_edge_mass,
             "edge_note": (
-                "Posterior concentration at an edge of the tested q support can signal "
-                "limited support or q/occupancy confounding. It is not the same as "
-                "posterior-predictive model stress."
+                "Mass near one edge of the tested q support is a boundary-pressure "
+                "diagnostic, not a stress score. It can suggest that q support is narrow "
+                "or that occupancy and detectability remain confounded. Posterior-"
+                "predictive model stress is computed separately from observation surprise."
             ),
         }
 
@@ -1183,9 +1224,18 @@ class MissionControlSession:
                 "initial_budget": self._budget,
                 "remaining_budget": public.remaining_budget,
                 "spent_budget": self._budget - public.remaining_budget,
+                "capacity_preserved": public.remaining_budget,
                 "teams": public.teams,
                 "round": public.round,
+                "mission_horizon": _DEMO_MISSION_HORIZON,
+                "missions_remaining": max(
+                    0, _DEMO_MISSION_HORIZON - public.round
+                ),
                 "effort_levels": list(_EFFORT_LEVELS),
+                "horizon_semantics": (
+                    "Hackathon response window: up to three field deployments. "
+                    "Unspent effort remains preserved capacity."
+                ),
             },
             "mission": self._serialize_mission(self._mission),
             "static_response": {
