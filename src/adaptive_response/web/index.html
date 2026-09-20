@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f4f7fb" />
-  <title>MARINE — Adaptive First Response</title>
+  <title>Catch the Crab — Adaptive First Response</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
@@ -20,14 +20,16 @@
     <header class="app-header">
       <div class="brand-block">
         <div class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 68 48">
-            <path d="M4 20c13-11 24-10 34-2 9 7 17 8 26 1-5 10-13 15-23 13-9-2-16-10-25-9-5 0-9 1-12 3 2-2 2-4 0-6Z"></path>
-            <path d="M8 31c10-7 19-6 27 0 8 5 16 6 25 1-6 8-14 11-23 9-8-2-15-7-22-7-3 0-5 0-7 1Z"></path>
+          <svg viewBox="0 0 64 52" class="crab-logo">
+            <path class="crab-shell" d="M18 21c2-8 8-13 14-13s12 5 14 13v8c0 7-6 12-14 12s-14-5-14-12Z"></path>
+            <path class="crab-eye" d="M24 18a2.4 2.4 0 1 0 0-4.8A2.4 2.4 0 0 0 24 18Zm16 0a2.4 2.4 0 1 0 0-4.8A2.4 2.4 0 0 0 40 18Z"></path>
+            <path class="crab-limb" d="M19 24 10 19 5 12m40 12 9-5 5-7M18 29 8 30l-5 6m43-7 10 1 5 6M20 34 11 40m33-6 9 6"></path>
+            <path class="crab-claw" d="M7 12c-3-1-5-4-4-7 4 0 7 2 8 5m46 2c3-1 5-4 4-7-4 0-7 2-8 5"></path>
           </svg>
         </div>
         <div class="brand-copy">
           <div class="brand-row">
-            <h1>MARINE</h1>
+            <h1>Catch the Crab</h1>
             <span>Observe · Infer · Decide · Survey · Replan</span>
           </div>
           <p>Adaptive first-response mission control for marine invasive species</p>
@@ -77,13 +79,13 @@
           <span class="section-icon">⌖</span>
           <div>
             <h2>Next field mission</h2>
-            <p>Marine recommends both a site and an effort level. You remain in control.</p>
+            <p>Catch the Crab recommends a site and effort level. You remain in control.</p>
           </div>
         </div>
 
         <div class="marine-recommendation">
           <div class="recommendation-label">
-            <span>MARINE RECOMMENDS</span>
+            <span>CATCH THE CRAB RECOMMENDS</span>
             <span id="marine-rank-badge" class="soft-badge">#1</span>
           </div>
           <div class="recommendation-hero">
@@ -108,14 +110,14 @@
         <div class="control-section">
           <div class="control-title">
             <span>Your decision</span>
-            <button id="follow-marine-btn" class="inline-action">Use Marine recommendation</button>
+            <button id="follow-marine-btn" class="inline-action">Use recommendation</button>
           </div>
           <label class="field-label" for="site-select">Site</label>
           <select id="site-select" class="large-select"></select>
 
           <div class="effort-title-row">
             <label class="field-label">Effort</label>
-            <span id="effort-rec-badge" class="recommended-chip">Marine: —</span>
+            <span id="effort-rec-badge" class="recommended-chip">Suggested: —</span>
           </div>
           <div id="effort-controls" class="effort-controls">
             <button class="effort-btn" data-effort="1"><b>1</b><span>LIGHT</span></button>
@@ -192,7 +194,7 @@
           <div class="map-legend">
             <div><span class="legend-node"></span> Survey site</div>
             <div><span class="legend-line"></span> Graph connection</div>
-            <div><span class="legend-marine"></span> Marine #1</div>
+            <div><span class="legend-marine"></span> Recommended #1</div>
             <div><span class="legend-detection"></span> Detection</div>
             <div><span class="legend-missing"></span> No layer data</div>
           </div>
@@ -224,10 +226,10 @@
 
       <aside class="card ramp-card">
         <div class="ramp-heading">
-          <span class="sponsor-pill">RAMP</span>
+          <span class="sponsor-pill">FIELD CAPACITY</span>
           <div>
             <h2>Save field capacity</h2>
-            <p>Three deployments. Marine can preserve unused effort instead of automatically spending the full budget.</p>
+            <p>Three deployments. The planner can preserve unused effort instead of automatically spending the full budget.</p>
           </div>
         </div>
 
@@ -248,7 +250,7 @@
 
         <details class="conversion-panel">
           <summary>Translate saved effort into local time / cost</summary>
-          <p>Optional operator inputs. MARINE does not assume a universal dollar or time conversion.</p>
+          <p>Optional operator inputs. No universal dollar or time conversion is assumed.</p>
           <div class="conversion-grid">
             <label><span>Minutes per effort unit</span><input id="minutes-per-unit" type="number" min="0" step="1" placeholder="e.g. 20" /></label>
             <label><span>$ per effort unit</span><input id="cost-per-unit" type="number" min="0" step="1" placeholder="e.g. 25" /></label>
@@ -342,7 +344,7 @@
       <section class="card live-card">
         <div class="live-head">
           <div>
-            <span class="eyebrow">RAMP · RESOURCE EFFICIENCY</span>
+            <span class="eyebrow">RESOURCE EFFICIENCY</span>
             <h2>What are we spending, and what are we learning?</h2>
             <p>Separate resource use from field outcomes so one lucky detection does not masquerade as a better policy.</p>
           </div>
@@ -353,7 +355,7 @@
           <div class="chart-panel">
             <div class="chart-panel-head">
               <strong>Effort per deployment</strong>
-              <span>Marine / your path vs static e6 reference</span>
+              <span>Adaptive / your path vs static e6 reference</span>
             </div>
             <svg id="effort-chart" viewBox="0 0 560 250" role="img" aria-label="Effort per deployment"></svg>
           </div>
@@ -372,7 +374,7 @@
           <div>
             <span class="eyebrow">EVALUATE</span>
             <h2>Same hidden incident. Same three-deployment response window.</h2>
-            <p>Marine vs Static is the policy comparison. Your Path is an interactive realization and can be luckier or unluckier on one incident.</p>
+            <p>Adaptive response vs Static is the policy comparison. Your Path is an interactive realization and can be luckier or unluckier on one incident.</p>
           </div>
           <button id="reveal-btn" class="reveal-button" disabled>Reveal true extent</button>
         </div>
