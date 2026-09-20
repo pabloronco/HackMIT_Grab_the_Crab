@@ -677,3 +677,15 @@ The audit must still report all 100 cases, including Marine-better, equal, and w
 - Species examples are grounded to NOAA/USGS invasive-species materials. Including them in the roadmap preview does not imply that the current simulator, priors, detectability model or planner has been validated for those taxa.
 
 **Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
+
+
+## 2026-09-20 — Final heat direction and species drawer behavior
+
+**Status:** CURRENT DEFAULT / UI freeze candidate.
+
+- Heat scale direction is now **green → yellow → orange → red**, with **red representing the highest displayed value / probability** and green the lowest. Map halos, site cores and legend use the same direction.
+- The **Other invasive species** extensibility preview is now a native collapsed disclosure control, closed by default. Clicking the summary expands the illustrative species list; clicking again closes it.
+- Expansion changes presentation only. It does not change incident state, planner behavior, inference, simulator configuration or selected species.
+- The expanded list is height-bounded and internally scrollable so the aligned right rail remains stable.
+
+**Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
