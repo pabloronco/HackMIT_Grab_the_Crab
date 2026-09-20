@@ -35,12 +35,9 @@ class FrontierPlanner:
     3. higher uncertainty;
     4. deterministic site_id tie-break.
 
-    If budget remains after feasible frontier nodes are ranked, the same
-    belief/uncertainty ordering is used for remaining feasible nodes. This is a
-    baseline decision rule, not an ecological optimality claim.
-
-    `effort_per_site` is configurable so M3 does not freeze the later RL action
-    space. The planner never sees HiddenWorld and uses only GraphState + budget.
+    rank_candidates exposes the exact same ranking used by plan so product
+    surfaces can explain and display several alternatives without re-implementing
+    planner semantics in the UI layer.
     """
 
     def __init__(
@@ -58,50 +55,32 @@ class FrontierPlanner:
             raise ValueError("max_sites must be a positive integer when provided.")
         if effort_levels is not None:
             if not effort_levels or any(
-                isinstance(e, bool) or not isinstance(e, int) or e <= 0 for e in effort_levels
+                isinstance(e, bool) or not isinstance(e, int) or e <= 0
+                for e in effort_levels
             ):
-                raise ValueError("effort_levels must be a non-empty sequence of positive ints.")
+                raise ValueError(
+                    "effort_levels must be a non-empty sequence of positive ints."
+                )
         self.effort_per_site = effort_per_site
         self.max_sites = max_sites
-        # R8 baseline-fairness correction (docs/R8_DEMU_BENCHMARK_REVIEW.md,
-        # configs/benchmark_protocol_r8.json baseline_fairness_gate): when set,
-        # each pick uses the standard-event effort level (the largest in
-        # effort_levels) when the remaining budget allows it, otherwise the
-        # largest level that still fits - never a fixed effort_per_site that
-        # structurally strands most of the budget unused. None (default)
-        # preserves the original fixed-effort_per_site behavior unchanged.
-        self.effort_levels = tuple(sorted(effort_levels, reverse=True)) if effort_levels is not None else None
+        self.effort_levels = (
+            tuple(sorted(effort_levels, reverse=True))
+            if effort_levels is not None
+            else None
+        )
 
-    def plan(
-        self,
-        graph_state: GraphState,
-        remaining_budget: int,
-        constraints: Mapping[str, Any],
-    ) -> MissionAction:
-        del constraints  # Frontier v0 intentionally does not use q or hidden context.
-
-        if not isinstance(remaining_budget, int) or remaining_budget < 0:
-            raise ValueError("remaining_budget must be a non-negative integer.")
+    def rank_candidates(self, graph_state: GraphState) -> tuple[dict[str, Any], ...]:
+        """Return all feasible candidates in the exact deterministic Frontier order."""
         if len(graph_state.node_ids) != len(graph_state.node_features):
             raise ValueError("GraphState node_ids and node_features are misaligned.")
         if len(graph_state.node_ids) != len(graph_state.feasibility_mask):
             raise ValueError("GraphState feasibility_mask is misaligned with nodes.")
-        if remaining_budget == 0:
-            return MissionAction(
-                allocations=(),
-                total_cost=0,
-                diagnostics={
-                    "planner": "frontier",
-                    "reason": "no_remaining_budget",
-                    "fallback_used": False,
-                },
-            )
 
         belief_idx = NODE_FEATURE_NAMES.index("belief")
         uncertainty_idx = NODE_FEATURE_NAMES.index("uncertainty")
         frontier_idx = NODE_FEATURE_NAMES.index("frontier")
 
-        candidates: list[tuple[str, float, float, bool]] = []
+        candidates: list[dict[str, Any]] = []
         for i, site_id in enumerate(graph_state.node_ids):
             if not graph_state.feasibility_mask[i]:
                 continue
@@ -112,56 +91,84 @@ class FrontierPlanner:
                     f"expected {len(NODE_FEATURE_NAMES)}."
                 )
             candidates.append(
-                (
-                    site_id,
-                    float(features[belief_idx]),
-                    float(features[uncertainty_idx]),
-                    bool(features[frontier_idx] > 0.5),
-                )
+                {
+                    "site_id": site_id,
+                    "belief": float(features[belief_idx]),
+                    "uncertainty": float(features[uncertainty_idx]),
+                    "frontier": bool(features[frontier_idx] > 0.5),
+                }
             )
 
         candidates.sort(
             key=lambda row: (
-                -int(row[3]),
-                -row[1],
-                -row[2],
-                row[0],
+                -int(bool(row["frontier"])),
+                -float(row["belief"]),
+                -float(row["uncertainty"]),
+                str(row["site_id"]),
             )
         )
-        if self.max_sites is not None:
-            candidates = candidates[: self.max_sites]
+        return tuple(candidates)
+
+    def plan(
+        self,
+        graph_state: GraphState,
+        remaining_budget: int,
+        constraints: Mapping[str, Any],
+    ) -> MissionAction:
+        del constraints
+
+        if not isinstance(remaining_budget, int) or remaining_budget < 0:
+            raise ValueError("remaining_budget must be a non-negative integer.")
+        if remaining_budget == 0:
+            return MissionAction(
+                allocations=(),
+                total_cost=0,
+                diagnostics={
+                    "planner": "frontier",
+                    "reason": "no_remaining_budget",
+                    "fallback_used": False,
+                    "ranked_candidates": (),
+                },
+            )
+
+        all_candidates = list(self.rank_candidates(graph_state))
+        selected_candidates = (
+            all_candidates
+            if self.max_sites is None
+            else all_candidates[: self.max_sites]
+        )
 
         budget_left = remaining_budget
         allocations: list[MissionAllocation] = []
-        ranking_diagnostics: list[dict[str, Any]] = []
+        selected_diagnostics: list[dict[str, Any]] = []
 
-        for site_id, belief, uncertainty, is_frontier in candidates:
+        for row in selected_candidates:
             if budget_left <= 0:
                 break
             if self.effort_levels is not None:
                 feasible_levels = [e for e in self.effort_levels if e <= budget_left]
                 if not feasible_levels:
                     break
-                effort = feasible_levels[0]  # effort_levels is sorted descending
+                effort = feasible_levels[0]
             else:
                 effort = min(self.effort_per_site, budget_left)
+
             allocations.append(
-                MissionAllocation(site_id=site_id, effort_units=effort)
+                MissionAllocation(
+                    site_id=str(row["site_id"]),
+                    effort_units=effort,
+                )
             )
-            ranking_diagnostics.append(
-                {
-                    "site_id": site_id,
-                    "belief": belief,
-                    "uncertainty": uncertainty,
-                    "frontier": is_frontier,
-                    "effort_units": effort,
-                }
-            )
+            selected_diagnostics.append({**row, "effort_units": effort})
             budget_left -= effort
 
         total_cost = sum(a.effort_units for a in allocations)
-        selected_non_frontier = any(not row["frontier"] for row in ranking_diagnostics)
-        no_frontier_available = not any(row[3] for row in candidates)
+        selected_non_frontier = any(
+            not bool(row["frontier"]) for row in selected_diagnostics
+        )
+        no_frontier_available = not any(
+            bool(row["frontier"]) for row in all_candidates
+        )
         return MissionAction(
             allocations=tuple(allocations),
             total_cost=total_cost,
@@ -169,7 +176,8 @@ class FrontierPlanner:
                 "planner": "frontier",
                 "fallback_used": selected_non_frontier or no_frontier_available,
                 "effort_per_site": self.effort_per_site,
-                "ranked_selected_sites": tuple(ranking_diagnostics),
+                "ranked_selected_sites": tuple(selected_diagnostics),
+                "ranked_candidates": tuple(all_candidates),
             },
         )
 

@@ -10,13 +10,19 @@ from pydantic import BaseModel
 from .mission_control import MissionControlSession
 
 WEB_DIR = Path(__file__).with_name("web")
-app = FastAPI(title="Adaptive First-Response Mission Control")
+app = FastAPI(title="Marine Interactive Mission Control")
 session = MissionControlSession()
 app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
 
 
 class ResetRequest(BaseModel):
     seed: int | None = None
+    case_id: str | None = None
+
+
+class DeployRequest(BaseModel):
+    site_id: str
+    effort: int
 
 
 @app.get("/")
@@ -29,11 +35,32 @@ def state() -> dict:
     return session.snapshot()
 
 
+@app.get("/api/cases")
+def cases() -> dict:
+    return session.case_library()
+
+
 @app.post("/api/reset")
 def reset(request: ResetRequest) -> dict:
-    return session.reset(seed=request.seed)
+    return _call(
+        lambda: session.reset(
+            seed=request.seed,
+            case_id=request.case_id,
+        )
+    )
 
 
+@app.post("/api/deploy")
+def deploy(request: DeployRequest) -> dict:
+    return _call(
+        lambda: session.deploy(
+            site_id=request.site_id,
+            effort=request.effort,
+        )
+    )
+
+
+# Backwards-compatible rehearsal endpoints. The interactive UI uses /api/deploy.
 @app.post("/api/plan")
 def plan() -> dict:
     return _call(session.plan)

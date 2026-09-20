@@ -131,6 +131,50 @@ class SpatialAdaptiveMissionLoop:
         self._phase = LoopPhase.MISSION_PLANNED
         return mission
 
+    def set_pending_mission(self, mission: MissionAction) -> MissionAction:
+        """Install or replace the pending mission with an operator-selected action.
+
+        This is a product/orchestration hook for human-in-the-loop mission control.
+        It does not bypass Environment validation, spend budget, update belief, or
+        expose hidden truth. It only replaces the action that execute_pending will
+        send to the Environment. Planner-facing state remains unchanged.
+        """
+
+        self._require_initialized()
+        if self._phase not in (LoopPhase.READY_TO_PLAN, LoopPhase.MISSION_PLANNED):
+            raise RuntimeError(
+                "Operator mission selection requires READY_TO_PLAN or MISSION_PLANNED."
+            )
+        assert self._public_state is not None
+        assert self._graph_state is not None
+
+        if mission.total_cost <= 0 or not mission.allocations:
+            raise ValueError("Operator mission must allocate positive effort.")
+        if mission.total_cost > self._public_state.remaining_budget:
+            raise ValueError("Operator mission exceeds remaining budget.")
+
+        known_sites = set(self._graph_state.node_ids)
+        allocated_effort = 0
+        for allocation in mission.allocations:
+            if allocation.site_id not in known_sites:
+                raise ValueError(
+                    f"Operator mission references unknown site {allocation.site_id!r}."
+                )
+            if (
+                isinstance(allocation.effort_units, bool)
+                or not isinstance(allocation.effort_units, int)
+                or allocation.effort_units <= 0
+            ):
+                raise ValueError("Operator mission effort must be a positive integer.")
+            allocated_effort += allocation.effort_units
+
+        if allocated_effort != mission.total_cost:
+            raise ValueError("Operator mission total_cost must equal allocated effort.")
+
+        self._pending_mission = mission
+        self._phase = LoopPhase.MISSION_PLANNED
+        return deepcopy(mission)
+
     def execute_pending(self) -> RoundTransition:
         self._require_initialized()
         if self._phase is not LoopPhase.MISSION_PLANNED or self._pending_mission is None:

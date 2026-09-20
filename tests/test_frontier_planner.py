@@ -221,3 +221,20 @@ def test_invalid_feature_width_is_rejected() -> None:
 
     with pytest.raises(ValueError, match="expected"):
         FrontierPlanner().plan(state, remaining_budget=1, constraints={})
+
+
+def test_rank_candidates_matches_plan_order_without_spending_budget() -> None:
+    state = graph(
+        [
+            ("site_c", node_row(belief=0.7, uncertainty=0.4, frontier=0), True),
+            ("site_a", node_row(belief=0.4, uncertainty=0.8, frontier=1), True),
+            ("site_b", node_row(belief=0.6, uncertainty=0.2, frontier=1), True),
+        ]
+    )
+    planner = FrontierPlanner()
+
+    ranked = planner.rank_candidates(state)
+    action = planner.plan(state, remaining_budget=3, constraints={})
+
+    assert [row["site_id"] for row in ranked] == ["site_b", "site_a", "site_c"]
+    assert selected_ids(action) == [row["site_id"] for row in ranked]

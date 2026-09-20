@@ -470,3 +470,102 @@ starved) but not sufficient to recommend it as the project's planner on
 this evidence.
 
 **Owner:** Demu.
+
+
+## 2026-09-19 — Hackathon judging pivot: interactive human-in-the-loop mission control
+
+**Status:** FROZEN for the judging/demo branch `ui/interactive-judge-mode`. This does not change the ecological kernel, benchmark claims, R8/R10 interpretation, hidden-truth boundary, or evidence semantics.
+
+Hackathon feedback changed the product presentation priority from validation-led to transformation-led. Marine is still introduced as ecological rapid response, but the judge now acts as the response coordinator instead of passively watching the planner.
+
+**Judging loop now frozen:**
+
+`inspect current belief -> inspect Marine recommendation -> choose any site -> choose effort {1,3,6} -> deploy -> receive field result -> explicit Bayes update -> inspect propagated belief changes -> inspect reordered plausible extents -> see next Marine recommendation -> repeat -> reveal hidden extent -> compare outcomes`.
+
+**Human-in-the-loop boundary:** Marine is advisory. The judge may follow Marine's top recommendation or override it. The browser contains no ecological inference or hidden truth. User selections are converted into a normal `MissionAction`; `Environment -> SpatialBeliefEngine -> GraphState -> planner` remains the evidence/decision path.
+
+**Possible-world UI:** show top unique ecological occupancy extents after marginalizing q. A world card is an explainability view only; clicking one does not assert hidden truth and does not invoke a new world-conditioned planner. Family provenance may be multi-family because identical occupancy maps are deduplicated.
+
+**Map semantics:** discrete monitoring sites only. No interpolated continuous probability heatmap is claimed. Primary layer is posterior occupancy belief; habitat and observed survey effort are contextual layers. Temperature remains stretch/out of the MVP unless coverage/provenance are made explicit.
+
+**Effort semantics:** the operator may allocate 1, 3, or 6 effort units. Marine does not claim an optimized LOW/MEDIUM/HIGH effort recommendation under Frontier. The UI may show posterior-predictive detection probability at each allowed effort because that quantity is explicitly computed by `SpatialBeliefEngine`.
+
+**Model-stress semantics:** the R9 posterior-predictive surprise diagnostic may be displayed after a field return. It diagnoses how expected the result was under the current ensemble. It does not automatically expand or repair the scenario ensemble.
+
+**Comparator semantics:** the hero comparison is `Marine adaptive Frontier vs Static Response vs You`. Static Response precommits the same Frontier ranking at t0 and does not use subsequent evidence to change its remaining targets. It is not labelled "expert", "professional", "WDFW", or "standard of care". Historical field trajectories remain a separate evidence/replay feature when data support them.
+
+**Outcome receipt:** after reveal, compare the number/fraction of true occupied sites that were actually confirmed/detected, including the known initial detection. Do not use "occupied sites surveyed" as a success metric because imperfect detection means survey is not confirmation. X-axis may be cumulative field effort; hidden truth stays locked until completion.
+
+**Reproducibility:** a committed 100-case demo manifest freezes public demo seeds. Cases are playable synthetic hidden incidents on the real monitoring graph; they are not represented as 100 historical outbreaks. Field outcomes use deterministic simulator-only potential outcomes so the same case is reproducible.
+
+**Implementation priority:** interactive site+effort deployment -> deterministic cases -> top candidate ranking/why-here -> top unique extents -> propagated belief animation -> comparator receipt -> explainability drawers -> polish. World-conditioned mission ranking and temperature are not MVP blockers.
+
+**Owner:** team. Demu may work on the UI in parallel; cross-cutting interface/claim changes require team review.
+
+
+## 2026-09-19 — Judge-mode hero-case selection rubric frozen before scanning results
+
+**Status:** FROZEN for illustrative demo-case selection only. This is not a new benchmark and must not replace or modify R8/R10 claims.
+
+The first technical smoke case (`incident_001`) was intentionally not selected for storytelling and happened to be uninformative: Marine, Static Response and the follow-Marine judge path all used the same three sites and confirmed only the already-known initial occupied site. Before inspecting the remaining 99 cases, the team freezes the following hero-case selection semantics.
+
+**Positive illustrative candidate gate:**
+- Marine confirms more true occupied sites than Static Response on the same frozen incident;
+- Marine and Static Response diverge in at least one mission target;
+- following Marine produces at least one visible `MISSION UPDATED` event;
+- at least one field detection occurs beyond the already-confirmed initial site.
+
+**Positive-candidate ordering, lexicographically:**
+1. larger Marine-minus-Static confirmed/detected occupied-site count;
+2. more mission-target divergences;
+3. more visible mission-updated rounds;
+4. more field detections beyond the initial detection;
+5. larger maximum propagated absolute occupancy-belief change;
+6. more top-world turnovers;
+7. deterministic case-id tie-break.
+
+**Causal-legibility fallback gate:** if no positive candidate exists, prioritize incidents with mission divergence plus visible mission update, then larger propagated belief changes and top-world turnover. Such a case may demonstrate adaptive causality without claiming an outcome advantage.
+
+The selector must also report counts of Marine-better / equal / worse cases across the full 100-case UI library so illustrative selection cannot be mistaken for an aggregate performance result.
+
+**Claim rule:** any selected hero incident must be described as an illustrative blinded scenario chosen for causal legibility. Formal statements about whether replanning reliably improves performance remain governed by the frozen R10 paired analysis.
+
+
+## 2026-09-19 — UI audit correction: old MISSION UPDATED flag was not causal
+
+**Status:** BLOCKER FIXED before selecting the hero case.
+
+The first 100-case UI audit exposed a semantic bug in the judging adapter: `mission_changed` was computed by comparing the just-executed mission with the next mission. Under a no-revisit sequential campaign those are almost always different, so the flag could fire even when the new field evidence did not alter what Marine would otherwise have recommended. The first audit therefore reported `mission_changed_rounds=2` for every three-mission case and must **not** be used to freeze the hero case.
+
+The aggregate outcome counts from that scan (Marine better/equal/worse than Static) and the actual Marine/Static mission sequences remain descriptive outputs of those cases, but any criterion depending on `mission_changed_rounds` must be rerun after this fix.
+
+**Correct semantics now:** after each survey, construct a counterfactual public state that keeps the action itself (effort spent, remaining budget, round, observed effort) while erasing the just-returned ecological result (new detections/status). Hold occupancy belief at the pre-observation posterior. Run the same current Frontier product planner on that counterfactual state. `MISSION UPDATED` is true only when the actual post-evidence recommendation differs from this no-new-evidence counterfactual recommendation.
+
+This makes the UI statement causal and aligned with the project thesis:
+
+`FIELD EVIDENCE -> BELIEF/OBSERVABLE EVIDENCE CHANGED -> NEXT MISSION CHANGED`.
+
+The frozen hero-case rubric from the preceding entry remains unchanged, but the 100-case selector must be rerun on the corrected semantics before a hero case is chosen.
+
+
+## 2026-09-19 — Judging UI visual direction and hero default implemented
+
+**Status:** CURRENT DEFAULT on `ui/interactive-judge-mode`.
+
+The judging interface has been rebuilt around the visual/product direction reviewed by the team: a bright professional marine operations dashboard with a dominant coastal map, a left mission/choice panel, a right probable-worlds panel, explicit effort controls, inspectable recommendation reasons, live observable incident telemetry, and reveal-only policy comparison.
+
+**Hero case:** `incident_097` is now the default case loaded by the dashboard. It remains an illustrative frozen blinded incident selected under the previously frozen hero-case rubric, not an aggregate performance claim. All 100 cases remain selectable.
+
+**Real-coast map:** the UI now renders the current incident subgraph at the real monitoring-site latitude/longitude coordinates from `real_sites_v0.csv`. Online, the browser requests OpenStreetMap raster tiles only as a cartographic basemap; the ecological graph, site states, beliefs, edges, mission recommendations and evidence are all produced by the local Marine backend. If tiles are unavailable, the SVG graph and coastal-water fallback remain usable. OpenStreetMap attribution is shown in the map.
+
+**Map probability semantics:** site-centered colored halos visualize node-level posterior occupancy belief / habitat context. They are not presented as an interpolated continuous ecological probability surface. The graph remains the decision state.
+
+**Left mission panel:** shows Marine's current Frontier recommendation, the frozen Static Response t0 route, operator site choice, effort `{1,3,6}`, and deploy control. Static Response is still a benchmark design, not a field-professional or agency simulation.
+
+**Why-this-mission panel:** only exposes quantities that the current system actually supports: Frontier status, current occupancy belief, and posterior-predictive detection probability at the operator-selected effort. Habitat is available as map/site context but is not falsely presented as a Frontier ranking cause.
+
+**Right panel:** shows top unique ecological extents marginalized over q plus the current q posterior. World explanations use only explicit extent size, provenance labels and posterior movement; they do not invent ecological narratives or world-conditioned planning.
+
+**Live chart:** before reveal, the chart uses observable quantities only: cumulative confirmed detections and field budget used. Hidden occupied-site coverage is not exposed. After reveal, the evaluator receipt separately compares Marine / Static Response / You on true occupied sites confirmed/detected.
+
+**Owner:** team.
