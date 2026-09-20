@@ -322,3 +322,10 @@ Open `http://127.0.0.1:8000` and verify the acceptance gate before merging.
 - It spans exactly the same desktop grid rows as the map and Why This Mission region; its bottom must align with the bottom of Why This Mission before full-width sections begin.
 - Probable Worlds owns flexible vertical space and internal scrolling; species and q remain bounded.
 - Species copy describes ecological damage / control rationale, not the software workflow. Safe wording is source-grounded to Washington Sea Grant / WDFW: potential damage to eelgrass/seagrass, shellfish and estuary habitat; early detection/removal improves the chance of control while populations are small.
+
+
+## UI freeze candidate — extensibility cue
+
+- Heat legend and map values use a muted red → orange → yellow → green scale.
+- Species card contains a static, non-interactive “Other invasive species” preview only to communicate extensibility.
+- Preview list is illustrative and not exhaustive; it must not imply that the current ecological model is calibrated or validated for those additional species.
