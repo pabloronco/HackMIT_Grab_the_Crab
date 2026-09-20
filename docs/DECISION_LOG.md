@@ -638,3 +638,17 @@ The audit must still report all 100 cases, including Marine-better, equal, and w
 - Zoom/pan no longer rerender the full SVG on every pointer movement. During interaction the existing map root is transformed directly; one committed reprojection occurs after the gesture. Wheel zoom previews continuously around the pointer and commits after a short idle window. This specifically reduces Safari/trackpad jank.
 
 **Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
+
+
+## 2026-09-20 — Dark-canvas right rail and muted belief heatmap
+
+**Status:** CURRENT DEFAULT / team-directed UI refinement.
+
+- The species/problem poster is removed from the map surface and placed **below Probable Worlds and Detectability Belief** in the right rail.
+- The species card now uses a real photograph of **European Green Crab (Carcinus maenas)** from Wikimedia Commons (Tim Binns, CC BY-SA 2.0) with explicit on-card attribution.
+- The problem pitch is intentionally narrow: a first detection is confirmed, the true extent is unknown, non-detections can miss occupancy, and field capacity is limited. No additional ecological-impact claim is introduced by the UI.
+- The global canvas is deep black/navy while mission/evidence cards remain white. This is a visual design choice only and does not change information hierarchy or semantics.
+- Belief heat colors are deliberately muted toward blue-grey → dusty violet → coral, with lower opacity and weaker edge diffusion. Heat remains a visual encoding of graph-structured posterior state, not an interpolated ecological surface.
+- Survey-site markers now use a double-outline disc (dark outer disc + white contour + smaller data-colored core) with separate frontier/selected/recommended rings for clearer visual hierarchy over satellite imagery.
+
+**Owner:** team. Implementation branch `ui/catch-the-crab-polish`.
