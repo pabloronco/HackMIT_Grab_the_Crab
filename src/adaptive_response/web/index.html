@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f4f7fb" />
+  <title>Grab the Crab — Adaptive First Response</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div id="transition-layer" class="transition-layer hidden" aria-live="polite">
+    <div class="transition-card">
+      <span id="transition-kicker" class="transition-kicker">FIELD RETURN</span>
+      <strong id="transition-title" class="transition-title">Evidence received</strong>
+      <p id="transition-detail" class="transition-detail"></p>
+    </div>
+  </div>
+
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 52" class="crab-logo">
+            <path class="crab-shell" d="M18 21c2-8 8-13 14-13s12 5 14 13v8c0 7-6 12-14 12s-14-5-14-12Z"></path>
+            <path class="crab-eye" d="M24 18a2.4 2.4 0 1 0 0-4.8A2.4 2.4 0 0 0 24 18Zm16 0a2.4 2.4 0 1 0 0-4.8A2.4 2.4 0 0 0 40 18Z"></path>
+            <path class="crab-limb" d="M19 24 10 19 5 12m40 12 9-5 5-7M18 29 8 30l-5 6m43-7 10 1 5 6M20 34 11 40m33-6 9 6"></path>
+            <path class="crab-claw" d="M7 12c-3-1-5-4-4-7 4 0 7 2 8 5m46 2c3-1 5-4 4-7-4 0-7 2-8 5"></path>
+          </svg>
+        </div>
+        <div class="brand-copy">
+          <div class="brand-row">
+            <h1>Grab the Crab</h1>
+            <span>Observe · Infer · Decide · Survey · Replan</span>
+          </div>
+          <p>Adaptive first-response mission control for marine invasive species</p>
+        </div>
+      </div>
+
+      <div class="header-live">
+        <span class="live-dot"></span>
+        <span>Live incident</span>
+      </div>
+
+      <div class="header-controls">
+        <label class="header-field">
+          <span>Scenario</span>
+          <select id="case-select"></select>
+        </label>
+        <button id="next-case-btn" class="icon-button" title="Next incident">→</button>
+        <button id="reset-btn" class="icon-button" title="Reset incident">↻</button>
+      </div>
+    </header>
+
+    <section class="status-ribbon" aria-label="Incident status">
+      <div class="status-item detection-status">
+        <span class="status-dot"></span>
+        <div>
+          <small>Confirmed first detection</small>
+          <strong>Site <span id="initial-detection">—</span></strong>
+        </div>
+      </div>
+      <div class="status-item">
+        <small>Incident</small>
+        <strong id="case-number">—</strong>
+      </div>
+      <div class="status-item">
+        <small>Response mission</small>
+        <strong id="round">—</strong>
+      </div>
+      <div class="status-item budget-status">
+        <small>Field capacity remaining</small>
+        <strong id="budget-left">—</strong>
+        <div class="budget-track"><span id="budget-fill"></span></div>
+      </div>
+      <div class="status-item truth-status">
+        <small>Hidden extent</small>
+        <strong id="truth-state">LOCKED</strong>
+      </div>
+    </section>
+
+    <main class="dashboard-grid">
+      <aside class="card mission-panel">
+        <div class="section-heading">
+          <span class="section-icon">⌖</span>
+          <div>
+            <h2>Next field mission</h2>
+            <p>Grab the Crab recommends a site and effort level. You remain in control.</p>
+          </div>
+        </div>
+
+        <div class="marine-recommendation">
+          <div class="recommendation-label">
+            <span>GRAB THE CRAB RECOMMENDS</span>
+            <span id="marine-rank-badge" class="soft-badge">#1</span>
+          </div>
+          <div class="recommendation-hero">
+            <div>
+              <small>Survey site</small>
+              <strong id="marine-site">Site —</strong>
+            </div>
+            <div class="effort-hero">
+              <small>Effort</small>
+              <strong id="marine-effort">—</strong>
+              <span>units</span>
+            </div>
+          </div>
+          <div class="recommendation-metrics">
+            <div><small>Occupancy belief</small><b id="marine-belief">—</b></div>
+            <div><small>Predicted detection</small><b id="marine-pdetect">—</b></div>
+            <div><small>Capacity after mission</small><b id="marine-saved">—</b></div>
+          </div>
+          <p id="marine-copy">Recommendation is computed from observable belief only.</p>
+        </div>
+
+        <div class="control-section">
+          <div class="control-title">
+            <span>Your decision</span>
+            <button id="follow-marine-btn" class="inline-action">Use recommendation</button>
+          </div>
+          <label class="field-label" for="site-select">Site</label>
+          <select id="site-select" class="large-select"></select>
+
+          <div class="effort-title-row">
+            <label class="field-label">Effort</label>
+            <span id="effort-rec-badge" class="recommended-chip">Suggested: —</span>
+          </div>
+          <div id="effort-controls" class="effort-controls">
+            <button class="effort-btn" data-effort="1"><b>1</b><span>LIGHT</span></button>
+            <button class="effort-btn" data-effort="3"><b>3</b><span>MEDIUM</span></button>
+            <button class="effort-btn" data-effort="6"><b>6</b><span>HIGH</span></button>
+          </div>
+          <div id="effort-options" class="effort-options"></div>
+          <p id="effort-caption" class="microcopy"></p>
+        </div>
+
+        <button id="deploy-btn" class="deploy-button">
+          <span class="play-mark">▶</span>
+          <span>
+            <b>Deploy mission</b>
+            <small>Survey → field return → Bayes update → replan</small>
+          </span>
+        </button>
+
+        <div class="static-strip">
+          <div>
+            <small>STATIC RESPONSE</small>
+            <strong id="static-site">Site —</strong>
+          </div>
+          <div id="static-route" class="route-chips"></div>
+          <span class="soft-badge">precommitted · e6</span>
+        </div>
+      </aside>
+
+      <section class="card map-card">
+        <div class="map-toolbar">
+          <div>
+            <span class="eyebrow">REAL MONITORING COAST · SALISH SEA</span>
+            <h2 id="map-title">Posterior occupancy belief</h2>
+          </div>
+          <div class="map-toolbar-actions">
+            <label class="layer-select-label">
+              <span>Data layer</span>
+              <select id="layer-select">
+                <option value="belief">Occupancy belief</option>
+                <option value="uncertainty">Uncertainty</option>
+                <option value="habitat">Habitat suitability</option>
+                <option value="temperature">Temperature</option>
+                <option value="exposure">Exposure</option>
+                <option value="eelgrass">Eelgrass</option>
+                <option value="salt_marsh">Salt marsh</option>
+                <option value="field_effort">Field effort</option>
+              </select>
+            </label>
+            <div class="zoom-controls" aria-label="Map zoom">
+              <button id="zoom-out" title="Zoom out">−</button>
+              <button id="zoom-fit" title="Fit all sites">Fit</button>
+              <button id="zoom-in" title="Zoom in">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="scenario-banner" class="scenario-banner hidden"></div>
+
+        <div class="map-stage" id="map-stage">
+          <svg id="graph" viewBox="0 0 1100 640" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Real coastal monitoring network"></svg>
+
+          <div class="map-top-left">
+            <span id="zoom-readout" class="map-chip">Fit</span>
+            <span class="map-chip">Scroll to zoom · drag to pan</span>
+          </div>
+
+
+          <div id="layer-legend" class="layer-legend">
+            <span id="layer-legend-title">Occupancy belief</span>
+            <i id="layer-gradient"></i>
+            <div><small id="legend-low">Low</small><small id="legend-high">High</small></div>
+            <p id="layer-provenance"></p>
+          </div>
+
+          <div class="map-legend">
+            <div><span class="legend-node"></span> Survey site</div>
+            <div><span class="legend-line"></span> Graph connection</div>
+            <div><span class="legend-marine"></span> Recommended #1</div>
+            <div><span class="legend-detection"></span> Detection</div>
+            <div><span class="legend-missing"></span> No layer data</div>
+          </div>
+
+          <div id="map-inspector" class="map-inspector"></div>
+          <div class="map-attribution">Real monitoring coordinates · imagery © Esri · fallback © OpenStreetMap contributors</div>
+          <div id="node-tooltip" class="tooltip hidden"></div>
+
+          <div id="replan-callout" class="replan-callout hidden">
+            <span>MISSION UPDATED BY EVIDENCE</span>
+            <strong id="replan-route">—</strong>
+            <p>The latest field return changed the next site and/or effort recommendation.</p>
+          </div>
+        </div>
+      </section>
+      <aside class="right-stack" aria-label="Incident evidence and species context">
+      <aside class="card species-card">
+        <div class="species-photo-wrap">
+          <img
+            class="species-photo"
+            src="https://upload.wikimedia.org/wikipedia/commons/0/06/European_Green_Crab.jpg"
+            alt="European Green Crab, Carcinus maenas"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+          />
+          <span class="species-badge">INVASIVE SPECIES</span>
+        </div>
+        <div class="species-card-body">
+          <div class="species-card-head">
+            <div>
+              <h2>European Green Crab</h2>
+              <em>Carcinus maenas</em>
+            </div>
+            <span class="species-status-dot" aria-hidden="true"></span>
+          </div>
+          <p class="species-pitch"><b>Why it matters:</b> where European green crabs become abundant, they can damage eelgrass and other seagrass beds, prey on shellfish, and threaten estuary habitat used by salmon and many other native species. Early detection and rapid removal while populations are still small gives managers the best chance to limit damage.</p>
+          <div class="species-challenges" aria-label="Ecological impacts">
+            <span>Eelgrass damage</span>
+            <span>Shellfish predation</span>
+            <span>Estuary habitat</span>
+          </div>
+
+          <details class="species-extension-preview">
+            <summary class="species-more-button">
+              <span>
+                <b>Other invasive species</b>
+                <small>Future coverage preview</small>
+              </span>
+              <span class="species-more-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="species-extension-panel">
+              <div class="species-extension-list">
+                <div><b>Lionfish</b><span>Atlantic · Gulf · Caribbean</span></div>
+                <div><b>Asian shore crab</b><span>Northeast · Mid-Atlantic</span></div>
+                <div><b>Chinese mitten crab</b><span>Pacific · estuaries</span></div>
+                <div><b>Veined rapa whelk</b><span>Chesapeake Bay</span></div>
+                <div><b>Colonial tunicate</b><span>Didemnum vexillum · Northeast</span></div>
+                <div><b>Japanese kelp</b><span>Undaria pinnatifida · Pacific</span></div>
+                <div><b>Zebra mussel</b><span>Inland aquatic extension</span></div>
+                <div><b>Quagga mussel</b><span>Inland aquatic extension</span></div>
+              </div>
+              <p class="species-extension-note">Illustrative extension targets — not an exhaustive U.S. invasive-species registry.</p>
+            </div>
+          </details>
+
+          <p class="species-credit">Impact summary: Washington Sea Grant / WDFW · Photo: Tim Binns / Wikimedia Commons · CC BY-SA 2.0</p>
+        </div>
+      </aside>
+      <aside class="card worlds-card">
+        <div class="section-heading compact">
+          <span class="section-icon">◎</span>
+          <div>
+            <h2>Probable worlds</h2>
+            <p>Top unique ecological extents after marginalizing detectability.</p>
+          </div>
+          <span id="world-count" class="count-badge">—</span>
+        </div>
+        <div id="world-list" class="world-list"></div>
+        <button id="clear-world-btn" class="inline-action hidden">Return to posterior map</button>
+      </aside>
+      <aside class="card detectability-card">
+        <div class="section-heading compact">
+          <span class="section-icon">q</span>
+          <div>
+            <h2>Detectability belief</h2>
+            <p>How easy the species is to detect <em>if it is actually present</em>.</p>
+          </div>
+        </div>
+
+        <div id="q-panel" class="q-panel"></div>
+        <div id="q-effort-preview" class="q-effort-preview"></div>
+
+        <details class="q-details">
+          <summary>What does q mean?</summary>
+          <p><b>q = P(detection in one check | occupied).</b> It is not occupancy probability. The inference engine estimates q jointly with possible invasion extents.</p>
+          <p>You do not directly set q during a mission. Your operational control is effort: more checks reduce the chance of missing an occupied site.</p>
+          <p id="q-boundary-copy"></p>
+        </details>
+      </aside>
+      </aside>
+
+
+
+
+      <aside class="card ramp-card">
+        <div class="ramp-heading">
+          <span class="sponsor-pill">FIELD CAPACITY</span>
+          <div>
+            <h2>Allocate field capacity</h2>
+            <p>Lower effort leaves more capacity for additional searches; higher effort buys stronger detection power at the current site.</p>
+          </div>
+        </div>
+
+        <div class="ramp-primary">
+          <div>
+            <small>Capacity remaining</small>
+            <strong id="resource-left">—</strong>
+            <span>effort units</span>
+          </div>
+          <div class="capacity-ring" id="capacity-ring"><b id="capacity-percent">—</b><span>left</span></div>
+        </div>
+
+        <div class="ramp-kpis">
+          <div><small>Effort spent</small><b id="resource-spent">—</b></div>
+          <div><small>Missions completed</small><b id="resource-missions">—</b></div>
+          <div><small>Next recommended effort</small><b id="resource-avoided">—</b></div>
+        </div>
+      </aside>
+
+      <section class="card why-card">
+        <div class="section-heading">
+          <span class="section-icon">✦</span>
+          <div>
+            <h2>Why this mission?</h2>
+            <p id="why-subtitle">Decision quality is judged before the outcome is known.</p>
+          </div>
+        </div>
+
+        <div class="why-grid">
+          <div class="why-item">
+            <small>FRONTIER</small>
+            <strong id="why-frontier-value">—</strong>
+            <p id="why-frontier-copy"></p>
+          </div>
+          <div class="why-item">
+            <small>OCCUPANCY BELIEF</small>
+            <strong id="why-belief-value">—</strong>
+            <p id="why-belief-copy"></p>
+          </div>
+          <div class="why-item">
+            <small>DETECTION POWER IF OCCUPIED</small>
+            <strong id="why-power-value">—</strong>
+            <p id="why-power-copy"></p>
+          </div>
+          <div class="why-item">
+            <small>PREDICTED DETECTION</small>
+            <strong id="why-detection-value">—</strong>
+            <p id="why-detection-copy"></p>
+          </div>
+        </div>
+
+        <div class="why-effort-banner">
+          <div>
+            <small>RESOURCE-AWARE EFFORT</small>
+            <strong id="why-effort-value">—</strong>
+          </div>
+          <p id="why-effort-copy"></p>
+        </div>
+
+        <div class="evidence-strip">
+          <div class="evidence-cell">
+            <small>Latest field return</small>
+            <div id="evidence-panel" class="evidence-content muted">Awaiting field evidence.</div>
+          </div>
+          <div class="evidence-cell">
+            <small>Decision quality receipt</small>
+            <div id="decision-receipt" class="evidence-content muted">No mission executed yet.</div>
+          </div>
+          <div class="evidence-cell">
+            <small>Largest propagated changes</small>
+            <div id="propagation-panel" class="evidence-content muted">No propagated update yet.</div>
+          </div>
+          <div class="evidence-cell">
+            <small>Model stress</small>
+            <div id="stress-panel" class="evidence-content muted">No field result yet.</div>
+          </div>
+        </div>
+      </section>
+
+
+
+
+
+      <section class="card live-card">
+        <div class="live-head">
+          <div>
+            <span class="eyebrow">RESOURCE EFFICIENCY</span>
+            <h2>What are we spending, and what are we learning?</h2>
+            <p>Separate resource use from field outcomes so one lucky detection does not masquerade as a better policy.</p>
+          </div>
+          <div id="live-kpis" class="live-kpis"></div>
+        </div>
+
+        <div class="dual-chart-grid">
+          <div class="chart-panel">
+            <div class="chart-panel-head">
+              <strong>Effort per deployment</strong>
+              <span>Adaptive / your path vs static e6 reference</span>
+            </div>
+            <svg id="effort-chart" viewBox="0 0 560 250" role="img" aria-label="Effort per deployment"></svg>
+          </div>
+          <div class="chart-panel">
+            <div class="chart-panel-head">
+              <strong>Cumulative confirmed detections</strong>
+              <span>Observable field returns only</span>
+            </div>
+            <svg id="detection-chart" viewBox="0 0 560 250" role="img" aria-label="Cumulative confirmed detections"></svg>
+          </div>
+        </div>
+      </section>
+
+      <section class="card evaluation-card">
+        <div class="evaluation-head">
+          <div>
+            <span class="eyebrow">EVALUATE</span>
+            <h2>Same hidden incident. Same 18-unit field budget.</h2>
+            <p>Adaptive response vs Static is the policy comparison. Your Path is an interactive realization and can be luckier or unluckier on one incident.</p>
+          </div>
+          <button id="reveal-btn" class="reveal-button" disabled>Reveal true extent</button>
+        </div>
+
+        <div id="performance-locked" class="performance-locked">
+          <span>⌁</span>
+          <div>
+            <b>Outcome receipt locked</b>
+            <small>Allocate the response budget to unlock the final outcome.</small>
+          </div>
+        </div>
+
+        <div id="performance-content" class="performance-content hidden">
+          <div id="resource-receipt" class="resource-receipt"></div>
+          <div id="scorecards" class="scorecards"></div>
+          <div class="performance-chart-wrap">
+            <svg id="performance-chart" viewBox="0 0 920 270" role="img" aria-label="True occupied sites detected by cumulative effort"></svg>
+            <p id="performance-note" class="performance-note"></p>
+          </div>
+          <div id="luck-receipts" class="luck-receipts"></div>
+        </div>
+      </section>
+
+      <section class="card tape-card">
+        <div class="tape-label">
+          <span>DECISION LOG</span>
+          <b>OBSERVE → INFER → DECIDE → SURVEY → LEARN → REPLAN</b>
+        </div>
+        <div id="timeline" class="timeline"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

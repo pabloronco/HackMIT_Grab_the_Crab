@@ -3,9 +3,9 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "adaptive-first-response"
+name = "grab-the-crab"
 version = "0.1.0"
-description = "HackMIT rehearsal implementation for adaptive ecological first-response planning."
+description = "Grab the Crab: adaptive first-response mission control for marine invasive species."
 requires-python = ">=3.11,<3.12"
 dependencies = [
   "numpy>=2.0,<3",
@@ -23,6 +23,23 @@ dev = [
 # it. Install with `pip install -e ".[dev,rl]"`.
 rl = [
   "torch>=2.2,<3",
+]
+# Mission Control web shell (src/adaptive_response/web_app.py, mission_control.py).
+# Also kept out of core `dependencies` for the same reason as `rl`: importing
+# adaptive_response must never require a web stack just to run the
+# simulator/Bayes/planner code. httpx is for FastAPI's TestClient in tests.
+# Install with `pip install -e ".[dev,ui]"`.
+ui = [
+  "fastapi>=0.110,<1",
+  "uvicorn>=0.29,<1",
+  "httpx>=0.27,<1",
+]
+# Natural-language mission briefings (`adaptive_response.narrate`). Kept out of
+# the core dependencies for the same reason as `rl`: the belief/planner engine
+# must run with no network access and no API key. Install with
+# `pip install -e ".[dev,llm]"`.
+llm = [
+  "openai>=1.0,<2",
 ]
 
 [tool.setuptools.packages.find]

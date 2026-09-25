@@ -1,0 +1,242 @@
+<title>Grab the Crab Performance Receipt</title>
+<style>
+  :root{
+    color-scheme:light;
+    --page:#f5f8fa; --surface:#ffffff; --surface-2:#fbfcfd;
+    --ink:#0b1420; --ink-2:#48586b; --muted:#8a97a6;
+    --hair:#e2e8ef; --hair-strong:#cdd7e1;
+    --accent:#1c6fb0; --accent-soft:#e8f1fa; --cyan:#1a97a8;
+    --marine:#2a78d6; --fixed:#eb6834;
+    --good:#0ca30c; --lose:#ec835a; --tie:#c7d0d9;
+    --shadow:0 1px 2px rgba(11,20,32,.04), 0 6px 18px rgba(11,20,32,.06);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme:dark;
+      --page:#0a121d; --surface:#101b2b; --surface-2:#0d1723;
+      --ink:#eef3f7; --ink-2:#a9b6c4; --muted:#7c8a99;
+      --hair:#22303f; --hair-strong:#2c3d4f;
+      --accent:#5fa8e0; --accent-soft:#132638; --cyan:#4fd0e0;
+      --marine:#3987e5; --fixed:#d95926;
+      --good:#28c228; --lose:#f0946e; --tie:#3a4854;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 22px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --page:#0a121d; --surface:#101b2b; --surface-2:#0d1723;
+    --ink:#eef3f7; --ink-2:#a9b6c4; --muted:#7c8a99;
+    --hair:#22303f; --hair-strong:#2c3d4f;
+    --accent:#5fa8e0; --accent-soft:#132638; --cyan:#4fd0e0;
+    --marine:#3987e5; --fixed:#d95926;
+    --good:#28c228; --lose:#f0946e; --tie:#3a4854;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 22px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);
+    overflow:hidden;display:flex;flex-direction:column;
+    padding:16px 22px calc(10px + env(safe-area-inset-bottom,0px));
+    gap:10px;
+  }
+  .mono{font-family:var(--mono)}
+
+  header.mast{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+  .brand-mark{width:28px;height:20px;flex:0 0 auto}
+  .brand-mark path:first-child{fill:var(--accent)} .brand-mark path:last-child{fill:var(--cyan)}
+  .mast h1{margin:0;font-size:15px;letter-spacing:.02em;color:var(--ink);line-height:1.1}
+  .mast .eyebrow{display:block;font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .mast .meta{margin-left:auto;text-align:right;font-size:9.5px;color:var(--muted);line-height:1.4}
+
+  .grid{
+    flex:1 1 auto;min-height:0;
+    display:grid;grid-template-columns:1.05fr 1.3fr;gap:12px;
+  }
+  .card{
+    background:var(--surface);border:1px solid var(--hair);border-radius:14px;
+    box-shadow:var(--shadow);min-height:0;display:flex;flex-direction:column;overflow:hidden
+  }
+  .card h2{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0;font-weight:800;padding:10px 14px 0}
+
+  /* left column */
+  .left{display:flex;flex-direction:column;gap:12px;min-height:0}
+  .hero{flex:1 1 auto;align-items:center;justify-content:space-evenly;text-align:center;padding:22px 18px}
+  .hero .kicker{font-size:clamp(10px,1.1vw,13px);font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .hero .big{font-size:clamp(60px,11vw,128px);font-weight:750;color:var(--good);letter-spacing:-.03em;line-height:1;margin:10px 0}
+  .hero .sub{font-size:clamp(13px,1.6vw,17px);color:var(--ink-2);max-width:32ch;margin:0 auto;line-height:1.55}
+  .hero .sub b{color:var(--ink);font-weight:650}
+  .hero .vs{margin-top:22px;display:flex;align-items:center;justify-content:center;gap:14px;font-size:clamp(11px,1.2vw,13px);color:var(--muted)}
+  .hero .vs .arrow{font-size:20px;color:var(--good)}
+  .hero .vs b{font-family:var(--mono);font-size:clamp(15px,1.6vw,18px);color:var(--ink)}
+
+  .kpis{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .kpi{background:var(--surface);border:1px solid var(--hair);border-radius:11px;padding:9px 6px;text-align:center;box-shadow:var(--shadow)}
+  .kpi .v{font-size:clamp(15px,2vw,19px);font-weight:750;color:var(--accent)}
+  .kpi .l{font-size:7.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-top:2px;line-height:1.3}
+
+  /* right column */
+  .right{display:flex;flex-direction:column;gap:12px;min-height:0}
+  .chart-card{flex:1 1 50%;padding-bottom:8px}
+  .chart-body{flex:1;min-height:0;display:flex;align-items:center;padding:2px 12px 6px}
+  .chart-body svg{width:100%;height:100%}
+  svg text{fill:var(--ink-2);font-family:var(--sans)}
+  .grid-line{stroke:var(--hair-strong);stroke-width:1}
+  .axis-line{stroke:var(--hair-strong);stroke-width:1.2}
+  .bar-marine{fill:var(--marine)}
+  .bar-fixed{fill:var(--fixed)}
+  .val-label{font-weight:750;font-size:15px}
+  .cat-label{font-size:10.5px;font-weight:600}
+  .ci-whisker{stroke:var(--ink);stroke-width:1.4;opacity:.5}
+
+  .legend-row{display:flex;gap:14px;padding:0 14px;font-size:9.5px;color:var(--ink-2)}
+  .legend-row span{display:inline-flex;align-items:center;gap:5px}
+  .dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+  .stack-wrap{padding:2px 14px 4px;flex:1;display:flex;flex-direction:column;justify-content:space-evenly;gap:14px}
+  .outcome-nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .outcome-nums div{text-align:center}
+  .outcome-nums .v{font-size:clamp(26px,3.4vw,38px);font-weight:750;line-height:1}
+  .outcome-nums .l{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+  .outcome-nums .win .v{color:var(--good)}
+  .outcome-nums .tie .v{color:var(--ink-2)}
+  .outcome-nums .lose .v{color:var(--lose)}
+  .outcome-nums-2{grid-template-columns:1fr 1fr}
+  .outcome-nums-2 .v{font-size:clamp(34px,4.6vw,50px);color:var(--good)}
+  .outcome-nums-2 .l{font-size:10.5px;max-width:20ch;margin-left:auto;margin-right:auto;line-height:1.35}
+  .stack-bar{height:30px;border-radius:7px;overflow:hidden;display:flex;border:1px solid var(--hair)}
+  .stack-bar .seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;color:#fff}
+  .seg-win{background:var(--good)}
+  .seg-tie{background:var(--tie);color:var(--ink-2)!important}
+  .seg-lose{background:var(--lose)}
+
+  .note{font-size:9.5px;color:var(--ink-2);padding:0 14px 10px;line-height:1.45}
+  .note b{color:var(--ink)}
+
+  .claims-card{flex:0 0 auto;padding:11px 16px}
+  .claims-strip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:10.5px;color:var(--ink-2);line-height:1.4}
+  .claims-strip b{color:var(--ink)}
+  .claims-strip .sep{color:var(--hair-strong)}
+  .claims-strip .muted-note{color:var(--muted);font-size:9.5px}
+
+  footer{flex:0 0 auto;font-size:8px;color:var(--muted);line-height:1.3;text-align:center}
+  footer code{font-family:var(--mono);background:var(--surface-2);padding:0 4px;border-radius:3px}
+
+  @media (max-width:760px){
+    body{overflow:auto;height:auto}
+    .grid{grid-template-columns:1fr}
+    .claims{grid-template-columns:1fr}
+    .claims .col:first-child{border-right:0;border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:8px}
+  }
+</style>
+
+<header class="mast">
+  <svg class="brand-mark" viewBox="0 0 68 48" aria-hidden="true">
+    <path d="M4 20c13-11 24-10 34-2 9 7 17 8 26 1-5 10-13 15-23 13-9-2-16-10-25-9-5 0-9 1-12 3 2-2 2-4 0-6Z"></path>
+    <path d="M8 31c10-7 19-6 27 0 8 5 16 6 25 1-6 8-14 11-23 9-8-2-15-7-22-7-3 0-5 0-7 1Z"></path>
+  </svg>
+  <div><span class="eyebrow">Adaptive first response</span><h1>Grab the Crab Performance Receipt</h1></div>
+  <div class="meta">100 simulated incidents · 18-unit budget<br>2026-09-19</div>
+</header>
+
+<div class="grid">
+
+  <div class="left">
+    <div class="card hero">
+      <div class="kicker">Average detection improvement</div>
+      <div class="big">+4.67%</div>
+      <div class="sub">Grab the Crab detects <b>4.67% more</b> of the true invasive extent than a fixed
+        maximum-effort comparator using the identical field budget.</div>
+      <div class="vs"><b class="mono" style="color:var(--marine)">41.9%</b><span class="arrow">›</span><b class="mono" style="color:var(--fixed)">40.0%</b></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="v">41.9%</div><div class="l">Grab the Crab detects</div></div>
+      <div class="kpi"><div class="v">40.0%</div><div class="l">Fixed effort</div></div>
+      <div class="kpi"><div class="v">94%</div><div class="l">Confidence</div></div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="card chart-card">
+      <h2>Detected extent by approach</h2>
+      <div class="chart-body"><svg id="barchart" viewBox="0 0 460 190" role="img" aria-label="Grab the Crab detects 41.9 percent versus Fixed High Effort 40.0 percent, with a 95 percent confidence interval"></svg></div>
+      <div class="legend-row">
+        <span><i class="dot" style="background:var(--marine)"></i>Grab the Crab (adaptive)</span>
+        <span><i class="dot" style="background:var(--fixed)"></i>Fixed high effort</span>
+        <span style="margin-left:auto;color:var(--muted)">thin line = 95% CI on the gap</span>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <h2>Outcome across all 100 incidents</h2>
+      <div class="stack-wrap">
+        <div class="outcome-nums outcome-nums-2">
+          <div class="win"><div class="v">88%</div><div class="l">Grab the Crab matches or beats the fixed comparator</div></div>
+          <div class="tie"><div class="v">2.3&times;</div><div class="l">More outright wins than losses</div></div>
+        </div>
+        <div class="stack-bar">
+          <div class="seg seg-win" style="width:27%">27%</div>
+          <div class="seg seg-tie" style="width:61%">61%</div>
+          <div class="seg seg-lose" style="width:12%">12%</div>
+        </div>
+      </div>
+      <div class="note"><b>A separate 180-case formal benchmark showed the same directional effect, but its 95% interval crossed zero; we keep that result visible rather than folding it into the demo statistic.</b></div>
+    </div>
+  </div>
+</div>
+
+<div class="card claims-card">
+  <div class="claims-strip">
+    <span class="pt"><b>Every</b> recommendation is a real, inspectable number computed live — belief, information gain, cost — never hidden truth.</span>
+    <span class="sep">·</span>
+    <span class="pt muted-note">Measured against a fixed-effort baseline, not a field professional.</span>
+  </div>
+</div>
+
+<footer>Source: <code>reports/ramp_v2/demo_population/summary.json</code> · <code>reports/ramp_v2/headline_metric.json</code> · <code>docs/DECISION_LOG.md</code></footer>
+
+<script>
+(function(){
+  const svg = document.getElementById("barchart");
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (n,a={})=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const W=460,H=190, ML=34, MR=14, MT=10, MB=26;
+  const plotW=W-ML-MR, plotH=H-MT-MB;
+  const maxV=50;
+  const y = v => MT + plotH - (v/maxV)*plotH;
+
+  for(let g=0; g<=5; g++){
+    const v = g*10; const yy = y(v);
+    svg.appendChild(el("line",{x1:ML,x2:W-MR,y1:yy,y2:yy,class:"grid-line"}));
+    const t = el("text",{x:ML-7,y:yy+3,"text-anchor":"end",style:"font-size:9px"}); t.textContent=v+"%";
+    svg.appendChild(t);
+  }
+  svg.appendChild(el("line",{x1:ML,x2:ML,y1:MT,y2:H-MB,class:"axis-line"}));
+  svg.appendChild(el("line",{x1:ML,x2:W-MR,y1:H-MB,y2:H-MB,class:"axis-line"}));
+
+  const bars = [
+    {label:"Grab the Crab", value:41.9, ci:[39.4,44.6], cls:"bar-marine", color:"var(--marine)", cx: ML+plotW*0.28},
+    {label:"Fixed High Effort", value:40.0, ci:null, cls:"bar-fixed", color:"var(--fixed)", cx: ML+plotW*0.72},
+  ];
+  const barW = 74;
+  bars.forEach(b=>{
+    const x0 = b.cx - barW/2;
+    const yTop = y(b.value);
+    svg.appendChild(el("rect",{x:x0,y:yTop,width:barW,height:(H-MB)-yTop,rx:6,class:b.cls}));
+    const lbl = el("text",{x:b.cx,y:yTop-8,"text-anchor":"middle",class:"val-label"});
+    lbl.setAttribute("fill", b.color); lbl.textContent=b.value.toFixed(1)+"%";
+    svg.appendChild(lbl);
+    const cat = el("text",{x:b.cx,y:H-MB+15,"text-anchor":"middle",class:"cat-label"});
+    cat.textContent=b.label;
+    svg.appendChild(cat);
+    if(b.ci){
+      const y1=y(b.ci[0]), y2=y(b.ci[1]);
+      svg.appendChild(el("line",{x1:b.cx,x2:b.cx,y1:y1,y2:y2,class:"ci-whisker"}));
+      svg.appendChild(el("line",{x1:b.cx-7,x2:b.cx+7,y1:y1,y2:y1,class:"ci-whisker"}));
+      svg.appendChild(el("line",{x1:b.cx-7,x2:b.cx+7,y1:y2,y2:y2,class:"ci-whisker"}));
+    }
+  });
+})();
+</script>

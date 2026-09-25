@@ -12,22 +12,9 @@ venv/
 .env
 .env.*
 
-# Data inputs/outputs
-/data/raw/*
-!/data/raw/.gitkeep
-!/data/raw/README.md
-/data/processed/*
-!/data/processed/.gitkeep
-/data/cache/
-
 # Model artifacts
 /checkpoints/
 /runs/
-
-# Frontend
-node_modules/
-dist/
-.next/
 
 # OS / editor
 .DS_Store

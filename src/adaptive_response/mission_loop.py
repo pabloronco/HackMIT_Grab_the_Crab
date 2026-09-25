@@ -37,6 +37,9 @@ class RoundTransition:
     next_mission: MissionAction | None
     done: bool
     simulator_metrics: dict[str, Any]
+    # True when the planner returned a STOP action after this round: the loop is
+    # COMPLETE with budget possibly remaining (effort-aware planners, R11).
+    planner_stopped: bool = False
 
 
 class AdaptiveMissionLoop:

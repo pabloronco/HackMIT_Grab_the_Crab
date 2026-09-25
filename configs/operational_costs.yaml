@@ -1,0 +1,23 @@
+# Operational cost / time mapping for the RAMP "save time, save money" receipt.
+#
+# STATUS: OPERATIONAL ASSUMPTIONS IN NORMALIZED UNITS. No sourced agency
+# minutes-per-trap or cost-per-effort figures are committed in this repository,
+# so every monetary/time conversion stays null and the UI reports effort units.
+# If a sourced mapping is added later, fill the fields below, cite the source,
+# and only then may the UI display minutes/currency. Never present these as
+# real agency savings without a documented source.
+version: 1
+status: NORMALIZED_UNITS_NO_SOURCED_MAPPING
+cost_model:
+  units: normalized_cost_units
+  dispatch_overhead_cost: 1.0     # fixed cost of sending a team on one mission (design choice)
+  effort_unit_cost: 1.0           # cost per effort unit (design choice)
+  travel_cost_weight: 0.0         # no per-mission travel model in frozen artifacts -> 0, documented
+time_money_mapping:
+  minutes_per_effort_unit: null
+  currency: null
+  currency_cost_per_effort_unit: null
+  dispatch_minutes: null
+  dispatch_cost: null
+  travel_cost_multiplier: null
+  source: null

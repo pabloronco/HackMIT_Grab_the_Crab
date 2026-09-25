@@ -1,6 +1,7 @@
 """Adaptive First-Response Mission Engine core package."""
 
 from .belief import BeliefEngine
+from .dynamic_delimitation_planner import DynamicDelimitationMax6Planner
 from .environment import Environment
 from .graph_state import (
     EDGE_FEATURE_NAMES,
@@ -49,6 +50,7 @@ __all__ = [
     "BeliefEngine",
     "BeliefState",
     "EDGE_FEATURE_NAMES",
+    "DynamicDelimitationMax6Planner",
     "EcologicalHypothesis",
     "Edge",
     "Environment",

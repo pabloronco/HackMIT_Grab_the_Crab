@@ -37,6 +37,12 @@ class SiteEffortDecision:
     effort_levels: tuple[int, ...] = ()
     node_logits: tuple[tuple[float, ...], ...] = ()
     eligible_mask: tuple[tuple[bool, ...], ...] = ()
+    # R12 additions (defaulted, so older callers/tests are unaffected): the flat
+    # [N*K] index of the chosen (site, effort) so PPO can re-evaluate it under
+    # updated parameters, plus action-probability diagnostics.
+    action_index: int = -1
+    action_probability: float = float("nan")
+    max_action_probability: float = float("nan")
 
 
 class SiteEffortRoundPolicy(nn.Module):

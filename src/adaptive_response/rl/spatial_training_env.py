@@ -121,8 +121,9 @@ def run_spatial_episode(
         rollout.effort_spent += int(transition.simulator_metrics["effort_spent"])
 
         horizon_reached = rollout.num_rounds >= max_rounds
-        episode_over = transition.done or horizon_reached
-        if episode_over and not transition.done:
+        planner_stopped = bool(getattr(transition, "planner_stopped", False))
+        episode_over = transition.done or horizon_reached or planner_stopped
+        if episode_over and not transition.done and not planner_stopped:
             loop.force_complete()
 
         if episode_over:

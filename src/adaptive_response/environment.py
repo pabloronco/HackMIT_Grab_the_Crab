@@ -28,7 +28,10 @@ class Environment:
 
     - ``world_model``: one explicit synthetic ecological family implementing the
       shared ``WorldModel`` protocol;
-    - ``q_true``: a hidden simulator-only scalar or per-site map.
+    - ``q_true``: a hidden simulator-only scalar or per-site map;
+    - ``observation_uniform_by_site``: optional simulator/evaluator-only fixed
+      uniforms used for paired experiments. It is never exposed to planners,
+      observations, PublicState, or GraphState.
 
     This separation matters because the inference engine must not be handed the
     simulator's true q. Public observations therefore never include the q value used
@@ -41,11 +44,15 @@ class Environment:
         *,
         world_model: WorldModel | None = None,
         q_true: float | Mapping[str, float] | None = None,
+        observation_uniform_by_site: Mapping[str, float] | None = None,
     ) -> None:
         self._validate_config(config)
         self._config = deepcopy(config)
         self._world_model = world_model
         self._q_true_by_site = self._normalize_q_true(q_true, self._config.sites)
+        self._observation_uniform_by_site = self._normalize_observation_uniforms(
+            observation_uniform_by_site, self._config.sites
+        )
         self._rng: np.random.Generator | None = None
         self._hidden_world: HiddenWorld | None = None
         self._public_state: PublicState | None = None
@@ -128,7 +135,12 @@ class Environment:
             q_true = self._resolve_simulator_q(site)
             occupied = self._hidden_world.occupied_by_site[site_id]
             detection_probability = 1.0 - (1.0 - q_true) ** effort if occupied else 0.0
-            detection = bool(self._rng.random() < detection_probability)
+            observation_uniform = (
+                float(self._rng.random())
+                if self._observation_uniform_by_site is None
+                else self._observation_uniform_by_site[site_id]
+            )
+            detection = bool(observation_uniform < detection_probability)
 
             observation = Observation(
                 site_id=site_id,
@@ -220,6 +232,30 @@ class Environment:
             raise ValueError("MissionAction must allocate positive effort.")
 
         return dict(effort_by_site)
+
+    @staticmethod
+    def _normalize_observation_uniforms(
+        values: Mapping[str, float] | None,
+        sites: list[Site],
+    ) -> dict[str, float] | None:
+        if values is None:
+            return None
+
+        site_ids = {site.id for site in sites}
+        if set(values) != site_ids:
+            raise ValueError(
+                "observation_uniform_by_site keys must exactly match IncidentConfig sites."
+            )
+
+        normalized: dict[str, float] = {}
+        for site_id, value in values.items():
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise ValueError("observation uniforms must be numeric.")
+            uniform = float(value)
+            if not 0.0 <= uniform < 1.0:
+                raise ValueError("observation uniforms must be in [0, 1).")
+            normalized[site_id] = uniform
+        return normalized
 
     def _resolve_simulator_q(self, site: Site) -> float:
         if self._q_true_by_site is not None:

@@ -1,0 +1,511 @@
+{
+  "version": "ui-case-manifest-v1",
+  "status": "FROZEN_FOR_DEMO_REPRODUCIBILITY",
+  "notes": [
+    "Each case freezes the public demo seed only.",
+    "Real graph extraction, hidden-world family, q_true, belief ensemble and deterministic field outcomes are derived reproducibly by MissionControlSession.",
+    "The manifest does not claim these are historical outbreaks."
+  ],
+  "cases": [
+    {
+      "case_id": "incident_001",
+      "seed": 0,
+      "label": "Response incident 001"
+    },
+    {
+      "case_id": "incident_002",
+      "seed": 1,
+      "label": "Response incident 002"
+    },
+    {
+      "case_id": "incident_003",
+      "seed": 2,
+      "label": "Response incident 003"
+    },
+    {
+      "case_id": "incident_004",
+      "seed": 3,
+      "label": "Response incident 004"
+    },
+    {
+      "case_id": "incident_005",
+      "seed": 4,
+      "label": "Response incident 005"
+    },
+    {
+      "case_id": "incident_006",
+      "seed": 5,
+      "label": "Response incident 006"
+    },
+    {
+      "case_id": "incident_007",
+      "seed": 6,
+      "label": "Response incident 007"
+    },
+    {
+      "case_id": "incident_008",
+      "seed": 7,
+      "label": "Response incident 008"
+    },
+    {
+      "case_id": "incident_009",
+      "seed": 8,
+      "label": "Response incident 009"
+    },
+    {
+      "case_id": "incident_010",
+      "seed": 9,
+      "label": "Response incident 010"
+    },
+    {
+      "case_id": "incident_011",
+      "seed": 10,
+      "label": "Response incident 011"
+    },
+    {
+      "case_id": "incident_012",
+      "seed": 11,
+      "label": "Response incident 012"
+    },
+    {
+      "case_id": "incident_013",
+      "seed": 12,
+      "label": "Response incident 013"
+    },
+    {
+      "case_id": "incident_014",
+      "seed": 13,
+      "label": "Response incident 014"
+    },
+    {
+      "case_id": "incident_015",
+      "seed": 14,
+      "label": "Response incident 015"
+    },
+    {
+      "case_id": "incident_016",
+      "seed": 15,
+      "label": "Response incident 016"
+    },
+    {
+      "case_id": "incident_017",
+      "seed": 16,
+      "label": "Response incident 017"
+    },
+    {
+      "case_id": "incident_018",
+      "seed": 17,
+      "label": "Response incident 018"
+    },
+    {
+      "case_id": "incident_019",
+      "seed": 18,
+      "label": "Response incident 019"
+    },
+    {
+      "case_id": "incident_020",
+      "seed": 19,
+      "label": "Response incident 020"
+    },
+    {
+      "case_id": "incident_021",
+      "seed": 20,
+      "label": "Response incident 021"
+    },
+    {
+      "case_id": "incident_022",
+      "seed": 21,
+      "label": "Response incident 022"
+    },
+    {
+      "case_id": "incident_023",
+      "seed": 22,
+      "label": "Response incident 023"
+    },
+    {
+      "case_id": "incident_024",
+      "seed": 23,
+      "label": "Response incident 024"
+    },
+    {
+      "case_id": "incident_025",
+      "seed": 24,
+      "label": "Response incident 025"
+    },
+    {
+      "case_id": "incident_026",
+      "seed": 25,
+      "label": "Response incident 026"
+    },
+    {
+      "case_id": "incident_027",
+      "seed": 26,
+      "label": "Response incident 027"
+    },
+    {
+      "case_id": "incident_028",
+      "seed": 27,
+      "label": "Response incident 028"
+    },
+    {
+      "case_id": "incident_029",
+      "seed": 28,
+      "label": "Response incident 029"
+    },
+    {
+      "case_id": "incident_030",
+      "seed": 29,
+      "label": "Response incident 030"
+    },
+    {
+      "case_id": "incident_031",
+      "seed": 30,
+      "label": "Response incident 031"
+    },
+    {
+      "case_id": "incident_032",
+      "seed": 31,
+      "label": "Response incident 032"
+    },
+    {
+      "case_id": "incident_033",
+      "seed": 32,
+      "label": "Response incident 033"
+    },
+    {
+      "case_id": "incident_034",
+      "seed": 33,
+      "label": "Response incident 034"
+    },
+    {
+      "case_id": "incident_035",
+      "seed": 34,
+      "label": "Response incident 035"
+    },
+    {
+      "case_id": "incident_036",
+      "seed": 35,
+      "label": "Response incident 036"
+    },
+    {
+      "case_id": "incident_037",
+      "seed": 36,
+      "label": "Response incident 037"
+    },
+    {
+      "case_id": "incident_038",
+      "seed": 37,
+      "label": "Response incident 038"
+    },
+    {
+      "case_id": "incident_039",
+      "seed": 38,
+      "label": "Response incident 039"
+    },
+    {
+      "case_id": "incident_040",
+      "seed": 39,
+      "label": "Response incident 040"
+    },
+    {
+      "case_id": "incident_041",
+      "seed": 40,
+      "label": "Response incident 041"
+    },
+    {
+      "case_id": "incident_042",
+      "seed": 41,
+      "label": "Response incident 042"
+    },
+    {
+      "case_id": "incident_043",
+      "seed": 42,
+      "label": "Response incident 043"
+    },
+    {
+      "case_id": "incident_044",
+      "seed": 43,
+      "label": "Response incident 044"
+    },
+    {
+      "case_id": "incident_045",
+      "seed": 44,
+      "label": "Response incident 045"
+    },
+    {
+      "case_id": "incident_046",
+      "seed": 45,
+      "label": "Response incident 046"
+    },
+    {
+      "case_id": "incident_047",
+      "seed": 46,
+      "label": "Response incident 047"
+    },
+    {
+      "case_id": "incident_048",
+      "seed": 47,
+      "label": "Response incident 048"
+    },
+    {
+      "case_id": "incident_049",
+      "seed": 48,
+      "label": "Response incident 049"
+    },
+    {
+      "case_id": "incident_050",
+      "seed": 49,
+      "label": "Response incident 050"
+    },
+    {
+      "case_id": "incident_051",
+      "seed": 50,
+      "label": "Response incident 051"
+    },
+    {
+      "case_id": "incident_052",
+      "seed": 51,
+      "label": "Response incident 052"
+    },
+    {
+      "case_id": "incident_053",
+      "seed": 52,
+      "label": "Response incident 053"
+    },
+    {
+      "case_id": "incident_054",
+      "seed": 53,
+      "label": "Response incident 054"
+    },
+    {
+      "case_id": "incident_055",
+      "seed": 54,
+      "label": "Response incident 055"
+    },
+    {
+      "case_id": "incident_056",
+      "seed": 55,
+      "label": "Response incident 056"
+    },
+    {
+      "case_id": "incident_057",
+      "seed": 56,
+      "label": "Response incident 057"
+    },
+    {
+      "case_id": "incident_058",
+      "seed": 57,
+      "label": "Response incident 058"
+    },
+    {
+      "case_id": "incident_059",
+      "seed": 58,
+      "label": "Response incident 059"
+    },
+    {
+      "case_id": "incident_060",
+      "seed": 59,
+      "label": "Response incident 060"
+    },
+    {
+      "case_id": "incident_061",
+      "seed": 60,
+      "label": "Response incident 061"
+    },
+    {
+      "case_id": "incident_062",
+      "seed": 61,
+      "label": "Response incident 062"
+    },
+    {
+      "case_id": "incident_063",
+      "seed": 62,
+      "label": "Response incident 063"
+    },
+    {
+      "case_id": "incident_064",
+      "seed": 63,
+      "label": "Response incident 064"
+    },
+    {
+      "case_id": "incident_065",
+      "seed": 64,
+      "label": "Response incident 065"
+    },
+    {
+      "case_id": "incident_066",
+      "seed": 65,
+      "label": "Response incident 066"
+    },
+    {
+      "case_id": "incident_067",
+      "seed": 66,
+      "label": "Response incident 067"
+    },
+    {
+      "case_id": "incident_068",
+      "seed": 67,
+      "label": "Response incident 068"
+    },
+    {
+      "case_id": "incident_069",
+      "seed": 68,
+      "label": "Response incident 069"
+    },
+    {
+      "case_id": "incident_070",
+      "seed": 69,
+      "label": "Response incident 070"
+    },
+    {
+      "case_id": "incident_071",
+      "seed": 70,
+      "label": "Response incident 071"
+    },
+    {
+      "case_id": "incident_072",
+      "seed": 71,
+      "label": "Response incident 072"
+    },
+    {
+      "case_id": "incident_073",
+      "seed": 72,
+      "label": "Response incident 073"
+    },
+    {
+      "case_id": "incident_074",
+      "seed": 73,
+      "label": "Response incident 074"
+    },
+    {
+      "case_id": "incident_075",
+      "seed": 74,
+      "label": "Response incident 075"
+    },
+    {
+      "case_id": "incident_076",
+      "seed": 75,
+      "label": "Response incident 076"
+    },
+    {
+      "case_id": "incident_077",
+      "seed": 76,
+      "label": "Response incident 077"
+    },
+    {
+      "case_id": "incident_078",
+      "seed": 77,
+      "label": "Response incident 078"
+    },
+    {
+      "case_id": "incident_079",
+      "seed": 78,
+      "label": "Response incident 079"
+    },
+    {
+      "case_id": "incident_080",
+      "seed": 79,
+      "label": "Response incident 080"
+    },
+    {
+      "case_id": "incident_081",
+      "seed": 80,
+      "label": "Response incident 081"
+    },
+    {
+      "case_id": "incident_082",
+      "seed": 81,
+      "label": "Response incident 082"
+    },
+    {
+      "case_id": "incident_083",
+      "seed": 82,
+      "label": "Response incident 083"
+    },
+    {
+      "case_id": "incident_084",
+      "seed": 83,
+      "label": "Response incident 084"
+    },
+    {
+      "case_id": "incident_085",
+      "seed": 84,
+      "label": "Response incident 085"
+    },
+    {
+      "case_id": "incident_086",
+      "seed": 85,
+      "label": "Response incident 086"
+    },
+    {
+      "case_id": "incident_087",
+      "seed": 86,
+      "label": "Response incident 087"
+    },
+    {
+      "case_id": "incident_088",
+      "seed": 87,
+      "label": "Response incident 088"
+    },
+    {
+      "case_id": "incident_089",
+      "seed": 88,
+      "label": "Response incident 089"
+    },
+    {
+      "case_id": "incident_090",
+      "seed": 89,
+      "label": "Response incident 090"
+    },
+    {
+      "case_id": "incident_091",
+      "seed": 90,
+      "label": "Response incident 091"
+    },
+    {
+      "case_id": "incident_092",
+      "seed": 91,
+      "label": "Response incident 092"
+    },
+    {
+      "case_id": "incident_093",
+      "seed": 92,
+      "label": "Response incident 093"
+    },
+    {
+      "case_id": "incident_094",
+      "seed": 93,
+      "label": "Response incident 094"
+    },
+    {
+      "case_id": "incident_095",
+      "seed": 94,
+      "label": "Response incident 095"
+    },
+    {
+      "case_id": "incident_096",
+      "seed": 95,
+      "label": "Response incident 096"
+    },
+    {
+      "case_id": "incident_097",
+      "seed": 96,
+      "label": "Response incident 097"
+    },
+    {
+      "case_id": "incident_098",
+      "seed": 97,
+      "label": "Response incident 098"
+    },
+    {
+      "case_id": "incident_099",
+      "seed": 98,
+      "label": "Response incident 099"
+    },
+    {
+      "case_id": "incident_100",
+      "seed": 99,
+      "label": "Response incident 100"
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "version": "r11-dynamic-delimitation-resource-v1",
+  "status": "FROZEN_RESOURCE_CONTRACT_TRAINING_AND_FORMAL_RESULTS_PENDING",
+  "note": "New experimental lane. Does NOT modify, extend, or supersede configs/benchmark_protocol_r8.json - R8/R10 remain the strong-baseline planner-to-planner comparison, unchanged. This is a separate operational comparator: a belief-aware learned policy (Grab the Crab GNN/RL) vs. a credible-but-deliberately-simpler deterministic reactive baseline (Dynamic Delimitation), both spending the same field-effort budget.",
+  "inherits": [
+    "configs/benchmark_protocol_r8.json"
+  ],
+  "frozen_resource_contract": {
+    "cross_team_ack": true,
+    "total_effort_budget": 18,
+    "effort_levels": [1, 3, 6],
+    "max_windows": 18,
+    "reason": "18 is simultaneously the max effort budget and the max number of decision windows possible only in the extreme case where every action is effort=1 (18 x e1 = 18 windows). 6 x e3 = 6 windows. 3 x e6 = 3 windows. Any mixed trajectory is valid provided sum(effort) <= 18 and num_windows <= 18. Do NOT raise the budget to 108 (18 windows x 6 effort) - the old max_rounds=6 horizon from benchmark_protocol_r8.json artificially prevented a small-effort policy from spending its full budget; this contract removes that artifact without changing the budget itself."
+  },
+  "dynamic_delimitation_baseline": {
+    "planner_class": "adaptive_response.dynamic_delimitation_planner.DynamicDelimitationMax6Planner",
+    "product_label": "Dynamic Delimitation",
+    "principle": "confirmed first detection -> inspect local frontier -> survey at full effort -> positive expands frontier -> negative closes/deprioritizes that branch -> replan -> repeat",
+    "dynamic_effort": 6,
+    "allowed_information": [
+      "graph_adjacency", "surveyed_vs_unsurveyed", "observed_positive_negative",
+      "static_habitat_proxy", "static_accessibility_proxy", "water_route_distance_proxy",
+      "current_previous_survey_location", "remaining_effort_budget"
+    ],
+    "forbidden_information": [
+      "posterior_occupancy_belief", "uncertainty_entropy", "q_posterior",
+      "predictive_detection_probability", "possible_worlds", "world_model_probabilities",
+      "spatial_belief_state", "gnn_embeddings", "hidden_truth", "future_observations"
+    ],
+    "revisit_policy": "no_immediate_revisit",
+    "invariance_requirement": "Dynamic planner output must be invariant to changes in belief/uncertainty/q/world weights when all allowed observable features stay unchanged."
+  },
+  "gnn_horizon_change": {
+    "max_rounds": 18,
+    "budget_unchanged": 18,
+    "note": "SiteEffortRoundPolicy action space (site, effort in {1,3,6}) is unchanged; only the environment horizon changes. If the current best checkpoint was trained with max_rounds=6, it is NOT formally valid for R11 and must be retrained.",
+    "reward_contract": "unchanged from configs/benchmark_protocol_r8.json frozen_rl_reward_contract for R11 v1 - no new effort/travel penalty added; effort/windows/travel are evaluation metrics only for this experiment, per the SSOT.",
+    "stop_action": "OUT_OF_SCOPE_FOR_R11_V1 - no learned STOP token in R11 v1; may be introduced in a future R12.",
+    "training_seed_requirement": {
+      "minimum_independent_rl_seeds": 3,
+      "tuning_rule": "No broad hyperparameter search. Do not modify simulator, reward, or Dynamic after seeing the formal R11 test set. Tune only on train/validation."
+    }
+  },
+  "primary_ecology_metrics": [
+    "confirmed_unique_positive_sites",
+    "new_confirmed_positive_sites",
+    "occupied_site_coverage",
+    "missed_occupied_fraction",
+    "detections_found"
+  ],
+  "resource_metrics": [
+    "effort_spent",
+    "num_windows",
+    "water_route_km",
+    "distinct_sites_visited"
+  ],
+  "hidden_truth_gate": "occupied_site_coverage and missed_occupied_fraction are computed evaluator-side only, after reveal. The policy/planner under test never receives hidden truth.",
+  "effort_to_parity": {
+    "target": "GNN confirmed-unique-positive-sites result at effort=18",
+    "continuation_planner": "Dynamic Delimitation only, unchanged rules, unchanged effort (always e6), unchanged information firewall",
+    "continuation_effort_steps": [18, 24, 30, 36],
+    "parity_max_total_effort": 36,
+    "parity_not_reached_report": "Did not reach parity within 2x the initial effort budget.",
+    "definition": "E*_dyn = min{E >= 18 : C_dyn(E) >= C_gnn(18)}; ExtraEffort = E*_dyn - 18; EffortOverhead% = (E*_dyn - 18) / 18 * 100",
+    "parity_is_measured_on": "unique confirmed-positive sites, NOT raw capture/detection event count"
+  },
+  "resource_cost_translation": {
+    "field_hours_anchor_minutes_per_check": 16.1,
+    "illustrative_wage_usd_per_hour": 20.37,
+    "field_hours_formula": "FieldHours = (16.1 / 60) * Effort",
+    "labor_cost_formula_illustrative_only": "LaborCost = FieldHours * 20.37",
+    "preferred_headline_claim": "X% more field effort required to reach the same confirmed extent",
+    "travel_cost_gate": "Do not convert effort overhead to fuel/$ until an explicit vessel/fuel model is frozen. Travel/access is an operational proxy (water_route.py), not a ground-truth cost."
+  },
+  "determinism_requirement": "Field potential outcomes must be deterministic with respect to (case_seed, site_id, visit_index, effort), not merely the current position of a global RNG stream, so that same incident + same action -> same field result regardless of which policy executed it or in what order.",
+  "claim_guardrail": "On these frozen real-data-constrained synthetic incidents only. Never claim: beats experts, better than WDFW, optimal response, or proven real-world savings. This is plausibility evidence, not proof of operational superiority.",
+  "artifact_isolation": {
+    "rule": "This experiment must not modify configs/benchmark_protocol_r8.json, docs/R8_BENCHMARK_REPORT.md, or any R8 paired-comparison report.",
+    "new_artifacts": [
+      "configs/benchmark_protocol_r11_dynamic.json",
+      "docs/R11_DYNAMIC_DELIMITATION_REPORT.md",
+      "reports/r11_*.csv"
+    ]
+  }
+}

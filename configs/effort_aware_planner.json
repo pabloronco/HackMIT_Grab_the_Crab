@@ -1,0 +1,43 @@
+{
+  "version": "effort-aware-planner-r11-v1",
+  "revision": 5,
+  "status": "FROZEN_R11_dual_population_tuned_2026-09-19_rev5",
+  "planner_config": {
+    "effort_levels": [
+      1,
+      3,
+      6
+    ],
+    "site_ranking": "belief_frontier",
+    "ranking_objective": "information_efficiency",
+    "information_objective": "extent_entropy",
+    "information_gain_weight": 1.0,
+    "detection_weight": 0.0,
+    "frontier_weight": 0.0,
+    "cost_weight": 0.0,
+    "travel_weight": 0.0,
+    "cost": {
+      "dispatch_overhead_cost": 0.5,
+      "effort_unit_cost": 1.0,
+      "travel_cost_weight": 0.0,
+      "units": "normalized_cost_units",
+      "provenance": "DESIGN_CHOICE_not_agency_truth",
+      "regime_adaptive": false,
+      "dispatch_base": 1.0,
+      "q_reference": 0.1167,
+      "q_slope": 0.0,
+      "prevalence_reference": 0.35,
+      "prevalence_slope": 0.0,
+      "dispatch_min": 0.0,
+      "dispatch_max": 3.0
+    },
+    "stop": {
+      "enabled": false,
+      "min_information_efficiency": null,
+      "entropy_target_bits": null
+    },
+    "status": "FROZEN_R11_dual_population_tuned_2026-09-19_rev5",
+    "provenance": "DESIGN_CHOICE tuned for robustness across BOTH the frozen R8 validation split (60 cases) and the 100-case judging-UI demo population (scripts/tune_dual_population.py); the demo library is documented as illustrative-only, not a protected benchmark split, so it is a legitimate second tuning signal. The R8 FORMAL split (id_test/ood_*) was re-read exactly once after freezing, to confirm, not to select. Regime-adaptive dispatch cost (methods 1+3, scripts/tune_regime_adaptive.py) was evaluated as a candidate successor and kept in the codebase (OperationalCostConfig.regime_adaptive, fully tested) but NOT adopted as the default: it gave a real, validated improvement on high-detectability incidents but left the pooled 280-case headline metric statistically indistinguishable from this simpler config, so the simpler config ships. See docs/DECISION_LOG.md, 'R11 regime-adaptive dispatch cost (methods 1+3)'."
+  },
+  "note": "Reinstated after evaluating and declining a regime-adaptive successor (revision 6 candidate); see docs/DECISION_LOG.md."
+}

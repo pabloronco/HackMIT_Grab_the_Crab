@@ -106,6 +106,30 @@ class SpatialBeliefState:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class ProspectiveActionEvaluation:
+    """Observable, pre-survey evaluation of one candidate (site, effort) action.
+
+    Every field is derived from the current joint posterior only. ``None`` marks a
+    quantity that is undefined for this action (e.g. entropy after a detection
+    when detection has zero posterior-predictive probability).
+    """
+
+    site_id: str
+    effort: int
+    occupancy_belief: float
+    predictive_detection_probability: float
+    ecological_entropy_before_bits: float
+    ecological_entropy_if_detection_bits: float | None
+    ecological_entropy_if_no_detection_bits: float | None
+    expected_ecological_entropy_after_bits: float
+    expected_information_gain_bits: float
+    conditional_miss_probability_if_occupied: float | None
+    # Secondary objective kept for continuity with the R7/R8 Information Gain
+    # baseline: expected reduction of the sum of marginal occupancy entropies.
+    expected_marginal_information_gain_bits: float | None = None
+
+
 class SpatialBeliefEngine:
     """Exact finite-ensemble Bayes update for spatial occupancy under imperfect detection.
 
@@ -293,6 +317,123 @@ class SpatialBeliefEngine:
         return _probability_with_roundoff_guard(
             probability,
             name=f"predictive detection probability for {site_id!r}",
+        )
+
+    @classmethod
+    def ecological_extent_entropy_bits(cls, belief: SpatialBeliefState) -> float:
+        """Entropy (bits) over unique ecological occupancy extents, q marginalized.
+
+        Joint hypotheses that share an occupancy bit-vector but differ in q are
+        ONE ecological extent: their posterior weights are summed before the
+        entropy is taken. This is deliberately not ``joint_entropy_bits``.
+        """
+
+        cls._validate_state(belief)
+        mass_by_extent: dict[tuple[bool, ...], float] = {}
+        for hypothesis, weight in zip(belief.hypotheses, belief.weights):
+            mass_by_extent[hypothesis.presence] = (
+                mass_by_extent.get(hypothesis.presence, 0.0) + float(weight)
+            )
+        return -sum(m * log2(m) for m in mass_by_extent.values() if m > 0.0)
+
+    @classmethod
+    def conditional_miss_probability_if_occupied(
+        cls,
+        belief: SpatialBeliefState,
+        *,
+        site_id: str,
+        effort: int,
+    ) -> float | None:
+        """P(no detection | site occupied, current joint posterior, effort).
+
+        Computed on the JOINT posterior so any occupancy/q dependence induced by
+        evidence is preserved. Returns ``None`` when posterior occupancy is zero
+        (the conditional is undefined).
+        """
+
+        cls._validate_state(belief)
+        if site_id not in belief.site_ids:
+            raise ValueError(f"Unknown site_id {site_id!r}.")
+        if isinstance(effort, bool) or not isinstance(effort, int) or effort <= 0:
+            raise ValueError("effort must be a positive integer.")
+        index = belief.site_ids.index(site_id)
+        occupied_mass = 0.0
+        miss_mass = 0.0
+        for hypothesis, weight in zip(belief.hypotheses, belief.weights):
+            if hypothesis.presence[index]:
+                occupied_mass += weight
+                miss_mass += weight * (1.0 - hypothesis.q) ** effort
+        if occupied_mass <= 0.0:
+            return None
+        return _probability_with_roundoff_guard(
+            miss_mass / occupied_mass, name=f"conditional miss probability for {site_id!r}"
+        )
+
+    @classmethod
+    def expected_information_gain_bits(
+        cls,
+        belief: SpatialBeliefState,
+        *,
+        site_id: str,
+        effort: int,
+    ) -> ProspectiveActionEvaluation:
+        """Exact reference EIG over ecological extents for a prospective action.
+
+        Hypothetical posteriors are built with the frozen ``update`` kernel on a
+        prospective ``Observation`` (round=0); ``update`` is pure and returns a new
+        state, so the live belief is never mutated.
+        """
+
+        cls._validate_state(belief)
+        if site_id not in belief.site_ids:
+            raise ValueError(f"Unknown site_id {site_id!r}.")
+        if isinstance(effort, bool) or not isinstance(effort, int) or effort <= 0:
+            raise ValueError("effort must be a positive integer.")
+
+        p_detection = cls.predictive_detection_probability(belief, site_id=site_id, effort=effort)
+        p_no_detection = 1.0 - p_detection
+        h_before = cls.ecological_extent_entropy_bits(belief)
+
+        def _hypothetical(detection: bool) -> float:
+            observation = Observation(site_id=site_id, effort=effort, detection=detection, round=0)
+            posterior = cls.update(
+                belief, ObservationBatch(observations=(observation,), round=0, total_effort=effort)
+            )
+            return cls.ecological_extent_entropy_bits(posterior)
+
+        def _hypothetical_marginal(detection: bool) -> float:
+            observation = Observation(site_id=site_id, effort=effort, detection=detection, round=0)
+            posterior = cls.update(
+                belief, ObservationBatch(observations=(observation,), round=0, total_effort=effort)
+            )
+            return sum(posterior.uncertainty_by_site().values())
+
+        h_det = _hypothetical(True) if p_detection > 0.0 else None
+        h_nodet = _hypothetical(False) if p_no_detection > 0.0 else None
+        expected_after = 0.0
+        expected_marginal_after = 0.0
+        if h_det is not None:
+            expected_after += p_detection * h_det
+            expected_marginal_after += p_detection * _hypothetical_marginal(True)
+        if h_nodet is not None:
+            expected_after += p_no_detection * h_nodet
+            expected_marginal_after += p_no_detection * _hypothetical_marginal(False)
+        marginal_before = sum(belief.uncertainty_by_site().values())
+
+        return ProspectiveActionEvaluation(
+            site_id=site_id,
+            effort=int(effort),
+            occupancy_belief=belief.p_by_site()[site_id],
+            predictive_detection_probability=p_detection,
+            ecological_entropy_before_bits=h_before,
+            ecological_entropy_if_detection_bits=h_det,
+            ecological_entropy_if_no_detection_bits=h_nodet,
+            expected_ecological_entropy_after_bits=expected_after,
+            expected_information_gain_bits=max(0.0, h_before - expected_after),
+            conditional_miss_probability_if_occupied=cls.conditional_miss_probability_if_occupied(
+                belief, site_id=site_id, effort=effort
+            ),
+            expected_marginal_information_gain_bits=max(0.0, marginal_before - expected_marginal_after),
         )
 
     @staticmethod

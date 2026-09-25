@@ -114,6 +114,75 @@ class SpatialRewardConfig:
     mean_uncertainty_reduction_weight: float = 2.0
     new_detection_weight: float = 0.5
     missed_occupied_fraction_weight: float = -2.0  # sign included, matches r7 config
+    # R12 (configs/benchmark_protocol_r12.json section 2): observable-only
+    # terms that align training with the R11/R12 evaluation metric
+    # (unique confirmed-positive sites) instead of raw detection events. Both
+    # default to 0.0 so the frozen R7/R8 reward ("current" family) is
+    # numerically unchanged unless a reward family opts in.
+    unique_positive_discovery_weight: float = 0.0
+    redundant_revisit_weight: float = 0.0  # sign included; negative = small cost
+
+
+# Pre-declared R12 reward families (handoff section 2). Coefficients are
+# validation-tunable only; they must never be chosen against a formal test set.
+SPATIAL_REWARD_FAMILIES: dict[str, dict[str, float]] = {
+    "current": {},
+    "unique": {
+        "new_detection_weight": 0.0,
+        "unique_positive_discovery_weight": 1.0,
+    },
+    "unique_redundancy": {
+        "new_detection_weight": 0.0,
+        "unique_positive_discovery_weight": 1.0,
+        "redundant_revisit_weight": -0.1,
+    },
+}
+
+
+def spatial_reward_family(name: str, **overrides: float) -> SpatialRewardConfig:
+    """Build a SpatialRewardConfig from a named R12 family plus explicit overrides."""
+    if name not in SPATIAL_REWARD_FAMILIES:
+        raise ValueError(f"Unknown reward family {name!r}; expected one of {sorted(SPATIAL_REWARD_FAMILIES)}.")
+    values = {**SPATIAL_REWARD_FAMILIES[name], **overrides}
+    return SpatialRewardConfig(**values)
+
+
+@dataclass(frozen=True)
+class ObservableRoundEvents:
+    """Per-round facts derived from PublicState only (never HiddenWorld)."""
+
+    surveyed_sites: tuple[str, ...]
+    new_unique_positive_sites: int
+    redundant_revisits: int
+
+
+def observable_round_events(
+    *,
+    public_state_before: PublicState,
+    public_state_after: PublicState,
+    mission,
+) -> ObservableRoundEvents:
+    """A site is a *new unique positive* when this round produced its first
+    confirmed detection of the episode (detections 0 -> >0). The confirmed
+    first-detection site starts at detections=1 (Environment._reset_site) so it
+    can never count as new. A *redundant revisit* is surveying a site that was
+    already surveyed or already confirmed positive before this round.
+    Observable-only: reads PublicState, not HiddenWorld."""
+
+    before = {site.id: site for site in public_state_before.sites}
+    after = {site.id: site for site in public_state_after.sites}
+    surveyed = tuple(dict.fromkeys(a.site_id for a in mission.allocations))
+    new_unique = sum(
+        1 for sid in surveyed if before[sid].detections == 0 and after[sid].detections > 0
+    )
+    redundant = sum(
+        1 for sid in surveyed if before[sid].observed_effort > 0 or before[sid].detections > 0
+    )
+    return ObservableRoundEvents(
+        surveyed_sites=surveyed,
+        new_unique_positive_sites=new_unique,
+        redundant_revisits=redundant,
+    )
 
 
 def spatial_round_reward_components(
@@ -122,19 +191,32 @@ def spatial_round_reward_components(
     belief_after: BeliefState,
     new_detections: int,
     config: SpatialRewardConfig | None = None,
+    new_unique_positive_sites: int = 0,
+    redundant_revisits: int = 0,
 ) -> dict[str, float]:
     """Per-round R7 reward terms. No effort-cost term: budget + horizon already
-    constrain resource use (explicit guardrail in benchmark_protocol_r7.json)."""
+    constrain resource use (explicit guardrail in benchmark_protocol_r7.json).
+
+    R12 terms (`unique_positive_discovery`, `redundant_revisit_cost`) are only
+    emitted when their weight is non-zero, so "current"-family logs and sums
+    are byte-identical to the frozen R7/R8 reward."""
 
     cfg = config or SpatialRewardConfig()
     mean_entropy_before = _mean(belief_before.uncertainty_by_site)
     mean_entropy_after = _mean(belief_after.uncertainty_by_site)
     reduction = mean_entropy_before - mean_entropy_after
 
-    return {
+    components = {
         "mean_uncertainty_reduction": cfg.mean_uncertainty_reduction_weight * reduction,
         "new_detections": cfg.new_detection_weight * float(new_detections),
     }
+    if cfg.unique_positive_discovery_weight != 0.0:
+        components["unique_positive_discovery"] = (
+            cfg.unique_positive_discovery_weight * float(new_unique_positive_sites)
+        )
+    if cfg.redundant_revisit_weight != 0.0:
+        components["redundant_revisit_cost"] = cfg.redundant_revisit_weight * float(redundant_revisits)
+    return components
 
 
 def spatial_terminal_reward_components(

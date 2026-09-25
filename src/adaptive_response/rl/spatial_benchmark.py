@@ -31,7 +31,7 @@ class SpatialBenchmarkCase:
     q_true: float
     ecological_hypotheses: tuple[EcologicalHypothesis, ...]
     q_hypotheses: tuple[QHypothesis, ...]
-    max_rounds: int
+    max_rounds: int | None
     seed: int
     group: str  # e.g. "id_test", "ood_model_E", "ood_q_low", "ood_q_high"
 
@@ -81,15 +81,41 @@ def run_spatial_planner_case(planner: Planner, case: SpatialBenchmarkCase) -> Sp
     detections_found = 0
     effort_spent = 0
 
+    last_transition = None
     while True:
         transition = loop.run_round()
+        if transition is None:
+            # Planner STOP before this round: campaign complete with budget left.
+            assert last_transition is not None, "planner stopped before any round"
+            transition = last_transition
+            hidden_world = loop.reveal()
+            metrics = compute_spatial_primary_metrics(
+                sites=transition.public_state_after.sites,
+                hidden_world=hidden_world,
+                final_belief=transition.belief_after,
+            )
+            return SpatialBenchmarkRow(
+                planner_name=getattr(planner, "planner_name", type(planner).__name__),
+                case_label=case.label, group=case.group, seed=case.seed,
+                num_sites=len(case.incident.sites), budget=case.incident.budget,
+                max_rounds=case.max_rounds if case.max_rounds is not None else 0,
+                num_rounds=num_rounds, detections_found=detections_found, effort_spent=effort_spent,
+                occupied_sites_total=metrics.occupied_sites_total,
+                occupied_sites_missed=metrics.occupied_sites_missed,
+                missed_occupied_fraction=metrics.missed_occupied_fraction,
+                occupied_site_coverage=metrics.occupied_site_coverage,
+                final_global_uncertainty=metrics.final_global_uncertainty,
+                wall_clock_seconds=time.time() - start,
+            )
+        last_transition = transition
         num_rounds += 1
         detections_found += int(transition.simulator_metrics["detections"])
         effort_spent += int(transition.simulator_metrics["effort_spent"])
 
-        horizon_reached = num_rounds >= case.max_rounds
-        episode_over = transition.done or horizon_reached
-        if episode_over and not transition.done:
+        horizon_reached = case.max_rounds is not None and num_rounds >= case.max_rounds
+        planner_stopped = bool(getattr(transition, "planner_stopped", False))
+        episode_over = transition.done or horizon_reached or planner_stopped
+        if episode_over and not transition.done and not planner_stopped:
             loop.force_complete()
 
         if episode_over:
@@ -106,7 +132,7 @@ def run_spatial_planner_case(planner: Planner, case: SpatialBenchmarkCase) -> Sp
                 seed=case.seed,
                 num_sites=len(case.incident.sites),
                 budget=case.incident.budget,
-                max_rounds=case.max_rounds,
+                max_rounds=case.max_rounds if case.max_rounds is not None else 0,
                 num_rounds=num_rounds,
                 detections_found=detections_found,
                 effort_spent=effort_spent,
